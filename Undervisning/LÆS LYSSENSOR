@@ -1,0 +1,34 @@
+#include <Arduino_MKRIoTCarrier.h>
+MKRIoTCarrier carrier;
+
+int r, g, b;
+
+void setup() {
+  // Initialiser kommunikation
+  Serial.begin(9600);
+  
+
+  CARRIER_CASE = false;
+  carrier.begin();
+  carrier.display.fillScreen(ST77XX_BLACK); // Start med en ren skærm
+}
+
+void loop() {
+
+    carrier.Light.readColor(r, g, b); // Læs data fra RGB-sensoren
+
+    carrier.display.fillScreen(ST77XX_WHITE);
+    carrier.display.setTextColor(ST77XX_RED);
+    carrier.display.setTextSize(2);
+
+    carrier.display.setCursor(30, 110);
+    carrier.display.print("RGB: ");
+    carrier.display.setCursor(30, 125);
+    carrier.display.print(r);
+    carrier.display.setCursor(30, 140);
+    carrier.display.print(g);
+    carrier.display.setCursor(30, 155);
+    carrier.display.print(b);
+
+  delay(1000); // Vent lidt før næste måling
+}
