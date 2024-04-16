@@ -4,6 +4,7 @@ use std::time::{Duration, Instant};
 
 use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
+use sdl2::ttf::{self, Sdl2TtfContext};
 use sdl2::{
     event::Event,
     image::{self, Sdl2ImageContext},
@@ -21,6 +22,7 @@ pub struct Game<'a> {
     sdl_context: Sdl,
     video_subsystem: VideoSubsystem,
     image_context: Sdl2ImageContext,
+    ttf_context: Sdl2TtfContext,
     canvas: Canvas<Window>,
     texture_creator: TextureCreator<WindowContext>,
     event_pump: sdl2::EventPump,
@@ -38,6 +40,7 @@ impl<'game> Game<'game> {
         let sdl_context = sdl2::init()?;
         let video_subsystem = sdl_context.video()?;
         let image_context = image::init(image::InitFlag::PNG)?;
+        let ttf_context = ttf::init().map_err(|e| e.to_string())?;
         let window = video_subsystem
             .window("pvp-game-dilapidation", 1280, 720)
             .position_centered()
@@ -58,6 +61,7 @@ impl<'game> Game<'game> {
             image_context,
             canvas,
             texture_creator,
+            ttf_context,
             event_pump,
             entities: vec![],
             components: vec![],

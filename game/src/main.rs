@@ -137,6 +137,13 @@ impl System for MenuSystem {
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
         for id in query!(ctx, Button) {
             let button = ctx.entity_component::<Button>(id).clone();
+            ctx.draw_rect(
+                (0, 0, 0),
+                button.position.0,
+                button.position.1,
+                button.size.0,
+                button.size.1,
+            )?;
             let position = ctx.mouse_position();
             if button.contains(position) && ctx.mouse_button_pressed(engine::MouseButton::Left) {
                 (button.action)(ctx);

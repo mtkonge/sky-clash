@@ -4,6 +4,7 @@ use sdl2::{
     image::LoadTexture,
     keyboard::Keycode,
     mouse::MouseButton,
+    pixels::Color,
     rect::Rect,
     render::{Canvas, Texture, TextureCreator},
     video::{Window, WindowContext},
@@ -168,6 +169,20 @@ impl<'context, 'game> Context<'context, 'game> {
             None,
             Rect::new(x, y, texture.query().width, texture.query().height),
         )?;
+        Ok(())
+    }
+
+    pub fn draw_rect(
+        &mut self,
+        rgb: (u8, u8, u8),
+        x: i32,
+        y: i32,
+        w: u32,
+        h: u32,
+    ) -> Result<(), Error> {
+        let (r, g, b) = rgb;
+        self.canvas.set_draw_color(Color { r, g, b, a: 255 });
+        self.canvas.fill_rect(Rect::new(x, y, w, h))?;
         Ok(())
     }
 
