@@ -85,6 +85,12 @@ impl<'game> Game<'game> {
                     Event::KeyUp { keycode, .. } => {
                         self.currently_pressed_keys.remove(&keycode.unwrap());
                     }
+                    Event::MouseButtonDown { mouse_btn, .. } => {
+                        self.currently_pressed_mouse_buttons.insert(mouse_btn);
+                    }
+                    Event::MouseButtonUp { mouse_btn, .. } => {
+                        self.currently_pressed_mouse_buttons.remove(&mouse_btn);
+                    }
                     _ => {}
                 }
             }

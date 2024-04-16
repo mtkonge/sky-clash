@@ -3,6 +3,8 @@
 mod collision;
 mod engine;
 
+use std::rc::Rc;
+
 use engine::{Component, System};
 
 use crate::collision::{Collider, CollisionSystem};
@@ -64,45 +66,6 @@ impl System for SpriteRenderer {
 }
 
 #[derive(Component)]
-struct Cloud;
-
-struct CloudSystem;
-impl System for CloudSystem {
-    fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
-        let cloud_amount = ctx.entities_with_component::<Cloud>().len();
-        if cloud_amount < 1 {
-            let cloud = ctx.load_sprite("textures/clouds.png").unwrap();
-            spawn!(
-                ctx,
-                Cloud,
-                Sprite { sprite: cloud },
-                RigidBody {
-                    pos: (-100.0, 150.0),
-                    ..Default::default()
-                },
-            );
-        }
-
-        for id in query!(ctx, Cloud, RigidBody) {
-            let body = ctx.entity_component::<RigidBody>(id);
-            body.vel.0 = if body.vel.0 < 200.0 {
-                body.vel.0 + 200.0 * delta
-            } else {
-                body.vel.0
-            };
-        }
-
-        for id in query!(ctx, Cloud, RigidBody) {
-            let body = ctx.entity_component::<RigidBody>(id);
-            if body.pos.0 > 1400.0 {
-                ctx.despawn(id);
-            }
-        }
-        Ok(())
-    }
-}
-
-#[derive(Component)]
 struct PlayerMovement;
 
 struct PlayerMovementSystem;
@@ -130,6 +93,59 @@ impl System for PlayerMovementSystem {
     }
 }
 
+#[derive(Component, Clone)]
+struct Button {
+    action: Rc<dyn Fn(&mut engine::Context)>,
+    position: (i32, i32),
+    size: (u32, u32),
+    text: String,
+}
+
+impl Button {
+    fn contains(&self, mouse_pos: (i32, i32)) -> bool {
+        (self.position.0..=self.position.0 + self.size.0 as i32).contains(&mouse_pos.0)
+            && (self.position.1..=self.position.1 + self.size.1 as i32).contains(&mouse_pos.1)
+    }
+}
+
+struct MenuSystem;
+impl System for MenuSystem {
+    fn on_add(&self, ctx: &mut engine::Context) {
+        spawn!(
+            ctx,
+            Button {
+                position: (0, 0),
+                text: "waow".to_string(),
+                action: Rc::new(|ctx| {
+                    println!("waow");
+                    spawn!(
+                        ctx,
+                        Button {
+                            position: (0, 200),
+                            text: "hewwo".to_string(),
+                            action: Rc::new(|_ctx| {
+                                println!("omgor");
+                            }),
+                            size: (200, 200),
+                        }
+                    );
+                }),
+                size: (200, 200),
+            }
+        );
+    }
+    fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
+        for id in query!(ctx, Button) {
+            let button = ctx.entity_component::<Button>(id).clone();
+            let position = ctx.mouse_position();
+            if button.contains(position) && ctx.mouse_button_pressed(engine::MouseButton::Left) {
+                (button.action)(ctx);
+            }
+        }
+        Ok(())
+    }
+}
+
 fn main() {
     let mut game = engine::Game::new().unwrap();
 
@@ -139,7 +155,7 @@ fn main() {
     context.add_system(SpriteRenderer);
     context.add_system(PlayerMovementSystem);
     context.add_system(GravitySystem);
-    context.add_system(CloudSystem);
+    context.add_system(MenuSystem);
     let player = context.load_sprite("textures/player.png").unwrap();
     let background = context.load_sprite("textures/literally_dprk.png").unwrap();
     let nope = context.load_sprite("textures/nuh-uh.png").unwrap();
