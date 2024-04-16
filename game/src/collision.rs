@@ -77,6 +77,30 @@ fn rects_within_reach(pos: V2, delta_pos: V2, rect: V2, other_pos: V2, other_rec
     radii >= length_between
 }
 
+#[test]
+fn test_rects_within_reach() {
+    assert_eq!(
+        rects_within_reach(
+            V2::new(0.0, 0.0),
+            V2::new(10.0, 0.0),
+            V2::new(10.0, 10.0),
+            V2::new(15.0, 0.0),
+            V2::new(10.0, 10.0)
+        ),
+        true,
+    );
+    assert_eq!(
+        rects_within_reach(
+            V2::new(0.0, 0.0),
+            V2::new(10.0, 0.0),
+            V2::new(10.0, 10.0),
+            V2::new(30.0, 0.0),
+            V2::new(10.0, 10.0)
+        ),
+        false,
+    );
+}
+
 fn point_vec_2_point_line_intersect(p: V2, dp: V2, c0: V2, c1: V2) -> Option<(V2, f64)> {
     if dp.len() == 0.0 {
         // no movement, no collision
@@ -112,10 +136,11 @@ fn point_vec_2_point_line_intersect(p: V2, dp: V2, c0: V2, c1: V2) -> Option<(V2
         (x, y)
     };
     let t = if c1.x == c0.x {
-        (y - c1.y) / (c1.y - c0.y)
+        (y - c0.y) / (c1.y - c0.y)
     } else {
-        (x - c1.x) / (c1.x - c0.x)
+        (x - c0.x) / (c1.x - c0.x)
     };
+    println!("t = {t}");
     if !(0.0..1.0).contains(&t) {
         // outside corners
         return None;
@@ -130,6 +155,19 @@ fn point_vec_2_point_line_intersect(p: V2, dp: V2, c0: V2, c1: V2) -> Option<(V2
         return None;
     }
     Some((V2::new(x, y), t))
+}
+
+#[test]
+fn test_point_vec_2_point_line_intersect() {
+    assert_eq!(
+        point_vec_2_point_line_intersect(
+            V2::new(10.0, 10.0),
+            V2::new(0.0, 15.0),
+            V2::new(0.0, 20.0),
+            V2::new(20.0, 20.0)
+        ),
+        Some((V2::new(10.0, 20.0), 0.5))
+    );
 }
 
 #[derive(Component, Clone, Default)]
@@ -175,20 +213,16 @@ impl System for ResolvingBoxCollisionSystem {
                             V2::from(body.pos) + body.rect.into(),
                             V2::from(body.pos).add_y(body.rect.1),
                         ];
-                        for (c0, c1) in [
+                        for (c0, c1) in [(
                             V2::from(other_body.pos),
                             V2::from(other_body.pos).add_x(other_body.rect.0),
-                        ]
-                        .windows(2)
-                        .map(|c0, c1| (c0, c1))
-                        {
-                            if let Some((int, _t)) = point_vec_2_point_line_intersect(
-                                body.pos.into(),
-                                delta_pos,
-                                *c0,
-                                *c1,
-                            ) {
-                                println!("weeeee");
+                        )] {
+                            for p in ps {
+                                if let Some((int, _t)) =
+                                    point_vec_2_point_line_intersect(p, delta_pos, c0, c1)
+                                {
+                                    println!("weeeee");
+                                }
                             }
                         }
                     }
