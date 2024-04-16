@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 use engine::{Component, System};
 
-use crate::collision::{Collider, CollisionSystem};
+use crate::collision::{ResolvingBoxCollider, ResolvingBoxCollisionSystem};
 
 #[derive(Component, Default, Clone, Debug)]
 struct RigidBody {
@@ -71,7 +71,7 @@ struct PlayerMovement;
 struct PlayerMovementSystem;
 impl System for PlayerMovementSystem {
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
-        for id in query!(ctx, PlayerMovement, RigidBody, Collider) {
+        for id in query!(ctx, PlayerMovement, RigidBody, ResolvingBoxCollider) {
             let d_down = ctx.key_pressed(engine::Keycode::D);
             let a_down = ctx.key_pressed(engine::Keycode::A);
             let w_down = ctx.key_pressed(engine::Keycode::W);
@@ -157,7 +157,7 @@ fn main() {
     let mut game = engine::Game::new().unwrap();
 
     let mut context = game.context();
-    context.add_system(CollisionSystem);
+    context.add_system(ResolvingBoxCollisionSystem);
     context.add_system(VelocitySystem);
     context.add_system(SpriteRenderer);
     context.add_system(PlayerMovementSystem);
@@ -178,12 +178,12 @@ fn main() {
         Sprite { sprite: player },
         RigidBody {
             pos: (400.0, 200.0),
-            vel: (10.0, 0.0),
+            vel: (0.0, 0.0),
             rect: (128.0, 128.0),
             gravity: true,
             ..Default::default()
         },
-        Collider {
+        ResolvingBoxCollider {
             resolve: true,
             ..Default::default()
         },
@@ -197,7 +197,7 @@ fn main() {
             rect: (960.0, 128.0),
             ..Default::default()
         },
-        Collider::default(),
+        ResolvingBoxCollider::default(),
     );
 
     // spawn!(
