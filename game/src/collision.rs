@@ -37,6 +37,14 @@ impl V2 {
     pub fn reverse(&self) -> Self {
         Self::new(-self.x, -self.y)
     }
+
+    pub fn add_x(&self, rhs: f64) -> Self {
+        Self::new(self.x + rhs, self.y)
+    }
+
+    pub fn add_y(&self, rhs: f64) -> Self {
+        Self::new(self.x, self.y + rhs)
+    }
 }
 
 impl std::ops::Add for V2 {
@@ -59,6 +67,14 @@ impl From<(f64, f64)> for V2 {
     fn from((x, y): (f64, f64)) -> Self {
         Self { x, y }
     }
+}
+
+fn rects_within_reach(pos: V2, delta_pos: V2, rect: V2, other_pos: V2, other_rect: V2) -> bool {
+    let radius = rect.div_comps(2.0).len();
+    let other_radius = other_rect.div_comps(2.0).len();
+    let length_between = (pos - other_pos).len();
+    let radii = radius + delta_pos.len() + other_radius;
+    radii >= length_between
 }
 
 fn point_vec_2_point_line_intersect(p: V2, dp: V2, c0: V2, c1: V2) -> Option<(V2, f64)> {
@@ -135,6 +151,57 @@ impl System for ResolvingBoxCollisionSystem {
                     continue;
                 }
                 let other_body = ctx.entity_component::<RigidBody>(other_id).clone();
+                let delta_pos = V2::from(body.vel).extend(delta);
+                if !rects_within_reach(
+                    body.pos.into(),
+                    delta_pos,
+                    body.rect.into(),
+                    other_body.pos.into(),
+                    other_body.rect.into(),
+                ) {
+                    continue;
+                }
+                match (
+                    body.vel.0 == 0.0,
+                    body.vel.1 == 0.0,
+                    body.vel.0 >= 0.0,
+                    body.vel.1 >= 0.0,
+                ) {
+                    (true, true, ..) => {
+                        // no movement, no collision
+                    }
+                    (true, false, _, true) => {
+                        let ps = [
+                            V2::from(body.pos) + body.rect.into(),
+                            V2::from(body.pos).add_y(body.rect.1),
+                        ];
+                        for (c0, c1) in [
+                            V2::from(other_body.pos),
+                            V2::from(other_body.pos).add_x(other_body.rect.0),
+                        ]
+                        .windows(2)
+                        .map(|c0, c1| (c0, c1))
+                        {
+                            if let Some((int, _t)) = point_vec_2_point_line_intersect(
+                                body.pos.into(),
+                                delta_pos,
+                                *c0,
+                                *c1,
+                            ) {
+                                println!("weeeee");
+                            }
+                        }
+                    }
+                    (true, false, _, false) => todo!(),
+                    (false, true, true, true) => todo!(),
+                    (false, true, true, false) => todo!(),
+                    (false, true, false, true) => todo!(),
+                    (false, true, false, false) => todo!(),
+                    (false, false, true, true) => todo!(),
+                    (false, false, true, false) => todo!(),
+                    (false, false, false, true) => todo!(),
+                    (false, false, false, false) => todo!(),
+                }
                 //
                 //let body = ctx.entity_component::<RigidBody>(id);
             }

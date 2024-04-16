@@ -162,10 +162,14 @@ fn main() {
     context.add_system(SpriteRenderer);
     context.add_system(PlayerMovementSystem);
     context.add_system(GravitySystem);
-    context.add_system(MenuSystem);
-    let player = context.load_sprite("textures/player.png").unwrap();
-    let background = context.load_sprite("textures/literally_dprk.png").unwrap();
-    let nope = context.load_sprite("textures/nuh-uh.png").unwrap();
+    // context.add_system(MenuSystem);
+    // let player = context.load_sprite("textures/player.png").unwrap();
+    // let background = context.load_sprite("textures/literally_dprk.png").unwrap();
+    let player = context.load_sprite("textures/player_outline.png").unwrap();
+    let background = context
+        .load_sprite("textures/black_background.png")
+        .unwrap();
+    // let nope = context.load_sprite("textures/nuh-uh.png").unwrap();
 
     spawn!(
         &mut context,
@@ -193,8 +197,10 @@ fn main() {
     spawn!(
         &mut context,
         RigidBody {
-            pos: (184.0, 540.0),
-            rect: (960.0, 128.0),
+            // pos: (184.0, 540.0),
+            // rect: (960.0, 128.0),
+            pos: (390.0, 540.0),
+            rect: (148.0, 128.0),
             ..Default::default()
         },
         ResolvingBoxCollider::default(),
