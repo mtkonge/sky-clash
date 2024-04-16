@@ -101,7 +101,7 @@ fn test_rects_within_reach() {
     );
 }
 
-fn point_vec_2_point_line_intersect(p: V2, dp: V2, c0: V2, c1: V2) -> Option<(V2, f64)> {
+fn point_vec_2p_line_intersect(p: V2, dp: V2, c0: V2, c1: V2) -> Option<(V2, f64)> {
     if dp.len() == 0.0 {
         // no movement, no collision
         return None;
@@ -140,15 +140,14 @@ fn point_vec_2_point_line_intersect(p: V2, dp: V2, c0: V2, c1: V2) -> Option<(V2
     } else {
         (x - c0.x) / (c1.x - c0.x)
     };
-    println!("t = {t}");
     if !(0.0..1.0).contains(&t) {
         // outside corners
         return None;
     }
     let s = if dp.x == 0.0 {
-        (y - p.y) / dp.y
+        (y - (p.y + dp.y)) / dp.y
     } else {
-        (x - p.x) / dp.x
+        (x - (p.x + dp.x)) / dp.x
     };
     if s >= 0.0 {
         // out of range
@@ -160,84 +159,234 @@ fn point_vec_2_point_line_intersect(p: V2, dp: V2, c0: V2, c1: V2) -> Option<(V2
 #[test]
 fn test_point_vec_2_point_line_intersect() {
     assert_eq!(
-        point_vec_2_point_line_intersect(
+        point_vec_2p_line_intersect(
             V2::new(10.0, 10.0),
             V2::new(0.0, 15.0),
             V2::new(0.0, 20.0),
             V2::new(20.0, 20.0)
         ),
-        Some((V2::new(10.0, 20.0), 0.5))
+        Some((V2::new(10.0, 20.0), 0.5)),
+    );
+    assert_eq!(
+        point_vec_2p_line_intersect(
+            V2::new(10.0, 10.0),
+            V2::new(0.0, 5.0),
+            V2::new(0.0, 20.0),
+            V2::new(20.0, 20.0)
+        ),
+        None,
+    );
+    assert_eq!(
+        point_vec_2p_line_intersect(
+            V2::new(30.0, 10.0),
+            V2::new(0.0, 15.0),
+            V2::new(0.0, 20.0),
+            V2::new(20.0, 20.0)
+        ),
+        None,
     );
 }
 
+#[derive(Clone, Copy, Debug)]
+enum Boyk {
+    Positive,
+    Zero,
+    Negative,
+}
+
+impl From<f64> for Boyk {
+    fn from(value: f64) -> Self {
+        use Boyk::*;
+        if value < 0.0 {
+            Positive
+        } else if value == 0.0 {
+            Zero
+        } else {
+            Negative
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+enum Direction {
+    None,
+    Top,
+    Right,
+    Bottom,
+    Left,
+    TopLeft,
+    TopRight,
+    BottomRight,
+    BottomLeft,
+}
+
+impl Direction {
+    pub fn reverse(&self) -> Self {
+        use Direction::*;
+        match self {
+            None => None,
+            Top => Bottom,
+            Right => Left,
+            Bottom => Top,
+            Left => Right,
+            TopLeft => BottomRight,
+            TopRight => BottomLeft,
+            BottomRight => TopLeft,
+            BottomLeft => TopRight,
+        }
+    }
+
+    pub fn clockwise(&self) -> (Self, Self) {
+        use Direction::*;
+        match self {
+            TopLeft => (Left, Top),
+            TopRight => (Top, Right),
+            BottomRight => (Right, Bottom),
+            BottomLeft => (Bottom, Left),
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl From<V2> for Direction {
+    fn from(value: V2) -> Self {
+        use Boyk::*;
+        use Direction::*;
+        match (Boyk::from(value.x), Boyk::from(value.y)) {
+            (Zero, Zero) => None,
+            (Zero, Positive) => Top,
+            (Zero, Negative) => Bottom,
+            (Positive, Zero) => Left,
+            (Negative, Zero) => Right,
+            (Positive, Positive) => TopLeft,
+            (Positive, Negative) => BottomLeft,
+            (Negative, Positive) => TopRight,
+            (Negative, Negative) => BottomRight,
+        }
+    }
+}
+
+fn rect_side_corners(pos: V2, rect: V2, dir: Direction) -> (V2, V2) {
+    use Direction::*;
+    match dir {
+        Top => (pos, pos.add_x(rect.x)),
+        Right => (pos.add_x(rect.x), pos + rect),
+        Bottom => (pos + rect, pos.add_y(rect.y)),
+        Left => (pos.add_y(rect.y), pos),
+        _ => unreachable!(),
+    }
+}
+
+fn rect_diagonal_corners(pos: V2, rect: V2, dir: Direction) -> (V2, V2, V2) {
+    use Direction::*;
+    match dir {
+        TopLeft => (pos.add_y(rect.y), pos, pos.add_x(rect.x)),
+        TopRight => (pos, pos.add_x(rect.x), pos + rect),
+        BottomRight => (pos.add_x(rect.x), pos + rect, pos.add_y(rect.y)),
+        BottomLeft => (pos + rect, pos.add_y(rect.y), pos),
+        _ => unreachable!(),
+    }
+}
+
+fn resolve_collision(body: &mut RigidBody, int: V2, rect: V2, dir: Direction) {
+    use Direction::*;
+    match dir {
+        Top => {
+            body.pos.1 = int.y + 1.0;
+            body.vel.1 = 0.0;
+        }
+        Bottom => {
+            body.pos.1 = int.y - rect.y - 1.0;
+            body.vel.1 = 0.0;
+        }
+        Right => {
+            body.pos.0 = int.x + 1.0;
+            body.vel.0 = 0.0;
+        }
+        Left => {
+            body.pos.0 = int.x - rect.x - 1.0;
+            body.vel.0 = 0.0;
+        }
+        _ => unreachable!(),
+    }
+}
+
 #[derive(Component, Clone, Default)]
-pub struct ResolvingBoxCollider {
+pub struct Collider {
     pub resolve: bool,
 }
 
-pub struct ResolvingBoxCollisionSystem;
-impl System for ResolvingBoxCollisionSystem {
+pub struct CollisionSystem;
+impl System for CollisionSystem {
     fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
-        for id in query!(ctx, RigidBody, ResolvingBoxCollider) {
-            let collider = ctx.entity_component::<ResolvingBoxCollider>(id).clone();
+        for id in query!(ctx, RigidBody, Collider) {
+            let collider = ctx.entity_component::<Collider>(id).clone();
             if !collider.resolve {
                 continue;
             }
             let body = ctx.entity_component::<RigidBody>(id).clone();
-            for other_id in query!(ctx, RigidBody, ResolvingBoxCollider) {
+            for other_id in query!(ctx, RigidBody, Collider) {
                 if id == other_id {
                     continue;
                 }
                 let other_body = ctx.entity_component::<RigidBody>(other_id).clone();
-                let delta_pos = V2::from(body.vel).extend(delta);
-                if !rects_within_reach(
-                    body.pos.into(),
-                    delta_pos,
-                    body.rect.into(),
-                    other_body.pos.into(),
-                    other_body.rect.into(),
-                ) {
+
+                let pos = V2::from(body.pos);
+                let rect = V2::from(body.rect);
+                let other_pos = V2::from(other_body.pos);
+                let other_rect = V2::from(other_body.rect);
+                let dp = V2::from(body.vel).extend(delta);
+
+                if !rects_within_reach(pos, dp, rect, other_pos, other_rect) {
                     continue;
                 }
-                match (
-                    body.vel.0 == 0.0,
-                    body.vel.1 == 0.0,
-                    body.vel.0 >= 0.0,
-                    body.vel.1 >= 0.0,
-                ) {
-                    (true, true, ..) => {
-                        // no movement, no collision
+
+                let body = ctx.entity_component::<RigidBody>(id);
+                match Direction::from(dp) {
+                    Direction::None => {}
+                    dir @ (Direction::Top
+                    | Direction::Right
+                    | Direction::Bottom
+                    | Direction::Left) => {
+                        let (p0, p1) = rect_side_corners(pos, rect, dir);
+                        let (c0, c1) = rect_side_corners(other_pos, other_rect, dir.reverse());
+                        for p in [p0, p1] {
+                            if let Some((int, _t)) = point_vec_2p_line_intersect(p, dp, c0, c1) {
+                                resolve_collision(body, int, rect, dir);
+                            }
+                        }
+                        for p in [c0, c1] {
+                            if let Some((_int, _t)) = point_vec_2p_line_intersect(p, dp, p0, p1) {
+                                resolve_collision(body, p, rect, dir);
+                            }
+                        }
                     }
-                    (true, false, _, true) => {
-                        let ps = [
-                            V2::from(body.pos) + body.rect.into(),
-                            V2::from(body.pos).add_y(body.rect.1),
-                        ];
-                        for (c0, c1) in [(
-                            V2::from(other_body.pos),
-                            V2::from(other_body.pos).add_x(other_body.rect.0),
-                        )] {
-                            for p in ps {
-                                if let Some((int, _t)) =
-                                    point_vec_2_point_line_intersect(p, delta_pos, c0, c1)
+                    dir @ (Direction::TopLeft
+                    | Direction::TopRight
+                    | Direction::BottomRight
+                    | Direction::BottomLeft) => {
+                        let (p0, p1, p2) = rect_diagonal_corners(pos, rect, dir);
+                        let (c0, c1, c2) =
+                            rect_diagonal_corners(other_pos, other_rect, dir.reverse());
+                        let (d0, d1) = dir.clockwise();
+                        for p in [p0, p1, p2] {
+                            for (c0, c1, dir) in [(c0, c1, d0), (c1, c2, d1)] {
+                                if let Some((int, _t)) = point_vec_2p_line_intersect(p, dp, c0, c1)
                                 {
-                                    println!("weeeee");
+                                    resolve_collision(body, int, rect, dir);
+                                }
+                            }
+                        }
+                        for p in [c0, c1, c2] {
+                            for (c0, c1, dir) in [(p0, p1, d0), (p1, p2, d1)] {
+                                if let Some((_int, _t)) = point_vec_2p_line_intersect(p, dp, c0, c1)
+                                {
+                                    resolve_collision(body, p, rect, dir);
                                 }
                             }
                         }
                     }
-                    (true, false, _, false) => todo!(),
-                    (false, true, true, true) => todo!(),
-                    (false, true, true, false) => todo!(),
-                    (false, true, false, true) => todo!(),
-                    (false, true, false, false) => todo!(),
-                    (false, false, true, true) => todo!(),
-                    (false, false, true, false) => todo!(),
-                    (false, false, false, true) => todo!(),
-                    (false, false, false, false) => todo!(),
                 }
-                //
-                //let body = ctx.entity_component::<RigidBody>(id);
             }
         }
         Ok(())

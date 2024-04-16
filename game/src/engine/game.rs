@@ -106,7 +106,6 @@ impl<'game> Game<'game> {
             self.canvas.clear();
             let now = Instant::now();
             let delta = (now - time_before).as_nanos() as f64 / 1_000_000_000.0;
-            let delta = delta / 4.0;
             time_before = now;
             for system in self.systems.clone() {
                 let Err(err) = system.on_update(&mut self.context(), delta) else {

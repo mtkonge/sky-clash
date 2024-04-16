@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 use engine::{Component, System};
 
-use crate::collision::{ResolvingBoxCollider, ResolvingBoxCollisionSystem};
+use crate::collision::{Collider, CollisionSystem};
 
 #[derive(Component, Default, Clone, Debug)]
 struct RigidBody {
@@ -71,7 +71,7 @@ struct PlayerMovement;
 struct PlayerMovementSystem;
 impl System for PlayerMovementSystem {
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
-        for id in query!(ctx, PlayerMovement, RigidBody, ResolvingBoxCollider) {
+        for id in query!(ctx, PlayerMovement, RigidBody, Collider) {
             let d_down = ctx.key_pressed(engine::Keycode::D);
             let a_down = ctx.key_pressed(engine::Keycode::A);
             let w_down = ctx.key_pressed(engine::Keycode::W);
@@ -157,10 +157,10 @@ fn main() {
     let mut game = engine::Game::new().unwrap();
 
     let mut context = game.context();
-    context.add_system(ResolvingBoxCollisionSystem);
+    context.add_system(PlayerMovementSystem);
+    context.add_system(CollisionSystem);
     context.add_system(VelocitySystem);
     context.add_system(SpriteRenderer);
-    context.add_system(PlayerMovementSystem);
     context.add_system(GravitySystem);
     // context.add_system(MenuSystem);
     // let player = context.load_sprite("textures/player.png").unwrap();
@@ -169,7 +169,7 @@ fn main() {
     let background = context
         .load_sprite("textures/black_background.png")
         .unwrap();
-    // let nope = context.load_sprite("textures/nuh-uh.png").unwrap();
+    let nope = context.load_sprite("textures/nuh-uh.png").unwrap();
 
     spawn!(
         &mut context,
@@ -187,7 +187,7 @@ fn main() {
             gravity: true,
             ..Default::default()
         },
-        ResolvingBoxCollider {
+        Collider {
             resolve: true,
             ..Default::default()
         },
@@ -197,13 +197,11 @@ fn main() {
     spawn!(
         &mut context,
         RigidBody {
-            // pos: (184.0, 540.0),
-            // rect: (960.0, 128.0),
-            pos: (390.0, 540.0),
-            rect: (148.0, 128.0),
+            pos: (184.0, 540.0),
+            rect: (960.0, 128.0),
             ..Default::default()
         },
-        ResolvingBoxCollider::default(),
+        Collider::default(),
     );
 
     // spawn!(
