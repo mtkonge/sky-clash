@@ -3,6 +3,7 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use sdl2::keyboard::Keycode;
+use sdl2::mouse::MouseButton;
 use sdl2::{
     event::Event,
     image::{self, Sdl2ImageContext},
@@ -28,6 +29,8 @@ pub struct Game<'a> {
     systems: Vec<Rc<dyn System>>,
     textures: Vec<(Id, Texture<'a>)>,
     currently_pressed_keys: HashSet<Keycode>,
+    currently_pressed_mouse_buttons: HashSet<MouseButton>,
+    mouse_position: (i32, i32),
 }
 
 impl<'game> Game<'game> {
@@ -47,6 +50,7 @@ impl<'game> Game<'game> {
         canvas.clear();
         canvas.present();
         let event_pump = sdl_context.event_pump()?;
+        let mouse_position = (event_pump.mouse_state().x(), event_pump.mouse_state().y());
         Ok(Self {
             id_counter: 0,
             sdl_context,
@@ -60,6 +64,8 @@ impl<'game> Game<'game> {
             systems: vec![],
             textures: vec![],
             currently_pressed_keys: HashSet::new(),
+            currently_pressed_mouse_buttons: HashSet::new(),
+            mouse_position,
         })
     }
 
@@ -82,6 +88,10 @@ impl<'game> Game<'game> {
                     _ => {}
                 }
             }
+            self.mouse_position = (
+                self.event_pump.mouse_state().x(),
+                self.event_pump.mouse_state().y(),
+            );
             self.canvas.set_draw_color(Color::RGB(60, 180, 180));
             self.canvas.clear();
             let now = Instant::now();
@@ -110,6 +120,8 @@ impl<'game> Game<'game> {
             systems: &mut self.systems,
             textures: &mut self.textures,
             currently_pressed_keys: &mut self.currently_pressed_keys,
+            currently_pressed_mouse_buttons: &mut self.currently_pressed_mouse_buttons,
+            mouse_position: self.mouse_position.clone(),
         }
     }
 

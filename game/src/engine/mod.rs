@@ -13,3 +13,4 @@ pub use self::{
 };
 pub use component_macro::Component;
 pub use sdl2::keyboard::Keycode;
+pub use sdl2::mouse::MouseButton;

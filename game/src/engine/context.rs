@@ -3,6 +3,7 @@ use std::{any::TypeId, collections::HashSet, rc::Rc};
 use sdl2::{
     image::LoadTexture,
     keyboard::Keycode,
+    mouse::MouseButton,
     rect::Rect,
     render::{Canvas, Texture, TextureCreator},
     video::{Window, WindowContext},
@@ -21,6 +22,8 @@ where
     pub(super) systems: &'context mut Vec<Rc<dyn System>>,
     pub(super) textures: &'context mut Vec<(Id, Texture<'game>)>,
     pub(super) currently_pressed_keys: &'context HashSet<Keycode>,
+    pub(super) currently_pressed_mouse_buttons: &'context HashSet<MouseButton>,
+    pub(super) mouse_position: (i32, i32),
 }
 
 pub struct ComponentQuery<T>(std::marker::PhantomData<T>);
@@ -189,5 +192,13 @@ impl<'context, 'game> Context<'context, 'game> {
 
     pub fn key_pressed(&self, keycode: Keycode) -> bool {
         self.currently_pressed_keys.contains(&keycode)
+    }
+
+    pub fn mouse_button_pressed(&self, button: MouseButton) -> bool {
+        self.currently_pressed_mouse_buttons.contains(&button)
+    }
+
+    pub fn mouse_position(&self) -> (i32, i32) {
+        self.mouse_position
     }
 }
