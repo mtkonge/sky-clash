@@ -133,95 +133,86 @@ fn rect_diagonal_corners(pos: V2, delta_pos: V2, rect: V2) -> (Diagonal, V2, V2,
     (diag, c0, c1, c2)
 }
 
-fn intersect_but_one_of_the_xs_is_regarded(
-    p: V2,
-    delta_pos: V2,
-    p0: V2,
-    p1: V2,
-) -> Option<(V2, f64)> {
-    let l1 = p1 - p0;
-    if delta_pos.x == 0.0 && l1.x == 0.0 {
+fn collision_intersect(p: V2, dp: V2, ca: V2, cb: V2) -> Option<(V2, f64)> {
+    if dp.x == 0.0 && dp.y == 0.0 {
+        // either we won't collide
+        // or we are already colliding
         return None;
-    } else if l1.x == 0.0 {
-        let ap = delta_pos.y / delta_pos.x;
+    }
+    let edge = cb - ca;
+    let (x, y) = if dp.x == 0.0 && edge.x == 0.0 {
+        // parallel: either none or continous intersection
+        return None;
+    } else if dp.x == 0.0 {
+        let x = p.x;
+        let ae = edge.y / edge.x;
+        // y = ax + b
+        // y - ax = b
+        // b = y - ax
+        let be = ca.y - ae * ca.x;
+        // y = ax + b
+        let y = ae * x + be;
+        //           y = ax + b
+        //       y - b = ax
+        // (y - b) / a = x
+        //           x = (y - b) / a
+        (x, y)
+    } else if edge.x == 0.0 {
+        let y = edge.y;
+        let ap = dp.y / dp.x;
         let bp = p.y - ap * p.x;
-        let t = (bp - p0.y) / l1.y;
-        if !(0.0..1.0).contains(&t) {
+        //            y = ap * x + bp
+        //       y - bp = ap * x
+        // (y - bp) / ap = x
+        //           x = (y - bp) / ap
+        let x = (y - bp) / ap;
+        (x, y)
+    } else {
+        // y = ax + b
+        let ap = dp.y / dp.x;
+        let ae = edge.y / edge.x;
+        if ap == ae {
+            // parallel: either none or continous intersection
             return None;
         }
-        return Some((V2::new(l1.x, bp), t));
-    } else if delta_pos.x == 0.0 {
-        let a1 = l1.y / l1.x;
-        let b1 = p0.y - a1 * p0.x;
-        if l1.y == 0.0 {
-            let t = (p.x - p0.x) / (p1.x - p0.x);
-            if (p0.x..p1.x).contains(&p.x) {
-                return Some((V2::new(p.x, b1), t));
-            } else {
-                return None;
-            }
-        }
-        let t = (b1 - p0.y) / l1.y;
-        if !(0.0..1.0).contains(&t) {
-            return None;
-        }
-        return Some((V2::new(l1.x, b1), t));
-    }
-    unreachable!()
-}
-
-fn vector_is_parallel(v0: V2, v1: V2) -> bool {
-    if v0.x == 0.0 || v1.x == 0.0 {
-        return v0.x == v1.x;
-    } else if v0.y == 0.0 || v1.y == 0.0 {
-        return v0.y == v1.y;
-    }
-    let kx = v0.x / v1.x;
-    let ky = v0.y / v1.y;
-    kx == ky
-}
-
-fn intersect(p: V2, delta_pos: V2, p0: V2, p1: V2) -> Option<(V2, f64)> {
-    let l1 = p1 - p0;
-    if delta_pos.x == 0.0 || l1.x == 0.0 {
-        return intersect_but_one_of_the_xs_is_regarded(p, delta_pos, p0, p1);
-    }
-    // y = ax + b
-    let ap = delta_pos.y / delta_pos.x;
-    let a1 = l1.y / l1.x;
-    if ap == a1 {
-        return None;
-    }
-    // b = y - ax
-    let bp = p.y - ap * p.x;
-    let b1 = p0.y - a1 * p0.x;
-    //               y = ap * x + bp
-    //               y = a1 * x + b1
-    //     ap * x + bp = a1 * x + b1
-    // ap * x - a1 * x = + b1 - bp
-    //   x * (ap - a1) = b1 - bp
-    //               x = (b1 - bp) / (ap - a1)
-    let x = (b1 - bp) / (ap - a1);
-    let y = ap * x + bp;
+        // b = y - ax
+        let bp = p.y - ap * p.x;
+        let be = ca.y - ae * ca.x;
+        //               y = ap * x + bp
+        //               y = a1 * x + b1
+        //     ap * x + bp = a1 * x + b1
+        // ap * x - a1 * x = + b1 - bp
+        //   x * (ap - a1) = b1 - bp
+        //               x = (b1 - bp) / (ap - a1)
+        let x = (be - bp) / (ap - ae);
+        let y = ap * x + bp;
+        (x, y)
+    };
     // vec(x, y) = p0 + vec(p0, p1) * t
     // x = p0.x + (p1.x - p0.x) * t
     // x - p0.x = (p1.x - p0.x) * t
     // (x - p0.x) / (p1.x - p0.x) = t
     // t = (x - p0.x) / (p1.x - p0.x)
-    let t = if p1.x == p0.x {
-        (y - p0.y) / (p1.y - p0.y)
+    let t = if cb.x == ca.x {
+        (y - ca.y) / (cb.y - ca.y)
     } else {
-        (x - p0.x) / (p1.x - p0.x)
+        (x - ca.x) / (cb.x - ca.x)
     };
     if !(0.0..1.0).contains(&t) {
+        // outside corners
         return None;
     }
     //            px = p + t * dp
     //        px - p = t * dp
     // (px - p) / dp = t
     //             t = (px - p) / dp
-    let s = (x - p.x) / delta_pos.x;
+    let s = if dp.x == 0.0 {
+        (y - p.y) / dp.y
+    } else {
+        (x - p.x) / dp.x
+    };
     if s >= 0.0 {
+        // out of range
         return None;
     }
     Some((V2 { x, y }, t))
@@ -235,7 +226,7 @@ fn rects_collide(
     other_delta_pos: V2,
     other_rect: V2,
 ) -> Option<(V2, Direction, f64)> {
-    let center = pos + rect.div_comps(2.);
+    let center = pos + rect.div_comps(2.0);
     let radius = rect.div_comps(2.0).max_comp() + delta_pos.len();
     let other_center = other_pos + other_rect.div_comps(2.);
     let other_radius = other_rect.div_comps(2.0).max_comp() + other_delta_pos.len();
@@ -246,6 +237,7 @@ fn rects_collide(
     let (diag, c0, c1, c2) = rect_diagonal_corners(pos, delta_pos, rect);
     let (other_diag, other_c0, other_c1, other_c2) =
         rect_diagonal_corners(other_pos, other_delta_pos, other_rect);
+    dbg!(&diag);
 
     let (da, db) = diag.clockwise();
 
@@ -254,7 +246,7 @@ fn rects_collide(
         (other_c1, other_c2, db.clone()),
     ] {
         for c in [c0, c1, c2] {
-            if let Some((intersection, t)) = intersect(c, delta_pos, oca, ocb) {
+            if let Some((intersection, t)) = collision_intersect(c, delta_pos, oca, ocb) {
                 return Some((intersection, dir, t));
             }
         }
@@ -301,6 +293,7 @@ impl System for CollisionSystem {
                 );
                 let body = ctx.entity_component::<RigidBody>(id);
                 if let Some((intersection, dir, _t)) = collision {
+                    println!("{intersection:?} {dir:?}");
                     match dir {
                         Direction::Top => {
                             body.pos.1 = intersection.y;
