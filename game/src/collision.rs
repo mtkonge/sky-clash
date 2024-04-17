@@ -145,16 +145,16 @@ fn point_vec_2p_line_intersect(p: V2, dp: V2, c0: V2, c1: V2) -> Option<(V2, f64
         return None;
     }
     let sp = if dp.x == 0.0 {
-        (y - (p.y)) / dp.y
+        (y - p.y) / dp.y
     } else {
-        (x - (p.x)) / dp.x
+        (x - p.x) / dp.x
     };
     let sd = if dp.x == 0.0 {
         (y - (p.y + dp.y)) / dp.y
     } else {
         (x - (p.x + dp.x)) / dp.x
     };
-    if sp > 0.0 && sd > 0.0 || sp < 0.0 && sd < 0.0 {
+    if sp * sd > 0.0 {
         // wrong side
         return None;
     }
@@ -203,6 +203,42 @@ fn test_point_vec_2_point_line_intersect() {
         ),
         None,
     );
+    assert_eq!(
+        point_vec_2p_line_intersect(
+            V2::new(10.0, 10.0),
+            V2::new(15.0, 15.0),
+            V2::new(0.0, 20.0),
+            V2::new(30.0, 20.0)
+        ),
+        Some((V2::new(20.0, 20.0), 2.0 / 3.0)),
+    );
+    assert_eq!(
+        point_vec_2p_line_intersect(
+            V2::new(10.0, 10.0),
+            V2::new(5.0, 5.0),
+            V2::new(0.0, 20.0),
+            V2::new(30.0, 20.0)
+        ),
+        None,
+    );
+    assert_eq!(
+        point_vec_2p_line_intersect(
+            V2::new(10.0, 10.0),
+            V2::new(-5.0, -5.0),
+            V2::new(0.0, 20.0),
+            V2::new(30.0, 20.0)
+        ),
+        None,
+    );
+    assert_eq!(
+        point_vec_2p_line_intersect(
+            V2::new(10.0, 10.0),
+            V2::new(-15.0, -15.0),
+            V2::new(0.0, 20.0),
+            V2::new(30.0, 20.0)
+        ),
+        None,
+    );
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -215,7 +251,7 @@ enum Boyk {
 impl From<f64> for Boyk {
     fn from(value: f64) -> Self {
         use Boyk::*;
-        if value < 0.0 {
+        if value > 0.0 {
             Positive
         } else if value == 0.0 {
             Zero
@@ -272,14 +308,14 @@ impl From<V2> for Direction {
         use Direction::*;
         match (Boyk::from(value.x), Boyk::from(value.y)) {
             (Zero, Zero) => None,
-            (Zero, Positive) => Top,
-            (Zero, Negative) => Bottom,
-            (Positive, Zero) => Left,
-            (Negative, Zero) => Right,
-            (Positive, Positive) => TopLeft,
-            (Positive, Negative) => BottomLeft,
-            (Negative, Positive) => TopRight,
-            (Negative, Negative) => BottomRight,
+            (Zero, Positive) => Bottom,
+            (Zero, Negative) => Top,
+            (Positive, Zero) => Right,
+            (Negative, Zero) => Left,
+            (Positive, Positive) => BottomRight,
+            (Positive, Negative) => TopRight,
+            (Negative, Positive) => BottomLeft,
+            (Negative, Negative) => TopLeft,
         }
     }
 }
@@ -306,23 +342,23 @@ fn rect_diagonal_corners(pos: V2, rect: V2, dir: Direction) -> (V2, V2, V2) {
     }
 }
 
-fn resolve_collision(body: &mut RigidBody, int: V2, rect: V2, dir: Direction) {
+fn resolve_collision(body: &mut RigidBody, p: V2, rect: V2, dir: Direction) {
     use Direction::*;
     match dir {
         Top => {
-            body.pos.1 = int.y + 1.0;
+            body.pos.1 = p.y + 1.0;
             body.vel.1 = 0.0;
         }
         Bottom => {
-            body.pos.1 = int.y - rect.y - 1.0;
+            body.pos.1 = p.y - rect.y - 1.0;
             body.vel.1 = 0.0;
         }
         Right => {
-            body.pos.0 = int.x + 1.0;
+            body.pos.0 = p.x + 1.0;
             body.vel.0 = 0.0;
         }
         Left => {
-            body.pos.0 = int.x - rect.x - 1.0;
+            body.pos.0 = p.x - rect.x - 1.0;
             body.vel.0 = 0.0;
         }
         _ => unreachable!(),
@@ -359,7 +395,8 @@ impl System for CollisionSystem {
                     continue;
                 }
 
-                let body = ctx.entity_component::<RigidBody>(id);
+                let mut ints = Vec::<(V2, Direction, f64)>::new();
+
                 match Direction::from(dp) {
                     Direction::None => {}
                     dir @ (Direction::Top
@@ -369,14 +406,15 @@ impl System for CollisionSystem {
                         let (p0, p1) = rect_side_corners(pos, rect, dir);
                         let (c0, c1) = rect_side_corners(other_pos, other_rect, dir.reverse());
                         for p in [p0, p1] {
-                            if let Some((int, _t)) = point_vec_2p_line_intersect(p, dp, c0, c1) {
-                                resolve_collision(body, int, rect, dir);
-                                println!("weeeeeeeee {int:?}")
+                            if let Some((int, t)) = point_vec_2p_line_intersect(p, dp, c0, c1) {
+                                ints.push((int, dir, t));
                             }
                         }
                         for p in [c0, c1] {
-                            if let Some((_int, _t)) = point_vec_2p_line_intersect(p, dp, p0, p1) {
-                                resolve_collision(body, p, rect, dir);
+                            if let Some((_int, t)) =
+                                point_vec_2p_line_intersect(p, dp.reverse(), p0, p1)
+                            {
+                                ints.push((p, dir, t));
                             }
                         }
                     }
@@ -390,21 +428,28 @@ impl System for CollisionSystem {
                         let (d0, d1) = dir.clockwise();
                         for p in [p0, p1, p2] {
                             for (c0, c1, dir) in [(c0, c1, d0), (c1, c2, d1)] {
-                                if let Some((int, _t)) = point_vec_2p_line_intersect(p, dp, c0, c1)
-                                {
-                                    resolve_collision(body, int, rect, dir);
+                                if let Some((int, t)) = point_vec_2p_line_intersect(p, dp, c0, c1) {
+                                    ints.push((int, dir, t));
                                 }
                             }
                         }
                         for p in [c0, c1, c2] {
                             for (c0, c1, dir) in [(p0, p1, d0), (p1, p2, d1)] {
-                                if let Some((_int, _t)) = point_vec_2p_line_intersect(p, dp, c0, c1)
+                                if let Some((_int, t)) =
+                                    point_vec_2p_line_intersect(p, dp.reverse(), c0, c1)
                                 {
-                                    resolve_collision(body, p, rect, dir);
+                                    ints.push((p, dir, t));
                                 }
                             }
                         }
                     }
+                }
+                if let Some((p, dir, _)) = ints
+                    .into_iter()
+                    .min_by(|(.., t0), (.., t1)| t0.total_cmp(t1))
+                {
+                    let body = ctx.entity_component::<RigidBody>(id);
+                    resolve_collision(body, p, rect, dir)
                 }
             }
         }

@@ -86,7 +86,7 @@ impl System for PlayerMovementSystem {
             };
             // if collider.on_ground && w_down {
             if w_down {
-                body.vel.1 = -1000.0;
+                body.vel.1 = -800.0;
             }
         }
         Ok(())
@@ -175,10 +175,10 @@ fn main() {
     let mut game = engine::Game::new().unwrap();
 
     let mut context = game.context();
-    context.add_system(PlayerMovementSystem);
     context.add_system(CollisionSystem);
     context.add_system(VelocitySystem);
     context.add_system(SpriteRenderer);
+    context.add_system(PlayerMovementSystem);
     context.add_system(GravitySystem);
     // context.add_system(MenuSystem);
     // let player = context.load_sprite("textures/player.png").unwrap();
@@ -222,27 +222,27 @@ fn main() {
         Collider::default(),
     );
 
-    // spawn!(
-    //     &mut context,
-    //     RigidBody {
-    //         pos: (300.0, 200.0),
-    //         rect: (32.0, 32.0),
-    //         ..Default::default()
-    //     },
-    //     Collider::default(),
-    //     Sprite { sprite: nope },
-    // );
-    //
-    // spawn!(
-    //     &mut context,
-    //     RigidBody {
-    //         pos: (900.0, 400.0),
-    //         rect: (32.0, 32.0),
-    //         ..Default::default()
-    //     },
-    //     Collider::default(),
-    //     Sprite { sprite: nope },
-    // );
+    spawn!(
+        &mut context,
+        RigidBody {
+            pos: (250.0, 200.0),
+            rect: (32.0, 32.0),
+            ..Default::default()
+        },
+        Collider::default(),
+        Sprite { sprite: nope },
+    );
+
+    spawn!(
+        &mut context,
+        RigidBody {
+            pos: (900.0, 400.0),
+            rect: (32.0, 32.0),
+            ..Default::default()
+        },
+        Collider::default(),
+        Sprite { sprite: nope },
+    );
 
     game.run();
 }
