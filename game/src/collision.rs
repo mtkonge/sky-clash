@@ -144,12 +144,21 @@ fn point_vec_2p_line_intersect(p: V2, dp: V2, c0: V2, c1: V2) -> Option<(V2, f64
         // outside corners
         return None;
     }
-    let s = if dp.x == 0.0 {
+    let sp = if dp.x == 0.0 {
+        (y - (p.y)) / dp.y
+    } else {
+        (x - (p.x)) / dp.x
+    };
+    let sd = if dp.x == 0.0 {
         (y - (p.y + dp.y)) / dp.y
     } else {
         (x - (p.x + dp.x)) / dp.x
     };
-    if s >= 0.0 {
+    if sp > 0.0 && sd > 0.0 || sp < 0.0 && sd < 0.0 {
+        // wrong side
+        return None;
+    }
+    if sd >= 0.0 {
         // out of range
         return None;
     }
@@ -182,6 +191,15 @@ fn test_point_vec_2_point_line_intersect() {
             V2::new(0.0, 15.0),
             V2::new(0.0, 20.0),
             V2::new(20.0, 20.0)
+        ),
+        None,
+    );
+    assert_eq!(
+        point_vec_2p_line_intersect(
+            V2::new(10.0, 20.0),
+            V2::new(0.0, 10.0),
+            V2::new(0.0, 10.0),
+            V2::new(30.0, 10.0)
         ),
         None,
     );
@@ -353,6 +371,7 @@ impl System for CollisionSystem {
                         for p in [p0, p1] {
                             if let Some((int, _t)) = point_vec_2p_line_intersect(p, dp, c0, c1) {
                                 resolve_collision(body, int, rect, dir);
+                                println!("weeeeeeeee {int:?}")
                             }
                         }
                         for p in [c0, c1] {
