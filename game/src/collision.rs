@@ -94,7 +94,7 @@ fn test_rects_within_reach() {
             V2::new(0.0, 0.0),
             V2::new(10.0, 0.0),
             V2::new(10.0, 10.0),
-            V2::new(30.0, 0.0),
+            V2::new(40.0, 0.0),
             V2::new(10.0, 10.0)
         ),
         false,
@@ -117,10 +117,10 @@ fn point_vec_2p_line_intersect(p: V2, dp: V2, c0: V2, c1: V2) -> Option<(V2, f64
         let y = ae * x + be;
         (x, y)
     } else if edge.x == 0.0 {
-        let y = edge.y;
-        let ap = dp.y / dp.x;
-        let bp = p.y - ap * p.x;
-        let x = (y - bp) / ap;
+        let x = c0.x;
+        let ae = dp.y / dp.x;
+        let be = p.y - ae * p.x;
+        let y = ae * x + be;
         (x, y)
     } else {
         let ap = dp.y / dp.x;
@@ -140,7 +140,7 @@ fn point_vec_2p_line_intersect(p: V2, dp: V2, c0: V2, c1: V2) -> Option<(V2, f64
     } else {
         (x - c0.x) / (c1.x - c0.x)
     };
-    if !(0.0..1.0).contains(&t) {
+    if !(0.0..=1.0).contains(&t) {
         // outside corners
         return None;
     }
@@ -162,7 +162,25 @@ fn point_vec_2p_line_intersect(p: V2, dp: V2, c0: V2, c1: V2) -> Option<(V2, f64
         // out of range
         return None;
     }
-    Some((V2::new(x, y), t))
+    let intersection = V2::new(x, y);
+    let score = figure_out_score(p, dp, intersection);
+    Some((intersection, score))
+}
+
+fn figure_out_score(pos: V2, delta_pos: V2, intersection: V2) -> f64 {
+    // intersection = pos + delta_pos * score
+    // (intersection - pos) / delta_pos = score
+
+    if delta_pos.x != 0.0 {
+        (intersection.x - pos.x) / delta_pos.x
+    } else if delta_pos.y != 0.0 {
+        (intersection.y - pos.y) / delta_pos.y
+    } else {
+        unreachable!(
+            "already verified delta_pos != (0, 0) in {}",
+            stringify!(point_vec_2p_line_intersect)
+        );
+    }
 }
 
 #[test]
@@ -238,6 +256,25 @@ fn test_point_vec_2_point_line_intersect() {
             V2::new(30.0, 20.0)
         ),
         None,
+    );
+    assert_eq!(
+        point_vec_2p_line_intersect(
+            V2::new(30.0, 10.0),
+            V2::new(-20.0, 20.0),
+            V2::new(0.0, 10.0),
+            V2::new(20.0, 20.0)
+        ),
+        Some((V2::new(20.0, 20.0), 1.0)),
+    );
+
+    assert_eq!(
+        point_vec_2p_line_intersect(
+            V2::new(10.0, 10.0),
+            V2::new(20.0, 15.0).extend(2.0),
+            V2::new(30.0, 30.0),
+            V2::new(30.0, 0.0),
+        ),
+        Some((V2::new(20.0, 20.0), 1.0)),
     );
 }
 
@@ -353,11 +390,11 @@ fn resolve_collision(body: &mut RigidBody, p: V2, rect: V2, dir: Direction) {
             body.pos.1 = p.y - rect.y - 1.0;
             body.vel.1 = 0.0;
         }
-        Right => {
+        Left => {
             body.pos.0 = p.x + 1.0;
             body.vel.0 = 0.0;
         }
-        Left => {
+        Right => {
             body.pos.0 = p.x - rect.x - 1.0;
             body.vel.0 = 0.0;
         }
@@ -403,6 +440,7 @@ impl System for CollisionSystem {
                     | Direction::Right
                     | Direction::Bottom
                     | Direction::Left) => {
+                        dbg!(dir);
                         let (p0, p1) = rect_side_corners(pos, rect, dir);
                         let (c0, c1) = rect_side_corners(other_pos, other_rect, dir.reverse());
                         for p in [p0, p1] {
@@ -422,6 +460,7 @@ impl System for CollisionSystem {
                     | Direction::TopRight
                     | Direction::BottomRight
                     | Direction::BottomLeft) => {
+                        dbg!(dir);
                         let (p0, p1, p2) = rect_diagonal_corners(pos, rect, dir);
                         let (c0, c1, c2) =
                             rect_diagonal_corners(other_pos, other_rect, dir.reverse());
