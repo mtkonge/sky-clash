@@ -1,4 +1,4 @@
-use sdl2::{video::WindowBuildError, IntegerOrSdlError};
+use sdl2::{render::TextureValueError, ttf::FontError, video::WindowBuildError, IntegerOrSdlError};
 
 #[derive(Debug, Clone)]
 pub struct Error(String);
@@ -27,4 +27,11 @@ macro_rules! impl_from_T_for_Error {
     };
 }
 
-impl_from_T_for_Error!(String, WindowBuildError, IntegerOrSdlError, &str);
+impl_from_T_for_Error!(
+    String,
+    WindowBuildError,
+    IntegerOrSdlError,
+    &str,
+    FontError,
+    TextureValueError
+);

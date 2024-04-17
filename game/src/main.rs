@@ -111,13 +111,27 @@ impl Button {
 struct MenuSystem;
 impl System for MenuSystem {
     fn on_add(&self, ctx: &mut engine::Context) {
+        let font = Sprite {
+            sprite: ctx
+                .render_font("textures/ttf/OpenSans.ttf", "click me", (255, 255, 255))
+                .unwrap(),
+        };
+
         spawn!(
             ctx,
             Button {
                 position: (0, 0),
                 text: "waow".to_string(),
                 action: Rc::new(|ctx| {
-                    println!("waow");
+                    let font = Sprite {
+                        sprite: ctx
+                            .render_font(
+                                "textures/ttf/OpenSans.ttf",
+                                "you can click me too!",
+                                (255, 255, 255),
+                            )
+                            .unwrap(),
+                    };
                     spawn!(
                         ctx,
                         Button {
@@ -127,15 +141,17 @@ impl System for MenuSystem {
                                 println!("omgor");
                             }),
                             size: (200, 200),
-                        }
+                        },
+                        font,
                     );
                 }),
                 size: (200, 200),
-            }
+            },
+            font,
         );
     }
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
-        for id in query!(ctx, Button) {
+        for id in query!(ctx, Button, Sprite) {
             let button = ctx.entity_component::<Button>(id).clone();
             ctx.draw_rect(
                 (0, 0, 0),
@@ -144,6 +160,8 @@ impl System for MenuSystem {
                 button.size.0,
                 button.size.1,
             )?;
+            let sprite = ctx.entity_component::<Sprite>(id).sprite;
+            ctx.draw_sprite(sprite, button.position.0, button.position.1)?;
             let position = ctx.mouse_position();
             if button.contains(position) && ctx.mouse_button_pressed(engine::MouseButton::Left) {
                 (button.action)(ctx);

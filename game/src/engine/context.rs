@@ -7,6 +7,7 @@ use sdl2::{
     pixels::Color,
     rect::Rect,
     render::{Canvas, Texture, TextureCreator},
+    ttf::Sdl2TtfContext,
     video::{Window, WindowContext},
 };
 
@@ -18,6 +19,7 @@ where
 {
     pub(super) id_counter: &'context mut Id,
     pub(super) canvas: &'context mut Canvas<Window>,
+    pub(super) ttf_context: &'context Sdl2TtfContext,
     pub(super) texture_creator: *const TextureCreator<WindowContext>,
     pub(super) entities: &'context mut Vec<Entity>,
     pub(super) systems: &'context mut Vec<Rc<dyn System>>,
@@ -150,8 +152,28 @@ impl<'context, 'game> Context<'context, 'game> {
     where
         P: AsRef<std::path::Path>,
     {
-        let path = path.as_ref().to_path_buf();
-        let texture: Texture<'game> = unsafe { (*self.texture_creator).load_texture(&path)? };
+        let texture: Texture<'game> = unsafe { (*self.texture_creator).load_texture(path)? };
+        let id = *self.id_counter;
+        *self.id_counter += 1;
+        self.textures.push((id, texture));
+        Ok(Sprite(id))
+    }
+
+    pub fn render_font<P>(
+        &mut self,
+        path: P,
+        text: &str,
+        rgb: (u8, u8, u8),
+    ) -> Result<Sprite, Error>
+    where
+        P: AsRef<std::path::Path>,
+    {
+        let font = self.ttf_context.load_font(path, 16)?;
+        let (r, g, b) = rgb;
+        let surface = font.render(text).solid(Color { r, g, b, a: 255 })?;
+        let texture = unsafe {
+            surface.as_texture(&*self.texture_creator as &TextureCreator<WindowContext>)
+        }?;
         let id = *self.id_counter;
         *self.id_counter += 1;
         self.textures.push((id, texture));
