@@ -72,8 +72,8 @@ impl From<(f64, f64)> for V2 {
 fn rects_within_reach(pos: V2, delta_pos: V2, rect: V2, other_pos: V2, other_rect: V2) -> bool {
     let radius = rect.div_comps(2.0).len();
     let other_radius = other_rect.div_comps(2.0).len();
-    let length_between = (pos - other_pos).len();
     let radii = radius + delta_pos.len() + other_radius;
+    let length_between = (pos - other_pos).len() - radius - other_radius;
     radii >= length_between
 }
 
