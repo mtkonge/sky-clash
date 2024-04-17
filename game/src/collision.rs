@@ -299,7 +299,7 @@ impl From<f64> for Boyk {
 }
 
 #[derive(Clone, Copy, Debug)]
-enum Direction {
+pub enum Direction {
     None,
     Top,
     Right,
@@ -334,6 +334,18 @@ impl Direction {
             TopRight => (Top, Right),
             BottomRight => (Right, Bottom),
             BottomLeft => (Bottom, Left),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn facing(&self, direction: Direction) -> bool {
+        use Direction::*;
+        match (direction, self) {
+            (Top, Top | TopLeft | TopRight)
+            | (Right, Right | TopRight | BottomRight)
+            | (Bottom, Bottom | BottomLeft | BottomRight) => true,
+            (Left, Left | TopLeft | TopRight) => todo!(),
+            (Top | Right | Bottom | Left, _) => false,
             _ => unreachable!(),
         }
     }
@@ -405,6 +417,7 @@ fn resolve_collision(body: &mut RigidBody, p: V2, rect: V2, dir: Direction) {
 #[derive(Component, Clone, Default)]
 pub struct Collider {
     pub resolve: bool,
+    pub colliding: Option<Direction>,
 }
 
 pub struct CollisionSystem;
@@ -415,6 +428,8 @@ impl System for CollisionSystem {
             if !collider.resolve {
                 continue;
             }
+            let collider = ctx.entity_component::<Collider>(id);
+            collider.colliding = None;
             let body = ctx.entity_component::<RigidBody>(id).clone();
             for other_id in query!(ctx, RigidBody, Collider) {
                 if id == other_id {
@@ -435,12 +450,14 @@ impl System for CollisionSystem {
                 let mut ints = Vec::<(V2, Direction, f64)>::new();
 
                 match Direction::from(dp) {
-                    Direction::None => {}
+                    dir @ Direction::None => {
+                        let collider = ctx.entity_component::<Collider>(id);
+                        collider.colliding = Some(dir);
+                    }
                     dir @ (Direction::Top
                     | Direction::Right
                     | Direction::Bottom
                     | Direction::Left) => {
-                        dbg!(dir);
                         let (p0, p1) = rect_side_corners(pos, rect, dir);
                         let (c0, c1) = rect_side_corners(other_pos, other_rect, dir.reverse());
                         for p in [p0, p1] {
@@ -460,7 +477,6 @@ impl System for CollisionSystem {
                     | Direction::TopRight
                     | Direction::BottomRight
                     | Direction::BottomLeft) => {
-                        dbg!(dir);
                         let (p0, p1, p2) = rect_diagonal_corners(pos, rect, dir);
                         let (c0, c1, c2) =
                             rect_diagonal_corners(other_pos, other_rect, dir.reverse());
@@ -487,6 +503,8 @@ impl System for CollisionSystem {
                     .into_iter()
                     .min_by(|(.., t0), (.., t1)| t0.total_cmp(t1))
                 {
+                    let collider = ctx.entity_component::<Collider>(id);
+                    collider.colliding = Some(dir);
                     let body = ctx.entity_component::<RigidBody>(id);
                     resolve_collision(body, p, rect, dir)
                 }

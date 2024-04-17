@@ -75,7 +75,7 @@ impl System for PlayerMovementSystem {
             let d_down = ctx.key_pressed(engine::Keycode::D);
             let a_down = ctx.key_pressed(engine::Keycode::A);
             let w_down = ctx.key_pressed(engine::Keycode::W);
-            // let collider = ctx.entity_component::<Collider>(id).clone();
+            let collider = ctx.entity_component::<Collider>(id).clone();
             let body = ctx.entity_component::<RigidBody>(id);
             body.vel.0 = if d_down && !a_down {
                 400.0
@@ -84,8 +84,11 @@ impl System for PlayerMovementSystem {
             } else {
                 0.0
             };
-            // if collider.on_ground && w_down {
-            if w_down {
+            if collider
+                .colliding
+                .is_some_and(|dir| dir.facing(collision::Direction::Bottom))
+                && w_down
+            {
                 body.vel.1 = -800.0;
             }
         }
