@@ -1,4 +1,4 @@
-### H3-Smart-Kommunikationsplatform - {Indsæt gruppenavn}
+### H3-Smart-Kommunikationsplatform - SkyClash
 
 Her skal alt omkring jeres projekt være. 
 
