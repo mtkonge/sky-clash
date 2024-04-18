@@ -1,8 +1,10 @@
 use std::env;
 
+use eyre::eyre;
 use eyre::Context;
 use sqlx::SqlitePool;
 
+use crate::database::Hero;
 use crate::database::{CreateHeroParams, Database};
 
 pub struct Sqlite3Db {
@@ -30,5 +32,18 @@ impl Database for Sqlite3Db {
         .await
         .with_context(|| "could not create hero in database")?;
         Ok(())
+    }
+
+    async fn hero_by_rfid(
+        &mut self,
+        rfid: &str,
+    ) -> Result<Option<crate::database::Hero>, eyre::Report> {
+        let result = sqlx::query_as!(Hero, "SELECT * FROM heroes WHERE rfid=?", rfid)
+            .fetch_optional(&self.pool)
+            .await;
+        match result {
+            Ok(result) => Ok(Some(result.unwrap())),
+            Err(_) => Err(eyre!("Server error")),
+        }
     }
 }

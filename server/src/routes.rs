@@ -1,4 +1,8 @@
-use actix_web::{get, post, web::Data, HttpResponse, Responder};
+use actix_web::{
+    get, post,
+    web::{Data, Json},
+    HttpResponse, Responder,
+};
 
 use crate::{
     database::{CreateHeroParams, Database},
@@ -11,17 +15,12 @@ pub async fn hello() -> impl Responder {
 }
 
 #[post("/create_hero")]
-pub async fn create_hero(
-    db: Data<DbParam>,
-    req_body: actix_web::web::Json<CreateHeroParams>,
-) -> impl Responder {
-    match db.lock().await.create_hero(req_body.0).await {
-        Ok(()) => HttpResponse::Created().finish(),
-        Err(_) => HttpResponse::InternalServerError().finish(),
+pub async fn create_hero(db: Data<DbParam>, req_body: Json<CreateHeroParams>) -> impl Responder {
+    if (db.lock().await.hero_by_rfid(&req_body.0.rfid).await).is_ok() {
+        return HttpResponse::Forbidden();
     }
-}
-
-#[post("/echo")]
-pub async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
+    match db.lock().await.create_hero(req_body.0).await {
+        Ok(()) => HttpResponse::Created(),
+        Err(_) => HttpResponse::InternalServerError(),
+    }
 }

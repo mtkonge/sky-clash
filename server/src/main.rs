@@ -3,7 +3,7 @@ mod routes;
 mod sqlite3_db;
 
 use actix_web::{middleware::Logger, web, App, HttpServer};
-use routes::{create_hero, echo, hello};
+use routes::{create_hero, hello};
 use sqlite3_db::Sqlite3Db;
 use tokio::sync::Mutex;
 
@@ -22,7 +22,6 @@ async fn main() -> std::io::Result<()> {
             .app_data(db_param.clone())
             .service(create_hero)
             .service(hello)
-            .service(echo)
             .wrap(Logger::new(""))
     })
     .bind(("0.0.0.0", 8080))?
