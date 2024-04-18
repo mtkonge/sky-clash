@@ -5,8 +5,9 @@ use actix_web::{
 };
 
 use crate::{
+    board::Board,
     database::{CreateHeroParams, Database},
-    DbParam,
+    BoardState, DbParam,
 };
 
 #[get("/")]
@@ -23,4 +24,14 @@ pub async fn create_hero(db: Data<DbParam>, req_body: Json<CreateHeroParams>) ->
         Ok(()) => HttpResponse::Created(),
         Err(_) => HttpResponse::InternalServerError(),
     }
+}
+
+#[post("/update_heros_on_board")]
+pub async fn update_heros_on_board(
+    board_state: Data<BoardState>,
+    req_body: Json<Board>,
+) -> impl Responder {
+    board_state.lock().await.hero_1_rfid = req_body.0.hero_1_rfid;
+    board_state.lock().await.hero_2_rfid = req_body.0.hero_2_rfid;
+    HttpResponse::Ok()
 }
