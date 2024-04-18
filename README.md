@@ -2,6 +2,8 @@
 
 Projekt kan findes her: ["Notion link"](https://mercantec.notion.site/Projekt-H3-IoT-og-Serverside-med-Christoffer-og-Kasper-e8980638a8584a72b0c7d718252dbba4?pvs=4)
 
+Filstrukturen ser sådan ud:
+
 - board/
 - docs/
 	- ER Diagrammer/
