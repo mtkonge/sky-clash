@@ -1,51 +1,14 @@
 #![allow(dead_code)]
 
-mod collision;
 mod engine;
 
 use std::rc::Rc;
 
 use engine::{Component, System};
 
-use crate::collision::{Collider, CollisionSystem};
-
-#[derive(Component, Default, Clone, Debug)]
-struct RigidBody {
-    pos: (f64, f64),
-    vel: (f64, f64),
-    rect: (f64, f64),
-    gravity: bool,
-}
-
-struct VelocitySystem;
-impl System for VelocitySystem {
-    fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
-        for id in query!(ctx, RigidBody) {
-            let body = ctx.entity_component::<RigidBody>(id);
-            body.pos.0 += body.vel.0 * delta;
-            body.pos.1 += body.vel.1 * delta;
-        }
-        Ok(())
-    }
-}
-
-struct GravitySystem;
-impl System for GravitySystem {
-    fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
-        for id in query!(ctx, RigidBody) {
-            let body = ctx.entity_component::<RigidBody>(id);
-            if !body.gravity {
-                continue;
-            }
-            body.vel.1 = if body.vel.1 < 400.0 {
-                body.vel.1 + 800.0 * delta
-            } else {
-                body.vel.1
-            };
-        }
-        Ok(())
-    }
-}
+use engine::{
+    rigid_body::GravitySystem, rigid_body::VelocitySystem, Collider, CollisionSystem, RigidBody,
+};
 
 #[derive(Component)]
 struct Sprite {
@@ -86,7 +49,7 @@ impl System for PlayerMovementSystem {
             };
             if collider
                 .colliding
-                .is_some_and(|dir| dir.facing(collision::Direction::Bottom))
+                .is_some_and(|dir| dir.facing(engine::collision::Direction::Bottom))
                 && w_down
             {
                 body.vel.1 = -800.0;

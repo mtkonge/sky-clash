@@ -86,14 +86,14 @@ macro_rules! query {
         {
             #[allow(unused_imports)]
             use $crate::engine::QueryRunner;
-            engine::ComponentQuery::<$t>::new().run($ctx)
+            $crate::engine::ComponentQuery::<$t>::new().run($ctx)
         }
     };
     ($ctx:expr, $($ts:ty),+) => {
         {
             #[allow(unused_imports)]
             use $crate::engine::QueryRunner;
-            engine::ComponentQuery::<($($ts),+)>::new().run($ctx)
+            $crate::engine::ComponentQuery::<($($ts),+)>::new().run($ctx)
         }
     };
 }
@@ -101,10 +101,10 @@ macro_rules! query {
 #[macro_export]
 macro_rules! spawn {
     ($ctx:expr, [$($ts:expr),+ $(,)?]) => {
-        engine::Context::spawn($ctx, vec![$(Box::new($ts)),+])
+        $crate::engine::Context::spawn($ctx, vec![$(Box::new($ts)),+])
     };
     ($ctx:expr, $($ts:expr),+ $(,)?) => {
-        engine::Context::spawn($ctx, vec![$(Box::new($ts)),+])
+        $crate::engine::Context::spawn($ctx, vec![$(Box::new($ts)),+])
     };
 }
 
