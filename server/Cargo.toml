@@ -10,4 +10,4 @@ actix-web = "4"
 
 [[bin]]
 name = "server"
-path = "main.rs"
+path = "src/main.rs"
