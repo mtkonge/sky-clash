@@ -2,58 +2,21 @@
 
 mod engine;
 
+use engine::{Component, System};
 use std::rc::Rc;
 
-use engine::{Component, System};
-
-use engine::{
-    rigid_body::GravitySystem, rigid_body::VelocitySystem, Collider, CollisionSystem, RigidBody,
-};
-
-#[derive(Component)]
-struct Sprite {
-    sprite: engine::Sprite,
+#[derive(Component, Clone)]
+struct Title {
+    pos: (i32, i32),
+    texture: engine::Texture,
 }
 
-struct SpriteRenderer;
-impl System for SpriteRenderer {
+struct TitleSystem;
+impl System for TitleSystem {
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
-        for id in query!(ctx, Sprite, RigidBody) {
-            let body = ctx.entity_component::<RigidBody>(id).clone();
-            let sprite = ctx.entity_component::<Sprite>(id).sprite;
-
-            ctx.draw_sprite(sprite, body.pos.0 as i32, body.pos.1 as i32)?;
-        }
-        Ok(())
-    }
-}
-
-#[derive(Component)]
-struct PlayerMovement;
-
-struct PlayerMovementSystem;
-impl System for PlayerMovementSystem {
-    fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
-        for id in query!(ctx, PlayerMovement, RigidBody, Collider) {
-            let d_down = ctx.key_pressed(engine::Keycode::D);
-            let a_down = ctx.key_pressed(engine::Keycode::A);
-            let w_down = ctx.key_pressed(engine::Keycode::W);
-            let collider = ctx.entity_component::<Collider>(id).clone();
-            let body = ctx.entity_component::<RigidBody>(id);
-            body.vel.0 = if d_down && !a_down {
-                400.0
-            } else if !d_down && a_down {
-                -400.0
-            } else {
-                0.0
-            };
-            if collider
-                .colliding
-                .is_some_and(|dir| dir.facing(engine::collision::Direction::Bottom))
-                && w_down
-            {
-                body.vel.1 = -800.0;
-            }
+        for id in query!(ctx, Title) {
+            let title = ctx.entity_component::<Title>(id).clone();
+            ctx.draw_texture(title.texture, title.pos.0, title.pos.1)?;
         }
         Ok(())
     }
@@ -61,74 +24,50 @@ impl System for PlayerMovementSystem {
 
 #[derive(Component, Clone)]
 struct Button {
-    action: Rc<dyn Fn(&mut engine::Context)>,
-    position: (i32, i32),
+    pos: (i32, i32),
     size: (u32, u32),
-    text: String,
+    texture: engine::Texture,
+    action: Rc<dyn Fn(&mut engine::Context)>,
 }
 
 impl Button {
     fn contains(&self, mouse_pos: (i32, i32)) -> bool {
-        (self.position.0..=self.position.0 + self.size.0 as i32).contains(&mouse_pos.0)
-            && (self.position.1..=self.position.1 + self.size.1 as i32).contains(&mouse_pos.1)
+        (self.pos.0..=self.pos.0 + self.size.0 as i32).contains(&mouse_pos.0)
+            && (self.pos.1..=self.pos.1 + self.size.1 as i32).contains(&mouse_pos.1)
     }
 }
 
-struct MenuSystem;
-impl System for MenuSystem {
-    fn on_add(&self, ctx: &mut engine::Context) {
-        let font = Sprite {
-            sprite: ctx
-                .render_font("textures/ttf/OpenSans.ttf", "click me", (255, 255, 255))
-                .unwrap(),
-        };
-
-        spawn!(
-            ctx,
-            Button {
-                position: (0, 0),
-                text: "waow".to_string(),
-                action: Rc::new(|ctx| {
-                    let font = Sprite {
-                        sprite: ctx
-                            .render_font(
-                                "textures/ttf/OpenSans.ttf",
-                                "you can click me too!",
-                                (255, 255, 255),
-                            )
-                            .unwrap(),
-                    };
-                    spawn!(
-                        ctx,
-                        Button {
-                            position: (0, 200),
-                            text: "hewwo".to_string(),
-                            action: Rc::new(|_ctx| {
-                                println!("omgor");
-                            }),
-                            size: (200, 200),
-                        },
-                        font,
-                    );
-                }),
-                size: (200, 200),
-            },
-            font,
-        );
-    }
+struct ButtonSystem;
+impl System for ButtonSystem {
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
-        for id in query!(ctx, Button, Sprite) {
+        for id in query!(ctx, Button) {
             let button = ctx.entity_component::<Button>(id).clone();
+            let position = ctx.mouse_position();
             ctx.draw_rect(
-                (0, 0, 0),
-                button.position.0,
-                button.position.1,
+                (255, 255, 255),
+                button.pos.0,
+                button.pos.1,
                 button.size.0,
                 button.size.1,
             )?;
-            let sprite = ctx.entity_component::<Sprite>(id).sprite;
-            ctx.draw_sprite(sprite, button.position.0, button.position.1)?;
-            let position = ctx.mouse_position();
+            if button.contains(position) {
+                ctx.draw_rect(
+                    (40, 40, 40),
+                    button.pos.0 + 1,
+                    button.pos.1 + 1,
+                    button.size.0 - 2,
+                    button.size.1 - 2,
+                )?;
+            } else {
+                ctx.draw_rect(
+                    (0, 0, 0),
+                    button.pos.0 + 1,
+                    button.pos.1 + 1,
+                    button.size.0 - 2,
+                    button.size.1 - 2,
+                )?;
+            }
+            ctx.draw_texture(button.texture, button.pos.0 + 3, button.pos.1 + 3)?;
             if button.contains(position) && ctx.mouse_button_pressed(engine::MouseButton::Left) {
                 (button.action)(ctx);
             }
@@ -137,78 +76,87 @@ impl System for MenuSystem {
     }
 }
 
+struct MainMenu;
+impl System for MainMenu {
+    fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
+        ctx.add_system(TitleSystem);
+        ctx.add_system(ButtonSystem);
+        let texture = ctx
+            .render_text("textures/ttf/OpenSans.ttf", "SkyCwash", 48, (255, 255, 255))
+            .unwrap();
+        spawn!(
+            ctx,
+            Title {
+                pos: (400, 100),
+                texture
+            }
+        );
+        let texture = ctx
+            .render_text(
+                "textures/ttf/OpenSans.ttf",
+                "Pway gwame",
+                24,
+                (255, 255, 255),
+            )
+            .unwrap();
+        spawn!(
+            ctx,
+            Button {
+                pos: (400, 250),
+                size: (400, 80),
+                texture,
+                action: Rc::new(|_| loop {})
+            },
+        );
+        let texture = ctx
+            .render_text(
+                "textures/ttf/OpenSans.ttf",
+                "Hewo cweator",
+                24,
+                (255, 255, 255),
+            )
+            .unwrap();
+        spawn!(
+            ctx,
+            Button {
+                pos: (400, 350),
+                size: (400, 80),
+                texture,
+                action: Rc::new(|_| ())
+            },
+        );
+        let texture = ctx
+            .render_text(
+                "textures/ttf/OpenSans.ttf",
+                "Exit gwame T~T",
+                24,
+                (255, 255, 255),
+            )
+            .unwrap();
+        spawn!(
+            ctx,
+            Button {
+                pos: (400, 450),
+                size: (400, 80),
+                texture,
+                action: Rc::new(|_| panic!())
+            },
+        );
+        Ok(())
+    }
+
+    fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
+        ctx.draw_rect((0, 0, 0), 0, 0, 1280, 720)?;
+        Ok(())
+    }
+}
+
 fn main() {
     let mut game = engine::Game::new().unwrap();
 
-    let mut context = game.context();
-    context.add_system(CollisionSystem);
-    context.add_system(VelocitySystem);
-    context.add_system(SpriteRenderer);
-    context.add_system(PlayerMovementSystem);
-    context.add_system(GravitySystem);
+    let mut ctx = game.context();
+    ctx.add_system(MainMenu);
     // context.add_system(MenuSystem);
-    // let player = context.load_sprite("textures/player.png").unwrap();
-    // let background = context.load_sprite("textures/literally_dprk.png").unwrap();
-    let player = context.load_sprite("textures/player_outline.png").unwrap();
-    let background = context
-        .load_sprite("textures/black_background.png")
-        .unwrap();
-    let nope = context.load_sprite("textures/nuh-uh.png").unwrap();
-
-    spawn!(
-        &mut context,
-        Sprite { sprite: background },
-        RigidBody::default(),
-    );
-
-    spawn!(
-        &mut context,
-        Sprite { sprite: player },
-        RigidBody {
-            pos: (400.0, 200.0),
-            vel: (0.0, 0.0),
-            rect: (128.0, 128.0),
-            gravity: true,
-            ..Default::default()
-        },
-        Collider {
-            resolve: true,
-            ..Default::default()
-        },
-        PlayerMovement,
-    );
-
-    spawn!(
-        &mut context,
-        RigidBody {
-            pos: (184.0, 540.0),
-            rect: (960.0, 128.0),
-            ..Default::default()
-        },
-        Collider::default(),
-    );
-
-    spawn!(
-        &mut context,
-        RigidBody {
-            pos: (250.0, 200.0),
-            rect: (32.0, 32.0),
-            ..Default::default()
-        },
-        Collider::default(),
-        Sprite { sprite: nope },
-    );
-
-    spawn!(
-        &mut context,
-        RigidBody {
-            pos: (900.0, 400.0),
-            rect: (32.0, 32.0),
-            ..Default::default()
-        },
-        Collider::default(),
-        Sprite { sprite: nope },
-    );
 
     game.run();
 }

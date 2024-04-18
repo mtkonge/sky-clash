@@ -6,12 +6,12 @@ use sdl2::{
     mouse::MouseButton,
     pixels::Color,
     rect::Rect,
-    render::{Canvas, Texture, TextureCreator},
+    render::{Canvas, Texture as SdlTexture, TextureCreator},
     ttf::Sdl2TtfContext,
     video::{Window, WindowContext},
 };
 
-use super::{entity::Entity, id::Id, sprite::Sprite, system::System, Component, Error};
+use super::{entity::Entity, id::Id, sprite::Texture, system::System, Component, Error};
 
 pub struct Context<'context, 'game>
 where
@@ -23,7 +23,7 @@ where
     pub(super) texture_creator: *const TextureCreator<WindowContext>,
     pub(super) entities: &'context mut Vec<Entity>,
     pub(super) systems: &'context mut Vec<Rc<dyn System>>,
-    pub(super) textures: &'context mut Vec<(Id, Texture<'game>)>,
+    pub(super) textures: &'context mut Vec<(Id, SdlTexture<'game>)>,
     pub(super) currently_pressed_keys: &'context HashSet<Keycode>,
     pub(super) currently_pressed_mouse_buttons: &'context HashSet<MouseButton>,
     pub(super) mouse_position: (i32, i32),
@@ -148,27 +148,28 @@ impl<'context, 'game> Context<'context, 'game> {
         component
     }
 
-    pub fn load_sprite<P>(&mut self, path: P) -> Result<Sprite, Error>
+    pub fn load_texture<P>(&mut self, path: P) -> Result<Texture, Error>
     where
         P: AsRef<std::path::Path>,
     {
-        let texture: Texture<'game> = unsafe { (*self.texture_creator).load_texture(path)? };
+        let texture: SdlTexture<'game> = unsafe { (*self.texture_creator).load_texture(path)? };
         let id = *self.id_counter;
         *self.id_counter += 1;
         self.textures.push((id, texture));
-        Ok(Sprite(id))
+        Ok(Texture(id))
     }
 
-    pub fn render_font<P>(
+    pub fn render_text<P>(
         &mut self,
         path: P,
         text: &str,
+        size: u16,
         rgb: (u8, u8, u8),
-    ) -> Result<Sprite, Error>
+    ) -> Result<Texture, Error>
     where
         P: AsRef<std::path::Path>,
     {
-        let font = self.ttf_context.load_font(path, 16)?;
+        let font = self.ttf_context.load_font(path, size)?;
         let (r, g, b) = rgb;
         let surface = font.render(text).solid(Color { r, g, b, a: 255 })?;
         let texture = unsafe {
@@ -177,14 +178,14 @@ impl<'context, 'game> Context<'context, 'game> {
         let id = *self.id_counter;
         *self.id_counter += 1;
         self.textures.push((id, texture));
-        Ok(Sprite(id))
+        Ok(Texture(id))
     }
 
-    pub fn draw_sprite(&mut self, sprite: Sprite, x: i32, y: i32) -> Result<(), Error> {
+    pub fn draw_texture(&mut self, texture: Texture, x: i32, y: i32) -> Result<(), Error> {
         let texture = self
             .textures
             .iter()
-            .find_map(|v| if v.0 == sprite.0 { Some(&v.1) } else { None })
+            .find_map(|v| if v.0 == texture.0 { Some(&v.1) } else { None })
             .ok_or("invalid sprite id")?;
         self.canvas.copy(
             texture,
@@ -223,8 +224,9 @@ impl<'context, 'game> Context<'context, 'game> {
     }
 
     pub fn add_system<S: 'static + System>(&mut self, system: S) {
-        system.on_add(self);
-        self.systems.push(Rc::new(system))
+        let system = Rc::new(system);
+        self.systems.push(system.clone());
+        let _ = system.on_add(self);
     }
 
     pub fn key_pressed(&self, keycode: Keycode) -> bool {

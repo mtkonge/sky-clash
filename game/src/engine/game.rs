@@ -44,6 +44,7 @@ impl<'game> Game<'game> {
         let window = video_subsystem
             .window("pvp-game-dilapidation", 1280, 720)
             .position_centered()
+            // .fullscreen()
             .build()?;
 
         let mut canvas = window.into_canvas().build()?;
@@ -134,10 +135,5 @@ impl<'game> Game<'game> {
             currently_pressed_mouse_buttons: &mut self.currently_pressed_mouse_buttons,
             mouse_position: self.mouse_position.clone(),
         }
-    }
-
-    pub fn add_system<S: 'static + System>(&mut self, system: S) {
-        system.on_add(&mut self.context());
-        self.systems.push(Rc::new(system))
     }
 }
