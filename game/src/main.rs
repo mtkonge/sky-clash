@@ -35,8 +35,8 @@ impl System for GravitySystem {
             if !body.gravity {
                 continue;
             }
-            body.vel.1 = if body.vel.1 < 800.0 {
-                body.vel.1 + 1600.0 * delta
+            body.vel.1 = if body.vel.1 < 400.0 {
+                body.vel.1 + 800.0 * delta
             } else {
                 body.vel.1
             };
@@ -154,7 +154,7 @@ fn main() {
         Sprite { sprite: player },
         RigidBody {
             pos: (400.0, 200.0),
-            vel: (10.0, 0.0),
+            vel: (0.0, 0.0),
             rect: (128.0, 128.0),
             gravity: true,
             ..Default::default()
