@@ -1,4 +1,5 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
@@ -14,10 +15,11 @@ use sdl2::{
     Sdl, VideoSubsystem,
 };
 
+use super::font::Font;
 use super::{context::Context, entity::Entity, id::Id, system::System};
 use super::{Component, Error};
 
-pub struct Game<'a> {
+pub struct Game<'game> {
     id_counter: u64,
     sdl_context: Sdl,
     video_subsystem: VideoSubsystem,
@@ -29,7 +31,8 @@ pub struct Game<'a> {
     entities: Vec<Entity>,
     components: Vec<(u64, Box<dyn Component>)>,
     systems: Vec<Rc<dyn System>>,
-    textures: Vec<(Id, Texture<'a>)>,
+    textures: Vec<(Id, Texture<'game>)>,
+    fonts: Vec<(Id, PathBuf, Font<'game>)>,
     currently_pressed_keys: HashSet<Keycode>,
     currently_pressed_mouse_buttons: HashSet<MouseButton>,
     mouse_position: (i32, i32),
@@ -68,6 +71,7 @@ impl<'game> Game<'game> {
             components: vec![],
             systems: vec![],
             textures: vec![],
+            fonts: vec![],
             currently_pressed_keys: HashSet::new(),
             currently_pressed_mouse_buttons: HashSet::new(),
             mouse_position,
@@ -131,6 +135,7 @@ impl<'game> Game<'game> {
             entities: &mut self.entities,
             systems: &mut self.systems,
             textures: &mut self.textures,
+            fonts: &mut self.fonts,
             currently_pressed_keys: &mut self.currently_pressed_keys,
             currently_pressed_mouse_buttons: &mut self.currently_pressed_mouse_buttons,
             mouse_position: self.mouse_position.clone(),

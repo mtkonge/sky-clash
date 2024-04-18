@@ -1,4 +1,9 @@
-use std::{any::TypeId, collections::HashSet, rc::Rc};
+use std::{
+    any::TypeId,
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+    rc::Rc,
+};
 
 use sdl2::{
     image::LoadTexture,
@@ -11,7 +16,9 @@ use sdl2::{
     video::{Window, WindowContext},
 };
 
-use super::{entity::Entity, id::Id, sprite::Texture, system::System, Component, Error};
+use super::{
+    entity::Entity, font::Font, id::Id, sprite::Texture, system::System, Component, Error,
+};
 
 pub struct Context<'context, 'game>
 where
@@ -19,11 +26,12 @@ where
 {
     pub(super) id_counter: &'context mut Id,
     pub(super) canvas: &'context mut Canvas<Window>,
-    pub(super) ttf_context: &'context Sdl2TtfContext,
+    pub(super) ttf_context: *const Sdl2TtfContext,
     pub(super) texture_creator: *const TextureCreator<WindowContext>,
     pub(super) entities: &'context mut Vec<Entity>,
     pub(super) systems: &'context mut Vec<Rc<dyn System>>,
     pub(super) textures: &'context mut Vec<(Id, SdlTexture<'game>)>,
+    pub(super) fonts: &'context mut Vec<(Id, PathBuf, Font<'game>)>,
     pub(super) currently_pressed_keys: &'context HashSet<Keycode>,
     pub(super) currently_pressed_mouse_buttons: &'context HashSet<MouseButton>,
     pub(super) mouse_position: (i32, i32),
@@ -148,6 +156,26 @@ impl<'context, 'game> Context<'context, 'game> {
         component
     }
 
+    pub fn load_font<P>(&mut self, path: P, size: u16) -> Result<Id, Error>
+    where
+        P: AsRef<std::path::Path>,
+    {
+        let path = path.as_ref();
+        let existing_id = self
+            .fonts
+            .iter()
+            .find_map(|(id, p, _)| if path == p { Some(*id) } else { None });
+        if let Some(id) = existing_id {
+            Ok(id)
+        } else {
+            let font = Font(unsafe { (*self.ttf_context).load_font(path, size)? });
+            let id = *self.id_counter;
+            *self.id_counter += 1;
+            self.fonts.push((id, path.to_path_buf(), font));
+            Ok(id)
+        }
+    }
+
     pub fn load_texture<P>(&mut self, path: P) -> Result<Texture, Error>
     where
         P: AsRef<std::path::Path>,
@@ -159,17 +187,17 @@ impl<'context, 'game> Context<'context, 'game> {
         Ok(Texture(id))
     }
 
-    pub fn render_text<P>(
+    pub fn render_text<'a>(
         &mut self,
-        path: P,
+        font_id: Id,
         text: &str,
-        size: u16,
         rgb: (u8, u8, u8),
-    ) -> Result<Texture, Error>
-    where
-        P: AsRef<std::path::Path>,
-    {
-        let font = self.ttf_context.load_font(path, size)?;
+    ) -> Result<Texture, Error> {
+        let Font(font) = self
+            .fonts
+            .iter()
+            .find_map(|(id, _, font)| if *id == font_id { Some(font) } else { None })
+            .ok_or("tried to render non-loaded text")?;
         let (r, g, b) = rgb;
         let surface = font.render(text).solid(Color { r, g, b, a: 255 })?;
         let texture = unsafe {

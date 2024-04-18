@@ -1,5 +1,5 @@
 use super::{Context, Error, System};
-use crate::{query, Component};
+use crate::{engine::Component, query};
 
 #[derive(Component, Default, Clone, Debug)]
 pub struct RigidBody {

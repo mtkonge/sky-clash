@@ -5,6 +5,7 @@ mod component;
 mod context;
 mod entity;
 mod error;
+mod font;
 mod game;
 mod id;
 pub mod rigid_body;
