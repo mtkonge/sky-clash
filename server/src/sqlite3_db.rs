@@ -23,13 +23,12 @@ impl Sqlite3Db {
 impl Database for Sqlite3Db {
     async fn create_hero(&mut self, hero: CreateHeroParams) -> Result<(), eyre::Report> {
         sqlx::query!(
-            "INSERT INTO heroes (rfid, hero_type) VALUES (?, ?);",
-            hero.rfid,
-            hero.hero_type
+            "INSERT INTO heroes (rfid, level, hero_type, unallocated_skillpoints, strength_points, agility_points, defence_points) VALUES (?, 0, ?, 0, 0, 0, 0);",
+            hero.rfid ,hero.hero_type
         )
         .execute(&self.pool)
         .await
-        .with_context(|| "Could not create hero in database")?;
+        .with_context(|| "could not create hero in database")?;
         Ok(())
     }
 }
