@@ -1,8 +1,11 @@
+use std::{ops::Deref, sync::Arc};
+
 use actix_web::{
     get, post,
     web::{Data, Json},
     HttpResponse, Responder,
 };
+use serde::Serialize;
 
 use crate::{
     board::Board,
@@ -26,12 +29,17 @@ pub async fn create_hero(db: Data<DbParam>, req_body: Json<CreateHeroParams>) ->
     }
 }
 
-#[post("/update_heros_on_board")]
-pub async fn update_heros_on_board(
+#[post("/update_heroes_on_board")]
+pub async fn update_heroes_on_board(
     board_state: Data<BoardState>,
     req_body: Json<Board>,
 ) -> impl Responder {
     board_state.lock().await.hero_1_rfid = req_body.0.hero_1_rfid;
     board_state.lock().await.hero_2_rfid = req_body.0.hero_2_rfid;
     HttpResponse::Ok()
+}
+
+#[get("heroes_on_board")]
+pub async fn heroes_on_board(board_state: Data<BoardState>) -> impl Responder {
+    HttpResponse::Ok().json(board_state.lock().await.clone())
 }
