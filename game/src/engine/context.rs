@@ -28,7 +28,7 @@ where
     pub(super) canvas: &'context mut Canvas<Window>,
     pub(super) ttf_context: *const Sdl2TtfContext,
     pub(super) texture_creator: *const TextureCreator<WindowContext>,
-    pub(super) entities: &'context mut Vec<Entity>,
+    pub(super) entities: &'context mut Vec<Option<Entity>>,
     pub(super) systems: &'context mut Vec<Rc<dyn System>>,
     pub(super) textures: &'context mut Vec<(Id, SdlTexture<'game>)>,
     pub(super) fonts: &'context mut Vec<(Id, PathBuf, Font<'game>)>,
@@ -121,15 +121,19 @@ impl<'context, 'game> Context<'context, 'game> {
         let entity_type_id = TypeId::of::<T>();
         self.entities
             .iter()
-            .filter_map(|Entity(id, components)| {
-                let contains_component = components
-                    .iter()
-                    .any(|entity| (*entity).inner_type_id() == entity_type_id);
-                if contains_component {
-                    Some(*id)
-                } else {
-                    None
-                }
+            .filter_map(|opt| {
+                opt.as_ref()
+                    .map(|Entity(id, components)| {
+                        let contains_component = components
+                            .iter()
+                            .any(|entity| (*entity).inner_type_id() == entity_type_id);
+                        if contains_component {
+                            Some(*id)
+                        } else {
+                            None
+                        }
+                    })
+                    .flatten()
             })
             .collect()
     }
@@ -139,7 +143,9 @@ impl<'context, 'game> Context<'context, 'game> {
         let Entity(_id, components) = self
             .entities
             .iter_mut()
-            .find(|Entity(id, _)| *id == entity_id)
+            .find(|opt| opt.as_ref().is_some_and(|Entity(id, _)| *id == entity_id))
+            .map(|v| v.as_mut())
+            .flatten()
             .unwrap();
 
         let component = components
@@ -237,24 +243,35 @@ impl<'context, 'game> Context<'context, 'game> {
         Ok(())
     }
 
-    pub fn spawn(&mut self, components: Vec<Box<dyn Component>>) {
+    pub fn spawn(&mut self, components: Vec<Box<dyn Component>>) -> Id {
         let id = *self.id_counter;
         *self.id_counter += 1;
-        self.entities.push(Entity(id, components));
+        let mut entity = Some(Entity(id, components));
+        let first_none = self.entities.iter().position(Option::is_none);
+        let Some(index) = first_none else {
+            self.entities.push(entity);
+            return id;
+        };
+        std::mem::swap(&mut self.entities[index], &mut entity);
+        id
     }
 
     pub fn despawn(&mut self, entity_id: u64) {
-        *self.entities = self
+        let Some(index) = self
             .entities
-            .drain(..)
-            .filter(|v| v.0 != entity_id)
-            .collect();
+            .iter()
+            .position(|v| v.as_ref().is_some_and(|v| v.0 != entity_id)) else {
+                println!("tried to despawn {entity_id}; entity not found");
+                return;
+            };
+
+        self.entities[index].take();
     }
 
     pub fn add_system<S: 'static + System>(&mut self, system: S) {
         let system = Rc::new(system);
         self.systems.push(system.clone());
-        let _ = system.on_add(self);
+        system.on_add(self).unwrap();
     }
 
     pub fn key_pressed(&self, keycode: Keycode) -> bool {

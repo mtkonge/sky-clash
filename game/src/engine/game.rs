@@ -28,7 +28,7 @@ pub struct Game<'game> {
     canvas: Canvas<Window>,
     texture_creator: TextureCreator<WindowContext>,
     event_pump: sdl2::EventPump,
-    entities: Vec<Entity>,
+    entities: Vec<Option<Entity>>,
     components: Vec<(u64, Box<dyn Component>)>,
     systems: Vec<Rc<dyn System>>,
     textures: Vec<(Id, Texture<'game>)>,

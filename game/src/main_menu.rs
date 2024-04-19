@@ -6,6 +6,7 @@ use crate::spawn;
 use std::rc::Rc;
 
 pub struct MainMenu;
+
 impl System for MainMenu {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
         let font48 = ctx.load_font("textures/ttf/OpenSans.ttf", 48)?;
