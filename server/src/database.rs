@@ -1,10 +1,11 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct CreateHeroParams {
     pub rfid: String,
     pub hero_type: i64,
 }
+#[derive(Deserialize, Serialize, Clone)]
 
 pub struct Hero {
     pub id: i64,

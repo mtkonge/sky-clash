@@ -1,22 +1,14 @@
-use std::{ops::Deref, sync::Arc};
-
 use actix_web::{
     get, post,
-    web::{Data, Json},
+    web::{Data, Json, Path},
     HttpResponse, Responder,
 };
-use serde::Serialize;
 
 use crate::{
     board::Board,
     database::{CreateHeroParams, Database},
     BoardState, DbParam,
 };
-
-#[get("/")]
-pub async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
-}
 
 #[post("/create_hero")]
 pub async fn create_hero(db: Data<DbParam>, req_body: Json<CreateHeroParams>) -> impl Responder {
@@ -26,6 +18,15 @@ pub async fn create_hero(db: Data<DbParam>, req_body: Json<CreateHeroParams>) ->
     match db.lock().await.create_hero(req_body.0).await {
         Ok(()) => HttpResponse::Created(),
         Err(_) => HttpResponse::InternalServerError(),
+    }
+}
+
+#[get("hero/{rfid}")]
+pub async fn get_hero(db: Data<DbParam>, rfid: Path<String>) -> impl Responder {
+    match db.lock().await.hero_by_rfid(rfid.clone().as_str()).await {
+        Ok(Some(hero)) => HttpResponse::Ok().json(hero),
+        Ok(None) => HttpResponse::NotFound().into(),
+        Err(_) => HttpResponse::InternalServerError().into(),
     }
 }
 
