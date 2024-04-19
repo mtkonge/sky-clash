@@ -16,8 +16,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - run: cd game
     - name: Build
+      working-directory: ./game
       run: cargo build --verbose
-    - name: Run tests
+    - name: Test
+      working-directory: ./game
       run: cargo test --verbose
