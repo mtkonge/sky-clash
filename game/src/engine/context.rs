@@ -116,6 +116,8 @@ macro_rules! spawn {
     };
 }
 
+pub struct ExclusiveId<T>(T);
+
 impl<'context, 'game> Context<'context, 'game> {
     pub fn entities_with_component<T: 'static + Component>(&self) -> Vec<u64> {
         let entity_type_id = TypeId::of::<T>();
@@ -271,6 +273,29 @@ impl<'context, 'game> Context<'context, 'game> {
         system.on_add(self).unwrap();
     }
 
+    fn system_id<S: 'static + System>(&mut self) -> usize {
+        let entity_type_id = TypeId::of::<S>();
+        let index = self
+            .systems
+            .iter()
+            .enumerate()
+            .find_map(|(index, system)| {
+                if system.inner_type_id() == entity_type_id {
+                    Some(index)
+                } else {
+                    None
+                }
+            })
+            .unwrap();
+        index
+    }
+
+    pub fn remove_system<S: 'static + System>(&mut self) {
+        let system_id = self.system_id::<S>();
+        let system = self.systems.remove(system_id);
+        system.on_remove(self).unwrap();
+    }
+
     pub fn key_pressed(&self, keycode: Keycode) -> bool {
         self.currently_pressed_keys.contains(&keycode)
     }
@@ -281,5 +306,24 @@ impl<'context, 'game> Context<'context, 'game> {
 
     pub fn mouse_position(&self) -> (i32, i32) {
         self.mouse_position
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::engine::{Game, System};
+
+    struct TestSystem0;
+    impl System for TestSystem0 {}
+    struct TestSystem1;
+    impl System for TestSystem1 {}
+    #[test]
+    fn system_id() {
+        let mut game = Game::new().unwrap();
+        let mut ctx = game.context();
+        ctx.add_system(TestSystem0);
+        ctx.add_system(TestSystem1);
+        assert_eq!(ctx.system_id::<TestSystem0>(), 0);
+        assert_eq!(ctx.system_id::<TestSystem1>(), 1);
     }
 }

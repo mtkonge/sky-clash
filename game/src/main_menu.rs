@@ -8,6 +8,13 @@ use std::rc::Rc;
 pub struct MainMenu;
 
 impl System for MainMenu {
+    fn on_remove(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
+        ctx.remove_system::<ui::TitleSystem>();
+        ctx.remove_system::<ui::ButtonSystem>();
+        todo!("remove currently loaded buttons/titles");
+        Ok(())
+    }
+
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
         let font48 = ctx.load_font("textures/ttf/OpenSans.ttf", 48)?;
         let font24 = ctx.load_font("textures/ttf/OpenSans.ttf", 24)?;
