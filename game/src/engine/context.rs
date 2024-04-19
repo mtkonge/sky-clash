@@ -122,18 +122,16 @@ impl<'context, 'game> Context<'context, 'game> {
         self.entities
             .iter()
             .filter_map(|opt| {
-                opt.as_ref()
-                    .map(|Entity(id, components)| {
-                        let contains_component = components
-                            .iter()
-                            .any(|entity| (*entity).inner_type_id() == entity_type_id);
-                        if contains_component {
-                            Some(*id)
-                        } else {
-                            None
-                        }
-                    })
-                    .flatten()
+                opt.as_ref().and_then(|Entity(id, components)| {
+                    let contains_component = components
+                        .iter()
+                        .any(|entity| (*entity).inner_type_id() == entity_type_id);
+                    if contains_component {
+                        Some(*id)
+                    } else {
+                        None
+                    }
+                })
             })
             .collect()
     }
@@ -144,8 +142,7 @@ impl<'context, 'game> Context<'context, 'game> {
             .entities
             .iter_mut()
             .find(|opt| opt.as_ref().is_some_and(|Entity(id, _)| *id == entity_id))
-            .map(|v| v.as_mut())
-            .flatten()
+            .and_then(|v| v.as_mut())
             .unwrap();
 
         let component = components
@@ -193,7 +190,7 @@ impl<'context, 'game> Context<'context, 'game> {
         Ok(Texture(id))
     }
 
-    pub fn render_text<'a>(
+    pub fn render_text(
         &mut self,
         font_id: Id,
         text: &str,

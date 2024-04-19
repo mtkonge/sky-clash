@@ -138,7 +138,7 @@ impl<'game> Game<'game> {
             fonts: &mut self.fonts,
             currently_pressed_keys: &mut self.currently_pressed_keys,
             currently_pressed_mouse_buttons: &mut self.currently_pressed_mouse_buttons,
-            mouse_position: self.mouse_position.clone(),
+            mouse_position: self.mouse_position,
         }
     }
 }

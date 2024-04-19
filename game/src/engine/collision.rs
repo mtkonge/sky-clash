@@ -117,21 +117,19 @@ fn rects_within_reach(rect: Rect, delta_pos: V2, other_rect: Rect) -> bool {
 
 #[test]
 fn test_rects_within_reach() {
-    assert_eq!(
+    assert!(
         rects_within_reach(
             Rect::from_f64(0.0, 0.0, 10.0, 0.0),
             V2::new(10.0, 10.0),
             Rect::from_f64(15.0, 0.0, 10.0, 10.0)
         ),
-        true,
     );
-    assert_eq!(
-        rects_within_reach(
+    assert!(
+        !rects_within_reach(
             Rect::from_f64(0.0, 0.0, 10.0, 0.0),
             V2::new(10.0, 10.0),
             Rect::from_f64(40.0, 0.0, 10.0, 10.0)
         ),
-        false,
     );
 }
 
@@ -144,7 +142,7 @@ fn point_vec_line_intersect(
     let line_direction = line_point1 - line_point0;
     if delta_pos.x == 0.0 && line_direction.x == 0.0 {
         // parallel, do nothing
-        return None;
+        None
     } else if delta_pos.x == 0.0 {
         let x = pos.x;
         // y = ax + b
