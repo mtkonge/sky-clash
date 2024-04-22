@@ -17,19 +17,21 @@ use sdl2::{
 };
 
 use super::{
-    entity::Entity, font::Font, id::Id, sprite::Texture, system::System, Component, Error,
+    entity::Entity, font::Font, id::Id, system::System, text::Text, texture::Texture, Component,
+    Error,
 };
 
 pub struct Context<'context, 'game>
 where
     'game: 'context,
 {
-    pub(super) id_counter: &'context mut Id,
     pub(super) canvas: &'context mut Canvas<Window>,
     pub(super) ttf_context: *const Sdl2TtfContext,
     pub(super) texture_creator: *const TextureCreator<WindowContext>,
+    pub(super) entity_id_counter: &'context mut Id,
     pub(super) entities: &'context mut Vec<Option<Entity>>,
-    pub(super) systems: &'context mut Vec<Rc<dyn System>>,
+    pub(super) system_id_counter: &'context mut Id,
+    pub(super) systems: &'context mut Vec<(u64, Rc<dyn System>)>,
     pub(super) textures: &'context mut Vec<(Id, SdlTexture<'game>)>,
     pub(super) fonts: &'context mut Vec<(Id, PathBuf, Font<'game>)>,
     pub(super) currently_pressed_keys: &'context HashSet<Keycode>,
@@ -172,8 +174,8 @@ impl<'context, 'game> Context<'context, 'game> {
             Ok(id)
         } else {
             let font = Font(unsafe { (*self.ttf_context).load_font(path, size)? });
-            let id = *self.id_counter;
-            *self.id_counter += 1;
+            let id = *self.entity_id_counter;
+            *self.entity_id_counter += 1;
             self.fonts.push((id, path.to_path_buf(), font));
             Ok(id)
         }
@@ -184,8 +186,8 @@ impl<'context, 'game> Context<'context, 'game> {
         P: AsRef<std::path::Path>,
     {
         let texture: SdlTexture<'game> = unsafe { (*self.texture_creator).load_texture(path)? };
-        let id = *self.id_counter;
-        *self.id_counter += 1;
+        let id = *self.entity_id_counter;
+        *self.entity_id_counter += 1;
         self.textures.push((id, texture));
         Ok(Texture(id))
     }
@@ -195,7 +197,7 @@ impl<'context, 'game> Context<'context, 'game> {
         font_id: Id,
         text: &str,
         rgb: (u8, u8, u8),
-    ) -> Result<Texture, Error> {
+    ) -> Result<Text, Error> {
         let Font(font) = self
             .fonts
             .iter()
@@ -206,10 +208,17 @@ impl<'context, 'game> Context<'context, 'game> {
         let texture = unsafe {
             surface.as_texture(&*self.texture_creator as &TextureCreator<WindowContext>)
         }?;
-        let id = *self.id_counter;
-        *self.id_counter += 1;
+        let id = *self.entity_id_counter;
+        *self.entity_id_counter += 1;
+        let texture_size = (texture.query().width, texture.query().height);
         self.textures.push((id, texture));
-        Ok(Texture(id))
+        Ok(Text {
+            texture: Texture(id),
+            size: (
+                texture_size.0.try_into().unwrap(),
+                texture_size.1.try_into().unwrap(),
+            ),
+        })
     }
 
     pub fn draw_texture(&mut self, texture: Texture, x: i32, y: i32) -> Result<(), Error> {
@@ -241,8 +250,8 @@ impl<'context, 'game> Context<'context, 'game> {
     }
 
     pub fn spawn(&mut self, components: Vec<Box<dyn Component>>) -> Id {
-        let id = *self.id_counter;
-        *self.id_counter += 1;
+        let id = *self.entity_id_counter;
+        *self.entity_id_counter += 1;
         let mut entity = Some(Entity(id, components));
         let first_none = self.entities.iter().position(Option::is_none);
         let Some(index) = first_none else {
@@ -253,7 +262,7 @@ impl<'context, 'game> Context<'context, 'game> {
         id
     }
 
-    pub fn despawn(&mut self, entity_id: u64) {
+    pub fn despawn(&mut self, entity_id: Id) {
         let Some(index) = self
             .entities
             .iter()
@@ -266,30 +275,24 @@ impl<'context, 'game> Context<'context, 'game> {
         self.entities[index].take();
     }
 
-    pub fn add_system<S: 'static + System>(&mut self, system: S) {
-        let system = Rc::new(system);
-        self.systems.push(system.clone());
+    pub fn add_system<S, CTor>(&mut self, system_ctor: CTor) -> Id
+    where
+        S: System + 'static,
+        CTor: Fn(Id) -> S,
+    {
+        let id = *self.system_id_counter;
+        *self.system_id_counter += 1;
+        let system = Rc::new(system_ctor(id));
+        self.systems.push((id, system.clone()));
         system.on_add(self).unwrap();
+        id
     }
 
-    fn system_id<S: 'static + System>(&mut self) -> Option<usize> {
-        let entity_type_id = TypeId::of::<S>();
-        let index = self.systems.iter().enumerate().find_map(|(index, system)| {
-            if system.inner_type_id() == entity_type_id {
-                Some(index)
-            } else {
-                None
-            }
-        });
-        index
-    }
-
-    pub fn remove_system<S: 'static + System>(&mut self) {
-        let Some(system_id) = self.system_id::<S>() else {
-            println!("attempted to remove system, but unable to find");
+    pub fn remove_system(&mut self, system_id: Id) {
+        let Some(index) = self.systems.iter().position(|(id, _)| *id == system_id) else {
             return;
         };
-        let system = self.systems.remove(system_id);
+        let (_id, system) = self.systems.remove(index);
         system.on_remove(self).unwrap();
     }
 
@@ -303,24 +306,5 @@ impl<'context, 'game> Context<'context, 'game> {
 
     pub fn mouse_position(&self) -> (i32, i32) {
         self.mouse_position
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::engine::{Game, System};
-
-    struct TestSystem0;
-    impl System for TestSystem0 {}
-    struct TestSystem1;
-    impl System for TestSystem1 {}
-    #[test]
-    fn system_id() {
-        let mut game = Game::new().unwrap();
-        let mut ctx = game.context();
-        ctx.add_system(TestSystem0);
-        ctx.add_system(TestSystem1);
-        assert_eq!(ctx.system_id::<TestSystem0>(), Some(0));
-        assert_eq!(ctx.system_id::<TestSystem1>(), Some(1));
     }
 }

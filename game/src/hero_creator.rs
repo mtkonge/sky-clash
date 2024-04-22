@@ -1,6 +1,7 @@
-use std::rc::Rc;
-
-use crate::{engine::Component, query, spawn};
+use crate::{
+    engine::{Component, Id},
+    query, spawn,
+};
 
 use super::{
     engine::{self, System},
@@ -27,7 +28,7 @@ impl System for SkillBarSystem {
         Ok(())
     }
 }
-pub struct HeroCreator;
+pub struct HeroCreator(pub Id);
 
 impl System for HeroCreator {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
@@ -36,25 +37,60 @@ impl System for HeroCreator {
         ctx.add_system(ui::TitleSystem);
         ctx.add_system(ui::ButtonSystem);
 
-        let texture = ctx
+        let text = ctx
             .render_text(font48, "Hewo cweator", (255, 255, 255))
             .unwrap();
+
         spawn!(
             ctx,
             ui::Title {
                 pos: (400, 100),
-                texture
+                texture: text.texture
             }
         );
-        let texture = ctx.render_text(font24, "+", (255, 255, 255)).unwrap();
+
+        let text = ctx.render_text(font48, "0", (255, 255, 255)).unwrap();
+
         spawn!(
             ctx,
-            ui::Button {
+            ui::Title {
+                pos: (400, 200),
+                texture: text.texture
+            }
+        );
+
+        let text = ctx.render_text(font48, "0", (255, 255, 255)).unwrap();
+
+        spawn!(
+            ctx,
+            ui::Title {
                 pos: (400, 250),
-                size: (400, 80),
-                texture,
-                action: Rc::new(|_| ())
-            },
+                texture: text.texture
+            }
+        );
+
+        let text = ctx.render_text(font48, "0", (255, 255, 255)).unwrap();
+
+        spawn!(
+            ctx,
+            ui::Title {
+                pos: (400, 300),
+                texture: text.texture
+            }
+        );
+
+        let text = ctx.render_text(font24, "+", (130, 255, 130)).unwrap();
+
+        spawn!(
+            ctx,
+            ui::Button::new((450, 250), (50, 50)).with_centered_text(text)
+        );
+
+        let text = ctx.render_text(font24, "-", (255, 130, 130)).unwrap();
+
+        spawn!(
+            ctx,
+            ui::Button::new((500, 250), (50, 50)).with_centered_text(text)
         );
 
         Ok(())

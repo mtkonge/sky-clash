@@ -20,7 +20,6 @@ use super::{context::Context, entity::Entity, id::Id, system::System};
 use super::{Component, Error};
 
 pub struct Game<'game> {
-    id_counter: u64,
     sdl_context: Sdl,
     video_subsystem: VideoSubsystem,
     image_context: Sdl2ImageContext,
@@ -28,9 +27,10 @@ pub struct Game<'game> {
     canvas: Canvas<Window>,
     texture_creator: TextureCreator<WindowContext>,
     event_pump: sdl2::EventPump,
+    entity_id_counter: Id,
     entities: Vec<Option<Entity>>,
-    components: Vec<(u64, Box<dyn Component>)>,
-    systems: Vec<Rc<dyn System>>,
+    system_id_counter: Id,
+    systems: Vec<(Id, Rc<dyn System>)>,
     textures: Vec<(Id, Texture<'game>)>,
     fonts: Vec<(Id, PathBuf, Font<'game>)>,
     currently_pressed_keys: HashSet<Keycode>,
@@ -59,7 +59,6 @@ impl<'game> Game<'game> {
         let event_pump = sdl_context.event_pump()?;
         let mouse_position = (event_pump.mouse_state().x(), event_pump.mouse_state().y());
         Ok(Self {
-            id_counter: 0,
             sdl_context,
             video_subsystem,
             image_context,
@@ -67,8 +66,9 @@ impl<'game> Game<'game> {
             texture_creator,
             event_pump,
             ttf_context,
+            entity_id_counter: 0,
             entities: vec![],
-            components: vec![],
+            system_id_counter: 0,
             systems: vec![],
             textures: vec![],
             fonts: vec![],
@@ -112,7 +112,7 @@ impl<'game> Game<'game> {
             let now = Instant::now();
             let delta = (now - time_before).as_nanos() as f64 / 1_000_000_000.0;
             time_before = now;
-            for system in self.systems.clone() {
+            for (_id, system) in self.systems.clone() {
                 let Err(err) = system.on_update(&mut self.context(), delta) else {
                     continue;
                 };
@@ -128,11 +128,12 @@ impl<'game> Game<'game> {
         'game: 'context,
     {
         Context {
-            id_counter: &mut self.id_counter,
             canvas: &mut self.canvas,
             texture_creator: &self.texture_creator,
             ttf_context: &self.ttf_context,
+            entity_id_counter: &mut self.entity_id_counter,
             entities: &mut self.entities,
+            system_id_counter: &mut self.system_id_counter,
             systems: &mut self.systems,
             textures: &mut self.textures,
             fonts: &mut self.fonts,

@@ -9,13 +9,14 @@ mod font;
 mod game;
 mod id;
 pub mod rigid_body;
-mod sprite;
 mod system;
+mod text;
+mod texture;
 
 pub use self::{
     collision::Collider, collision::CollisionSystem, component::Component, context::ComponentQuery,
-    context::Context, context::QueryRunner, error::Error, game::Game, sprite::Texture,
-    system::System,
+    context::Context, context::QueryRunner, error::Error, game::Game, id::Id, system::System,
+    text::Text, texture::Texture,
 };
 pub use component_macro::Component;
 pub use sdl2::keyboard::Keycode;

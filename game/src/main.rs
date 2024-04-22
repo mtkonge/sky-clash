@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-use hero_creator::HeroCreator;
 use main_menu::MainMenu;
 
 mod engine;
