@@ -2,19 +2,12 @@ use super::{
     engine::{self, System},
     ui,
 };
-use crate::spawn;
+use crate::{hero_creator::HeroCreator, query, spawn};
 use std::rc::Rc;
 
 pub struct MainMenu;
 
 impl System for MainMenu {
-    fn on_remove(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
-        ctx.remove_system::<ui::TitleSystem>();
-        ctx.remove_system::<ui::ButtonSystem>();
-        todo!("remove currently loaded buttons/titles");
-        Ok(())
-    }
-
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
         let font48 = ctx.load_font("textures/ttf/OpenSans.ttf", 48)?;
         let font24 = ctx.load_font("textures/ttf/OpenSans.ttf", 24)?;
@@ -42,18 +35,7 @@ impl System for MainMenu {
                 action: Rc::new(|_| ())
             },
         );
-        let texture = ctx
-            .render_text(font24, "Hewo cweator", (255, 255, 255))
-            .unwrap();
-        spawn!(
-            ctx,
-            ui::Button {
-                pos: (400, 350),
-                size: (400, 80),
-                texture,
-                action: Rc::new(|_| ())
-            },
-        );
+
         let texture = ctx
             .render_text(font24, "Exit gwame T~T", (255, 255, 255))
             .unwrap();
@@ -66,6 +48,36 @@ impl System for MainMenu {
                 action: Rc::new(|_| panic!())
             },
         );
+
+        let texture = ctx
+            .render_text(font24, "Hewo cweator", (255, 255, 255))
+            .unwrap();
+        spawn!(
+            ctx,
+            ui::Button {
+                pos: (400, 350),
+                size: (400, 80),
+                texture,
+                action: Rc::new(|ctx| {
+                    ctx.remove_system::<MainMenu>();
+                    ctx.add_system(HeroCreator)
+                })
+            },
+        );
+
+        Ok(())
+    }
+
+    fn on_remove(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
+        ctx.remove_system::<ui::TitleSystem>();
+        ctx.remove_system::<ui::ButtonSystem>();
+        for id in query!(ctx, ui::Button) {
+            ctx.despawn(id);
+        }
+        for id in query!(ctx, ui::Title) {
+            ctx.despawn(id);
+        }
+
         Ok(())
     }
 
