@@ -4,7 +4,7 @@ use super::{
     engine::{self, Id, System},
     ui,
 };
-use crate::{hero_creator::HeroCreator, query, spawn};
+use crate::{hero_creator::HeroCreatorSystem, query, spawn};
 
 #[derive(Component, Clone)]
 pub struct CleanerUpper {
@@ -51,7 +51,7 @@ impl System for MainMenu {
                 .with_centered_text(text)
                 .with_action(move |ctx| {
                     ctx.remove_system(system_id);
-                    ctx.add_system(HeroCreator);
+                    ctx.add_system(HeroCreatorSystem);
                 })
         );
 
