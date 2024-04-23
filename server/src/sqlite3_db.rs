@@ -42,7 +42,7 @@ impl Database for Sqlite3Db {
             .fetch_optional(&self.pool)
             .await;
         match result {
-            Ok(result) => Ok(Some(result.unwrap())),
+            Ok(result) => Ok(result),
             Err(_) => Err(eyre!("Server error")),
         }
     }

@@ -12,8 +12,10 @@ use crate::{
 
 #[post("/create_hero")]
 pub async fn create_hero(db: Data<DbParam>, req_body: Json<CreateHeroParams>) -> impl Responder {
-    if (db.lock().await.hero_by_rfid(&req_body.0.rfid).await).is_ok() {
-        return HttpResponse::Forbidden();
+    match db.lock().await.hero_by_rfid(&req_body.0.rfid).await {
+        Ok(Some(_)) => return HttpResponse::BadRequest(),
+        Ok(None) => (),
+        Err(_) => return HttpResponse::InternalServerError(),
     }
     match db.lock().await.create_hero(req_body.0).await {
         Ok(()) => HttpResponse::Created(),
