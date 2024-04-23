@@ -1,9 +1,15 @@
 #include <Adafruit_PN532.h>
+#include "wifi.h"
 
 #define IRQ_PIN 1
 #define RSTO_PIN 0
 
+
+
 Adafruit_PN532 rfid(IRQ_PIN, RSTO_PIN, &Wire);
+
+
+Wifi wifi(IPAddress(192, 168, 132, 183), 8080);
 
 void setup() {
   Serial.begin(9600);
@@ -32,6 +38,13 @@ void setup() {
   Serial.println(String("version = ") + version);
 
   // rfid.setPassiveActivationRetries(0xFF);
+
+  wifi.connect();
+  delay(500);
+  wifi.ping();
+  delay(1000);
+  String response = wifi.post("/create_hero", "{\"rfid\": \"1234\", \"hero_type\": 0}");
+  Serial.println(response);
 }
 
 int slurs = 0;

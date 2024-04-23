@@ -2,26 +2,22 @@
 #include <SPI.h>
 #include <WiFiNINA.h>
 
-int status = WL_IDLE_STATUS;
-int pingResult;
-
-WiFiClient client;
-
-void connect_to_network() {
+void Wifi::connect() {
+  int status = WL_IDLE_STATUS;
   while (status != WL_CONNECTED) {
     Serial.print("Attempting to connect to network: ");
     Serial.println(ssid);
     status = WiFi.begin(ssid, pass);
-    delay(10000);
+    delay(5000);
   }
+  Serial.print(String("Connected to ") + ssid + "!");
 }
 
-IPAddress server(192, 168, 132, 183);
-
-void ping(char* ip) {
+void Wifi::ping() {
+  int pingResult;
   Serial.print("Pinging ");
-  Serial.println(ip);
-  pingResult = WiFi.ping(ip);
+  Serial.println(this->ip);
+  pingResult = WiFi.ping(this->ip);
 
   if (pingResult >= 0) {
     Serial.print("SUCCESS! RTT = ");
@@ -33,7 +29,7 @@ void ping(char* ip) {
   }
 }
 
-void printWifiStatus() {
+void Wifi::print_info() {
   Serial.print("SSID: ");
   Serial.println(WiFi.SSID());
 
@@ -47,32 +43,32 @@ void printWifiStatus() {
   Serial.println(" dBm");
 
 }
-void get_google_html() {
-  Serial.println("\nStarting connection to server...");
-  if (client.connect("www.google.com", 80)) {
-    Serial.println("connected to server");
-    client.println("GET /search?q=arduino HTTP/1.1");
-    client.println("Host: www.google.com");
-    client.println("Connection: close");
-    client.println();
-  }
-}
 
-
-void post_request() {
-  String data = "{\"rfid\": \"aiojfejiofeq\", \"hero_type\": 4}";
+String Wifi::post(const String& path, const String& data) {
   Serial.println("WE ARE MAKING A POST REQUEST NOBODY BREATH");
-  if (client.connect("192.168.132.183", 8080)) {
+  if (client.connect(this->ip, this->port)) {
     Serial.println("WE ARE IN !!!!");
-    client.println("POST /create_hero HTTP/1.1");
-    client.println("Host: 192.168.132.183:8080");
+    client.println(String("POST ") + path + " HTTP/1.1");
+    client.println(String("Host: ") + this->ip + ":" + this->port);
     client.println("Content-Type: application/json");
     client.print("Content-Length: ");
     client.println(data.length());
     client.println();
     client.print(data);
+    while (client.available() == 0) {
+      delay(100);
+    }
+    String response;
+    for (int i = 0; i < client.available(); i++) {
+      int byte = client.read();
+      if (byte == -1) {
+        break;
+      }
+      response += static_cast<char>(byte);
+    }
+    return response;
   } else {
-    Serial.println("Could not connect");
+    Serial.println(String("Could not post to ") + ip + ":" + port + ", unresolved hostname" );
+    return "Unresolved hostname";
   }
 }
-
