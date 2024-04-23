@@ -12,6 +12,7 @@ pub mod rigid_body;
 mod system;
 mod text;
 mod texture;
+pub mod ui;
 
 pub use self::{
     collision::Collider, collision::CollisionSystem, component::Component, context::ComponentQuery,
