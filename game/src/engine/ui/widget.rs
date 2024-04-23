@@ -1,17 +1,54 @@
-use crate::engine::{Context, Error};
+use std::ops::Deref;
+use std::rc::Rc;
+
+use crate::engine::{Component, Context, Error, Id};
 
 use super::canvas::Canvas;
 
 use super::units::*;
 
-pub struct WidgetWrapper(pub Box<dyn Widget>);
+#[derive(Component, Clone)]
+pub struct WidgetRc {
+    pub creator_id: Option<Id>,
+    pub(super) inner: Rc<dyn Widget>,
+}
 
-impl<T> From<T> for WidgetWrapper
+impl Deref for WidgetRc {
+    type Target = dyn Widget;
+
+    fn deref(&self) -> &Self::Target {
+        self.inner.deref()
+    }
+}
+
+impl WidgetRc {
+    pub fn new<T: Widget + 'static>(value: T) -> Self {
+        Self {
+            creator_id: None,
+            inner: Rc::new(value),
+        }
+    }
+    pub fn from_id<T: Widget + 'static>(creator_id: u64, value: T) -> Self {
+        Self {
+            creator_id: Some(creator_id),
+            inner: Rc::new(value),
+        }
+    }
+    pub fn with_id(mut self, id: u64) -> Self {
+        self.creator_id = Some(id);
+        self
+    }
+}
+
+impl<T> From<T> for WidgetRc
 where
     T: Widget + 'static,
 {
     fn from(value: T) -> Self {
-        Self(Box::new(value))
+        Self {
+            creator_id: None,
+            inner: Rc::new(value),
+        }
     }
 }
 
@@ -24,8 +61,8 @@ pub trait WithChildren
 where
     Self: Sized,
 {
-    fn with_child(self, child: WidgetWrapper) -> Self;
-    fn with_children<C: IntoIterator<Item = WidgetWrapper>>(self, children: C) -> Self {
+    fn with_child(self, child: WidgetRc) -> Self;
+    fn with_children<C: IntoIterator<Item = WidgetRc>>(self, children: C) -> Self {
         children
             .into_iter()
             .fold(self, |parent, child| parent.with_child(child))
@@ -50,19 +87,19 @@ pub trait FromChildren
 where
     Self: Sized + WithChildren,
 {
-    fn from_child(child: WidgetWrapper) -> Self;
-    fn from_children<C: IntoIterator<Item = WidgetWrapper>>(children: C) -> Self;
+    fn from_child(child: WidgetRc) -> Self;
+    fn from_children<C: IntoIterator<Item = WidgetRc>>(children: C) -> Self;
 }
 
 impl<T> FromChildren for T
 where
     T: Sized + WithChildren + Default,
 {
-    fn from_child(child: WidgetWrapper) -> Self {
+    fn from_child(child: WidgetRc) -> Self {
         Self::default().with_child(child)
     }
 
-    fn from_children<C: IntoIterator<Item = WidgetWrapper>>(children: C) -> Self {
+    fn from_children<C: IntoIterator<Item = WidgetRc>>(children: C) -> Self {
         Self::default().with_children(children)
     }
 }

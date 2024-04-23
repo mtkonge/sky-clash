@@ -145,7 +145,7 @@ impl<'context, 'game> Context<'context, 'game> {
             .iter_mut()
             .find(|opt| opt.as_ref().is_some_and(|Entity(id, _)| *id == entity_id))
             .and_then(|v| v.as_mut())
-            .unwrap();
+            .expect("tried to get entity_component of removed id, are you removing it while looping over it?");
 
         let component = components
             .iter_mut()
@@ -275,7 +275,7 @@ impl<'context, 'game> Context<'context, 'game> {
         let Some(index) = self
             .entities
             .iter()
-            .position(|v| v.as_ref().is_some_and(|v| v.0 != entity_id))
+            .position(|v| v.as_ref().is_some_and(|v| v.0 == entity_id))
         else {
             println!("tried to despawn {entity_id}; entity not found");
             return;
@@ -299,6 +299,7 @@ impl<'context, 'game> Context<'context, 'game> {
 
     pub fn remove_system(&mut self, system_id: Id) {
         let Some(index) = self.systems.iter().position(|(id, _)| *id == system_id) else {
+            println!("tried to remove system with id {system_id} but unable to");
             return;
         };
         let (_id, system) = self.systems.remove(index);

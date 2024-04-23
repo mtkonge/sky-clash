@@ -2,7 +2,7 @@ use crate::engine::{
     ui::{
         canvas::Canvas,
         units::{Pos, Size},
-        widget::{Widget, WidgetWrapper, WithChildren},
+        widget::{Widget, WidgetRc, WithChildren},
     },
     Error,
 };
@@ -12,7 +12,7 @@ use super::shape::Rect;
 #[derive(Default)]
 pub struct HorizontallyCentered {
     pos: Pos,
-    children: Vec<Box<dyn Widget>>,
+    children: Vec<WidgetRc>,
 }
 
 impl Widget for HorizontallyCentered {
@@ -37,8 +37,8 @@ impl Widget for HorizontallyCentered {
 }
 
 impl WithChildren for HorizontallyCentered {
-    fn with_child(mut self, child: WidgetWrapper) -> Self {
-        self.children.push(child.0);
+    fn with_child(mut self, child: WidgetRc) -> Self {
+        self.children.push(child);
         self
     }
 }
@@ -46,7 +46,7 @@ impl WithChildren for HorizontallyCentered {
 #[derive(Default)]
 pub struct VerticallyCentered {
     pos: Pos,
-    children: Vec<Box<dyn Widget>>,
+    children: Vec<WidgetRc>,
 }
 
 impl Widget for VerticallyCentered {
@@ -71,8 +71,8 @@ impl Widget for VerticallyCentered {
 }
 
 impl WithChildren for VerticallyCentered {
-    fn with_child(mut self, child: WidgetWrapper) -> Self {
-        self.children.push(child.0);
+    fn with_child(mut self, child: WidgetRc) -> Self {
+        self.children.push(child);
         self
     }
 }

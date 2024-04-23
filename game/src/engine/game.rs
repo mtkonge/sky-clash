@@ -112,11 +112,12 @@ impl<'game> Game<'game> {
             let now = Instant::now();
             let delta = (now - time_before).as_nanos() as f64 / 1_000_000_000.0;
             time_before = now;
-            for (_id, system) in self.systems.clone() {
+            for (id, system) in self.systems.clone() {
+                println!("system {id} updated");
                 let Err(err) = system.on_update(&mut self.context(), delta) else {
                     continue;
                 };
-                println!("error occcurred updating system: {err}");
+                println!("error occurred updating system: {err}");
             }
             self.canvas.present();
             std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 144))
