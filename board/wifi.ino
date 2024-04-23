@@ -45,9 +45,7 @@ void Wifi::print_info() {
 }
 
 String Wifi::post(const String& path, const String& data) {
-  Serial.println("WE ARE MAKING A POST REQUEST NOBODY BREATH");
   if (client.connect(this->ip, this->port)) {
-    Serial.println("WE ARE IN !!!!");
     client.println(String("POST ") + path + " HTTP/1.1");
     client.println(String("Host: ") + this->ip + ":" + this->port);
     client.println("Content-Type: application/json");
