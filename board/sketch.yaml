@@ -1,0 +1,3 @@
+default_fqbn: arduino:samd:mkrwifi1010
+default_port: /dev/ttyACM0
+

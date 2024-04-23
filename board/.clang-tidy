@@ -1,0 +1,5 @@
+
+Checks: "-*, altara-*, boost-*, bugprone-*, cert-*, clang-analyzer-*, cppcoreguidelines-*, google-*, llvm-*, modernize-*, performance-*, portability-*, readability-*"
+HeaderFilterRegex: ".*"
+FormatStyle: webkit
+
