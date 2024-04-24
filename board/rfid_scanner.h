@@ -1,12 +1,47 @@
 #pragma once
 #include <Adafruit_PN532.h>
 
+struct RfidConnection {
+  virtual ~RfidConnection() {};
+
+  virtual Adafruit_PN532 build() = 0;
+};
+
+struct RfidI2C final : public RfidConnection {
+  RfidI2C(int irq_pin, int rsto_pin, TwoWire* wire)
+    : irq_pin(irq_pin)
+    , rsto_pin(rsto_pin)
+    , wire(wire)
+  {}
+
+  inline Adafruit_PN532 build() override {
+    return Adafruit_PN532(this->irq_pin, this->rsto_pin, this->wire);
+  }
+
+  int irq_pin;
+  int rsto_pin;
+  TwoWire* wire;
+};
+
+struct RfidSPI final : public RfidConnection {
+  RfidSPI(uint8_t reset_pin, HardwareSerial* serial)
+    : reset_pin(reset_pin)
+    , serial(serial)
+  {}
+
+  inline Adafruit_PN532 build() override {
+    return Adafruit_PN532(this->reset_pin, this->serial);
+  }
+
+  uint8_t reset_pin;
+  HardwareSerial* serial;
+};
+
 class RfidScanner {
   public:
-    RfidScanner(int irq_pin, int rsto_pin)
-      : irq_pin(irq_pin)
-      , rsto_pin(rsto_pin)
-      , rfid(irq_pin, rsto_pin, &Wire)
+    template<typename T>
+    RfidScanner(T connection)
+      : rfid(connection.build())
     {
     }
 
@@ -15,7 +50,5 @@ class RfidScanner {
     uint32_t read(uint16_t timeout_ms);
 
   private:
-    int irq_pin;
-    int rsto_pin;
     Adafruit_PN532 rfid;
 };

@@ -1,5 +1,6 @@
 void RfidScanner::begin() {
-
+  int attempts = 0;
+  Serial.println(String("attempt ") + attempts);
   bool success = this->rfid.begin();
   if (!success) {
     Serial.println("RFID failed");
@@ -14,6 +15,8 @@ void RfidScanner::begin() {
       Serial.println("RFID failed");
     }
     version = this->rfid.getFirmwareVersion();
+    Serial.println(String("attempt ") + attempts);
+    attempts++;
   }
   Serial.println(String("version = ") + version);
 
