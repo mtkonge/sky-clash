@@ -4,7 +4,7 @@ use crate::engine::{
         units::{Offset, Size},
         widget::{Widget, WidgetPointer, WithChildren},
     },
-    Error,
+    Error, Id,
 };
 
 use super::shape::Rect;
@@ -33,6 +33,10 @@ impl Widget for HorizontallyCentered {
         self.children.iter().fold(Size(0, 0), |acc, curr| {
             Size(std::cmp::max(acc.0, curr.size().0), acc.1 + curr.size().1)
         })
+    }
+
+    fn child_pointers(&self) -> Option<Vec<WidgetPointer>> {
+        Some(self.children.clone())
     }
 }
 
@@ -67,6 +71,10 @@ impl Widget for VerticallyCentered {
         self.children.iter().fold(Size(0, 0), |acc, curr| {
             Size(acc.0 + curr.size().0, std::cmp::max(acc.1, curr.size().1))
         })
+    }
+
+    fn child_pointers(&self) -> Option<Vec<WidgetPointer>> {
+        Some(self.children.clone())
     }
 }
 

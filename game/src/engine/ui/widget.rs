@@ -1,3 +1,4 @@
+use std::cell::{Cell, Ref, RefCell};
 use std::ops::Deref;
 use std::rc::Rc;
 
@@ -14,10 +15,10 @@ pub struct Root {
 }
 
 impl Deref for Root {
-    type Target = dyn Widget;
+    type Target = WidgetPointer;
 
     fn deref(&self) -> &Self::Target {
-        self.inner.deref()
+        &self.inner
     }
 }
 
@@ -31,6 +32,10 @@ impl Root {
             inner: inner.into(),
         }
     }
+
+    pub fn into_inner(self) -> WidgetPointer {
+        self.inner
+    }
 }
 
 impl Component for Root {
@@ -40,7 +45,7 @@ impl Component for Root {
 }
 
 #[derive(Clone)]
-pub struct WidgetPointer(Rc<dyn Widget>);
+pub struct WidgetPointer(Option<Id>, Rc<dyn Widget>);
 
 impl<T> From<T> for WidgetPointer
 where
@@ -55,20 +60,44 @@ impl Deref for WidgetPointer {
     type Target = dyn Widget;
 
     fn deref(&self) -> &Self::Target {
-        self.0.deref()
+        self.1.deref()
     }
 }
 
 impl WidgetPointer {
     pub fn new<T: Widget + 'static>(value: T) -> Self {
-        Self(Rc::new(value))
+        Self(None, Rc::new(value))
+    }
+    pub fn set<T: Widget + 'static>(&self, value: T) {
+        let raw = Rc::<(dyn Widget + 'static)>::as_ptr(&self.1) as *mut T;
+        unsafe { *raw = value }
+    }
+    pub fn with_id(mut self, id: Id) -> Self {
+        self.0 = Some(id);
+        self
+    }
+    pub fn widget_with_id(self, id: Id) -> (Self, Option<WidgetPointer>) {
+        let ptr = if self.0.is_some_and(|v| v == id) {
+            Some(self.clone())
+        } else {
+            match self.child_pointers() {
+                Some(ptrs) => ptrs.into_iter().find_map(|w| w.widget_with_id(id).1),
+                None => None,
+            }
+        };
+        (self, ptr)
     }
 }
 
 pub trait Widget {
     fn render(&self, offset: Offset, canvas: &mut dyn Canvas) -> Result<(), Error>;
     fn size(&self) -> Size;
-    fn resolve_events(&self, _event_pool: Rc<std::sync::Mutex<u32>>) {}
+    fn resolve_events(&self, _event_pool: Rc<std::sync::Mutex<u32>>) {
+        todo!()
+    }
+    fn child_pointers(&self) -> Option<Vec<WidgetPointer>> {
+        None
+    }
 }
 
 pub trait WithChildren
