@@ -7,13 +7,13 @@ use super::canvas::Canvas;
 
 use super::units::*;
 
-#[derive(Component, Clone)]
-pub struct WidgetRc {
-    pub creator_id: Option<Id>,
-    pub(super) inner: Rc<dyn Widget>,
+#[derive(Clone)]
+pub struct Root {
+    pub creator_id: Id,
+    inner: WidgetPointer,
 }
 
-impl Deref for WidgetRc {
+impl Deref for Root {
     type Target = dyn Widget;
 
     fn deref(&self) -> &Self::Target {
@@ -21,48 +21,62 @@ impl Deref for WidgetRc {
     }
 }
 
-impl WidgetRc {
-    pub fn new<T: Widget + 'static>(value: T) -> Self {
+impl Root {
+    pub fn new<T>(creator_id: Id, inner: T) -> Self
+    where
+        T: Into<WidgetPointer>,
+    {
         Self {
-            creator_id: None,
-            inner: Rc::new(value),
+            creator_id,
+            inner: inner.into(),
         }
     }
-    pub fn from_id<T: Widget + 'static>(creator_id: u64, value: T) -> Self {
-        Self {
-            creator_id: Some(creator_id),
-            inner: Rc::new(value),
-        }
-    }
-    pub fn with_id(mut self, id: u64) -> Self {
-        self.creator_id = Some(id);
+}
+
+impl Component for Root {
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
         self
     }
 }
 
-impl<T> From<T> for WidgetRc
+#[derive(Clone)]
+pub struct WidgetPointer(Rc<dyn Widget>);
+
+impl<T> From<T> for WidgetPointer
 where
     T: Widget + 'static,
 {
     fn from(value: T) -> Self {
-        Self {
-            creator_id: None,
-            inner: Rc::new(value),
-        }
+        Self::new(value)
+    }
+}
+
+impl Deref for WidgetPointer {
+    type Target = dyn Widget;
+
+    fn deref(&self) -> &Self::Target {
+        self.0.deref()
+    }
+}
+
+impl WidgetPointer {
+    pub fn new<T: Widget + 'static>(value: T) -> Self {
+        Self(Rc::new(value))
     }
 }
 
 pub trait Widget {
-    fn render(&self, position: Pos, canvas: &mut dyn Canvas) -> Result<(), Error>;
+    fn render(&self, offset: Offset, canvas: &mut dyn Canvas) -> Result<(), Error>;
     fn size(&self) -> Size;
+    fn resolve_events(&self, _event_pool: Rc<std::sync::Mutex<u32>>) {}
 }
 
 pub trait WithChildren
 where
     Self: Sized,
 {
-    fn with_child(self, child: WidgetRc) -> Self;
-    fn with_children<C: IntoIterator<Item = WidgetRc>>(self, children: C) -> Self {
+    fn with_child(self, child: WidgetPointer) -> Self;
+    fn with_children<C: IntoIterator<Item = WidgetPointer>>(self, children: C) -> Self {
         children
             .into_iter()
             .fold(self, |parent, child| parent.with_child(child))
@@ -80,26 +94,26 @@ pub trait WithPos
 where
     Self: Sized,
 {
-    fn with_pos<T: Into<Pos>>(self, pos: T) -> Self;
+    fn with_pos<T: Into<Offset>>(self, pos: T) -> Self;
 }
 
 pub trait FromChildren
 where
     Self: Sized + WithChildren,
 {
-    fn from_child(child: WidgetRc) -> Self;
-    fn from_children<C: IntoIterator<Item = WidgetRc>>(children: C) -> Self;
+    fn from_child(child: WidgetPointer) -> Self;
+    fn from_children<C: IntoIterator<Item = WidgetPointer>>(children: C) -> Self;
 }
 
 impl<T> FromChildren for T
 where
     T: Sized + WithChildren + Default,
 {
-    fn from_child(child: WidgetRc) -> Self {
+    fn from_child(child: WidgetPointer) -> Self {
         Self::default().with_child(child)
     }
 
-    fn from_children<C: IntoIterator<Item = WidgetRc>>(children: C) -> Self {
+    fn from_children<C: IntoIterator<Item = WidgetPointer>>(children: C) -> Self {
         Self::default().with_children(children)
     }
 }
@@ -115,7 +129,7 @@ pub trait FromPos
 where
     Self: Sized + WithPos,
 {
-    fn from_pos<T: Into<Pos>>(pos: T) -> Self;
+    fn from_pos<T: Into<Offset>>(pos: T) -> Self;
 }
 
 impl<S> FromSize for S
@@ -131,7 +145,7 @@ impl<S> FromPos for S
 where
     S: Default + Sized + WithPos,
 {
-    fn from_pos<T: Into<Pos>>(pos: T) -> Self {
+    fn from_pos<T: Into<Offset>>(pos: T) -> Self {
         Self::default().with_pos(pos.into())
     }
 }

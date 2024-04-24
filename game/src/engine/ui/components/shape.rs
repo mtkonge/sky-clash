@@ -12,11 +12,11 @@ use crate::engine::ui::units::*;
 pub struct Rect {
     color: Rgb,
     size: Size,
-    pos: Pos,
+    pos: Offset,
 }
 
 impl WithPos for Rect {
-    fn with_pos<T: Into<Pos>>(mut self, pos: T) -> Self {
+    fn with_pos<T: Into<Offset>>(mut self, pos: T) -> Self {
         self.pos = pos.into();
         self
     }
@@ -30,7 +30,7 @@ impl WithSize for Rect {
 }
 
 impl Rect {
-    pub fn with_pos(mut self, pos: Pos) -> Self {
+    pub fn with_pos(mut self, pos: Offset) -> Self {
         self.pos = pos;
         self
     }
@@ -41,7 +41,7 @@ impl Rect {
 }
 
 impl Widget for Rect {
-    fn render(&self, pos: Pos, canvas: &mut dyn Canvas) -> Result<(), Error> {
+    fn render(&self, pos: Offset, canvas: &mut dyn Canvas) -> Result<(), Error> {
         canvas.draw_rect(
             self.size.clone(),
             pos + self.pos.clone(),

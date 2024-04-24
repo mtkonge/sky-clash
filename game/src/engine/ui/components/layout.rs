@@ -1,8 +1,8 @@
 use crate::engine::{
     ui::{
         canvas::Canvas,
-        units::{Pos, Size},
-        widget::{Widget, WidgetRc, WithChildren},
+        units::{Offset, Size},
+        widget::{Widget, WidgetPointer, WithChildren},
     },
     Error,
 };
@@ -11,19 +11,19 @@ use super::shape::Rect;
 
 #[derive(Default)]
 pub struct HorizontallyCentered {
-    pos: Pos,
-    children: Vec<WidgetRc>,
+    pos: Offset,
+    children: Vec<WidgetPointer>,
 }
 
 impl Widget for HorizontallyCentered {
-    fn render(&self, pos: Pos, canvas: &mut dyn Canvas) -> Result<(), Error> {
+    fn render(&self, pos: Offset, canvas: &mut dyn Canvas) -> Result<(), Error> {
         let pos = pos + self.pos;
         let size = self.size();
         let mut y = pos.1;
         for child in &self.children {
             let child_size = child.size();
             let x = ((size.0 - child_size.0) / 2) as i32;
-            child.render(Pos(x, y), canvas)?;
+            child.render(Offset(x, y), canvas)?;
             y += child_size.1 as i32;
         }
         Ok(())
@@ -37,7 +37,7 @@ impl Widget for HorizontallyCentered {
 }
 
 impl WithChildren for HorizontallyCentered {
-    fn with_child(mut self, child: WidgetRc) -> Self {
+    fn with_child(mut self, child: WidgetPointer) -> Self {
         self.children.push(child);
         self
     }
@@ -45,19 +45,19 @@ impl WithChildren for HorizontallyCentered {
 
 #[derive(Default)]
 pub struct VerticallyCentered {
-    pos: Pos,
-    children: Vec<WidgetRc>,
+    pos: Offset,
+    children: Vec<WidgetPointer>,
 }
 
 impl Widget for VerticallyCentered {
-    fn render(&self, pos: Pos, canvas: &mut dyn Canvas) -> Result<(), Error> {
+    fn render(&self, pos: Offset, canvas: &mut dyn Canvas) -> Result<(), Error> {
         let pos = pos + self.pos;
         let size = self.size();
         let mut x = pos.0;
         for child in &self.children {
             let child_size = child.size();
             let y = ((size.1 - child_size.1) / 2) as i32;
-            child.render(Pos(x, y), canvas)?;
+            child.render(Offset(x, y), canvas)?;
             x += child_size.0 as i32;
         }
         Ok(())
@@ -71,7 +71,7 @@ impl Widget for VerticallyCentered {
 }
 
 impl WithChildren for VerticallyCentered {
-    fn with_child(mut self, child: WidgetRc) -> Self {
+    fn with_child(mut self, child: WidgetPointer) -> Self {
         self.children.push(child);
         self
     }
