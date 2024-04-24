@@ -21,13 +21,33 @@ void setup() {
   delay(500);
   wifi.ping();
   delay(1000);
-  String response = wifi.post("/create_hero", "{\"rfid\": \"1234\", \"hero_type\": 0}");
-  Serial.println(response);
 
   rfid_scanner.begin();
 }
 
 
+
+
+String response;
+uint32_t last_rfid = -1;
+
+
 void loop() {
-  rfid_scanner.read();
+  uint32_t read_rfid = rfid_scanner.read(100);
+  if (last_rfid == read_rfid) { 
+    return;
+  }
+  last_rfid = read_rfid;
+
+  Serial.println(read_rfid);
+  if (read_rfid != 0) {
+    String data = String("{\"hero_1_rfid\": \"") + read_rfid + "\", \"hero_2_rfid\": null}";
+    Serial.println(String("data: ") + data);
+    response = wifi.post("/update_heroes_on_board", data);
+  } else {
+    String data = "{\"hero_1_rfid\": null, \"hero_2_rfid\": null}";
+    Serial.println(String("data: ") + data);
+    response = wifi.post("/update_heroes_on_board", data);
+  }
+  Serial.println(response);
 }

@@ -11,7 +11,8 @@ class RfidScanner {
     }
 
     void begin();
-    void read();
+    // returns 0 on failure
+    uint32_t read(uint16_t timeout_ms);
 
   private:
     int irq_pin;
