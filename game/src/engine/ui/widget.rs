@@ -77,15 +77,15 @@ impl WidgetPointer {
         self
     }
     pub fn widget_with_id(self, id: Id) -> Option<WidgetPointer> {
-        let ptr = if self.0.is_some_and(|v| v == id) {
+        
+        if self.0.is_some_and(|v| v == id) {
             Some(self.clone())
         } else {
             match self.child_pointers() {
                 Some(ptrs) => ptrs.into_iter().find_map(|w| w.widget_with_id(id)),
                 None => None,
             }
-        };
-        ptr
+        }
     }
 }
 

@@ -18,14 +18,17 @@ pub struct Node {
     height: Option<i32>,
     on_click: Option<u64>,
 }
-pub struct DOM {
+
+type EventHandler = Rc<dyn Fn(&mut Dom, &mut engine::Context, NodeId)>;
+
+pub struct Dom {
     nodes: Vec<(NodeId, Node)>,
     id_counter: u64,
     event_queue: Vec<(u64, NodeId)>,
-    event_handlers: Vec<(u64, Rc<dyn Fn(&mut DOM, &mut engine::Context, NodeId)>)>,
+    event_handlers: Vec<(u64, EventHandler)>,
 }
 
-impl DOM {
+impl Dom {
     pub fn new(mut build: builder::Box<builder::Node>) -> Self {
         let mut nodes = Vec::new();
         let mut id_counter = 0;
@@ -40,7 +43,7 @@ impl DOM {
 
     pub fn add_event_handler<F>(&mut self, event_id: u64, f: F)
     where
-        F: Fn(&mut DOM, &mut engine::Context, NodeId) + 'static,
+        F: Fn(&mut Dom, &mut engine::Context, NodeId) + 'static,
     {
         self.event_handlers.push((event_id, Rc::new(f)))
     }

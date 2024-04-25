@@ -43,9 +43,9 @@ impl Rect {
 impl Widget for Rect {
     fn render(&self, pos: Offset, canvas: &mut dyn Canvas) -> Result<(), Error> {
         canvas.draw_rect(
-            self.size.clone(),
-            pos + self.pos.clone(),
-            self.color.clone(),
+            self.size,
+            pos + self.pos,
+            self.color,
         )
     }
 
