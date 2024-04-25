@@ -21,13 +21,10 @@ impl System for MyMenuSystem {
         ]));
 
         dom.add_event_handler(12, |dom, _ctx, _node_id| {
-            let Some(other) = dom.select(34) else {return;};
-            match other.kind {
-                ui2::Kind::Text(ref mut text) => {
-                    *text = "some thing else".to_string();
-                }
-                _ => unreachable!(),
-            }
+            let Some(element) = dom.select_mut(34) else { return; };
+            if let ui2::Kind::Text { text, .. } = &mut element.kind {
+                *text = "some thing else".to_string();
+            };
         });
 
         spawn!(

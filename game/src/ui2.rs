@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{path::PathBuf, rc::Rc};
 
 use crate::engine;
 
@@ -14,7 +14,11 @@ impl From<u64> for NodeId {
 pub enum Kind {
     Vert(Vec<NodeId>),
     Hori(Vec<NodeId>),
-    Text(String),
+    Text {
+        text: String,
+        font: PathBuf,
+        size: u16,
+    },
 }
 
 pub struct Node {
@@ -25,11 +29,85 @@ pub struct Node {
     on_click: Option<u64>,
 }
 
+impl Node {
+    pub fn children<'dom>(&self, dom: &'dom Dom) -> Option<Vec<&'dom Node>> {
+        match &self.kind {
+            Kind::Vert(children) | Kind::Hori(children) => {
+                children.iter().map(|id| dom.select(*id)).collect()
+            }
+            Kind::Text { .. } => None,
+        }
+    }
+
+    pub fn size(&self, dom: &Dom, ctx: &mut engine::Context) -> (i32, i32) {
+        match &self.kind {
+            node @ (Kind::Vert(_) | Kind::Hori(_)) => {
+                let children = self.children(dom).unwrap();
+                let mut size = (0, 0);
+                let mut max_size = (0, 0);
+                for child in children {
+                    let child_size = child.size(dom, ctx);
+                    size.0 += child_size.0;
+                    size.1 += child_size.1;
+                    max_size = (
+                        std::cmp::max(child_size.0, max_size.0),
+                        std::cmp::max(child_size.1, max_size.1),
+                    );
+                }
+                match node {
+                    Kind::Vert(_) => (max_size.0, size.1),
+                    Kind::Hori(_) => (size.0, max_size.1),
+                    Kind::Text { .. } => unreachable!(),
+                }
+            }
+            Kind::Text { text, font, size } => {
+                let font_id = ctx.load_font(font, *size).unwrap();
+                let (w, h) = ctx.text_size(font_id, text).unwrap();
+                (w as i32, h as i32)
+            }
+        }
+    }
+
+    pub fn draw(&self, dom: &Dom, ctx: &mut engine::Context, pos: (i32, i32)) {
+        let size = self.size(dom, ctx);
+        match &self.kind {
+            Kind::Vert(_) => {
+                let children = self.children(dom).unwrap();
+                let mut pos = pos;
+                for child in children {
+                    let child_size = child.size(dom, ctx);
+                    let x = pos.0 + (size.0 - child_size.0) / 2;
+                    let y = pos.1;
+                    pos.1 += child_size.1;
+                    child.draw(dom, ctx, (x, y));
+                }
+            }
+            Kind::Hori(_) => {
+                let children = self.children(dom).unwrap();
+                let mut pos = pos;
+                for child in children {
+                    let child_size = child.size(dom, ctx);
+                    let x = pos.0;
+                    let y = pos.1 + (size.1 - child_size.1) / 2;
+                    pos.0 += child_size.0;
+                    child.draw(dom, ctx, (x, y));
+                }
+            }
+            Kind::Text { text, size, font } => {
+                let font_id = ctx.load_font(font, *size).unwrap();
+                let text = ctx.render_text(font_id, text, (255, 255, 255)).unwrap();
+                ctx.draw_texture(text.texture, pos.0, pos.1).unwrap();
+            }
+        }
+    }
+}
+
 type EventHandler = Rc<dyn Fn(&mut Dom, &mut engine::Context, NodeId)>;
 
 pub struct Dom {
     nodes: Vec<(NodeId, Node)>,
     id_counter: u64,
+    root_id: NodeId,
     event_queue: Vec<(u64, NodeId)>,
     event_handlers: Vec<(u64, EventHandler)>,
 }
@@ -38,9 +116,10 @@ impl Dom {
     pub fn new(mut build: builder::Box<builder::Node>) -> Self {
         let mut nodes = Vec::new();
         let mut id_counter = 0;
-        build.build(&mut nodes, &mut id_counter);
+        let root_id = build.build(&mut nodes, &mut id_counter);
         Self {
             nodes,
+            root_id,
             id_counter,
             event_queue: Vec::new(),
             event_handlers: Vec::new(),
@@ -54,7 +133,18 @@ impl Dom {
         self.event_handlers.push((event_id, Rc::new(f)))
     }
 
-    pub fn select<I>(&mut self, node_id: I) -> Option<&mut Node>
+    pub fn select<I>(&self, node_id: I) -> Option<&Node>
+    where
+        I: Into<NodeId>,
+    {
+        let node_id = node_id.into();
+        self.nodes
+            .iter()
+            .find(|(id, _)| *id == node_id)
+            .map(|(_, node)| node)
+    }
+
+    pub fn select_mut<I>(&mut self, node_id: I) -> Option<&mut Node>
     where
         I: Into<NodeId>,
     {
@@ -78,14 +168,21 @@ impl Dom {
 
     pub fn resolve_click(&mut self, pos: (i32, i32)) {}
 
-    pub fn draw(&self, ctx: &mut engine::Context) {}
+    pub fn draw(&self, ctx: &mut engine::Context, pos: (i32, i32)) {
+        self.nodes
+            .iter()
+            .find(|(id, _)| *id == self.root_id)
+            .map(|(_, node)| node)
+            .expect("")
+            .draw(self, ctx, pos);
+    }
 
     pub fn update(&mut self, ctx: &mut engine::Context) {
         if ctx.mouse_button_pressed(engine::MouseButton::Left) {
             self.resolve_click(ctx.mouse_position())
         }
         self.handle_events(ctx);
-        self.draw(ctx);
+        self.draw(ctx, (0, 0));
     }
 }
 
@@ -94,6 +191,7 @@ pub mod builder {
     use std::{
         boxed::Box as InnerBox,
         ops::{Deref, DerefMut},
+        path::PathBuf,
     };
 
     pub struct Box<T> {
@@ -205,7 +303,11 @@ pub mod builder {
                     nodes.push((
                         id,
                         super::Node {
-                            kind: super::Kind::Text(v.clone()),
+                            kind: super::Kind::Text {
+                                text: v.clone(),
+                                font: PathBuf::from("textures/ttf/OpenSans.ttf"),
+                                size: 16,
+                            },
                             id: self.id,
                             width: self.width,
                             height: self.height,

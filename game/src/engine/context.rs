@@ -195,10 +195,10 @@ impl<'context, 'game> Context<'context, 'game> {
         Ok(Texture(id))
     }
 
-    pub fn render_text(
+    pub fn render_text<S: AsRef<str>>(
         &mut self,
         font_id: Id,
-        text: &str,
+        text: S,
         rgb: (u8, u8, u8),
     ) -> Result<Text, Error> {
         let Font(font) = self
@@ -207,7 +207,9 @@ impl<'context, 'game> Context<'context, 'game> {
             .find_map(|(id, _, _, font)| if *id == font_id { Some(font) } else { None })
             .ok_or("tried to render non-loaded text")?;
         let (r, g, b) = rgb;
-        let surface = font.render(text).blended(Color { r, g, b, a: 255 })?;
+        let surface = font
+            .render(text.as_ref())
+            .blended(Color { r, g, b, a: 255 })?;
         let texture = unsafe {
             surface.as_texture(&*self.texture_creator as &TextureCreator<WindowContext>)
         }?;
@@ -224,13 +226,13 @@ impl<'context, 'game> Context<'context, 'game> {
         })
     }
 
-    pub fn text_size(&mut self, font_id: Id, text: &str) -> Result<(u32, u32), Error> {
+    pub fn text_size<S: AsRef<str>>(&mut self, font_id: Id, text: S) -> Result<(u32, u32), Error> {
         let Font(font) = self
             .fonts
             .iter()
             .find_map(|(id, _, _, font)| if *id == font_id { Some(font) } else { None })
             .ok_or("tried to render non-loaded text")?;
-        Ok(font.size_of(text).map_err(|e| e.to_string())?)
+        Ok(font.size_of(text.as_ref()).map_err(|e| e.to_string())?)
     }
 
     pub fn draw_texture(&mut self, texture: Texture, x: i32, y: i32) -> Result<(), Error> {
