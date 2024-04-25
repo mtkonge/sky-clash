@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 
 mod engine;
-mod menu;
+mod my_menu;
 mod ui;
+mod ui2;
 
 fn main() {
     let mut game = engine::Game::new().unwrap();
