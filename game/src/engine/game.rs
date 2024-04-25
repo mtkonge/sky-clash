@@ -32,7 +32,7 @@ pub struct Game<'game> {
     system_id_counter: Id,
     systems: Vec<(Id, Rc<dyn System>)>,
     textures: Vec<(Id, Texture<'game>)>,
-    fonts: Vec<(Id, PathBuf, Font<'game>)>,
+    fonts: Vec<(Id, u16, PathBuf, Font<'game>)>,
     currently_pressed_keys: HashSet<Keycode>,
     currently_pressed_mouse_buttons: HashSet<MouseButton>,
     mouse_position: (i32, i32),

@@ -33,7 +33,7 @@ where
     pub(super) system_id_counter: &'context mut Id,
     pub(super) systems: &'context mut Vec<(u64, Rc<dyn System>)>,
     pub(super) textures: &'context mut Vec<(Id, SdlTexture<'game>)>,
-    pub(super) fonts: &'context mut Vec<(Id, PathBuf, Font<'game>)>,
+    pub(super) fonts: &'context mut Vec<(Id, u16, PathBuf, Font<'game>)>,
     pub(super) currently_pressed_keys: &'context HashSet<Keycode>,
     pub(super) currently_pressed_mouse_buttons: &'context HashSet<MouseButton>,
     pub(super) mouse_position: (i32, i32),
@@ -166,17 +166,20 @@ impl<'context, 'game> Context<'context, 'game> {
         P: AsRef<std::path::Path>,
     {
         let path = path.as_ref();
-        let existing_id = self
-            .fonts
-            .iter()
-            .find_map(|(id, p, _)| if path == p { Some(*id) } else { None });
+        let existing_id = self.fonts.iter().find_map(|(id, s, p, _)| {
+            if path == p && size == *s {
+                Some(*id)
+            } else {
+                None
+            }
+        });
         if let Some(id) = existing_id {
             Ok(id)
         } else {
             let font = Font(unsafe { (*self.ttf_context).load_font(path, size)? });
             let id = *self.entity_id_counter;
             *self.entity_id_counter += 1;
-            self.fonts.push((id, path.to_path_buf(), font));
+            self.fonts.push((id, size, path.to_path_buf(), font));
             Ok(id)
         }
     }
@@ -201,7 +204,7 @@ impl<'context, 'game> Context<'context, 'game> {
         let Font(font) = self
             .fonts
             .iter()
-            .find_map(|(id, _, font)| if *id == font_id { Some(font) } else { None })
+            .find_map(|(id, _, _, font)| if *id == font_id { Some(font) } else { None })
             .ok_or("tried to render non-loaded text")?;
         let (r, g, b) = rgb;
         let surface = font.render(text).blended(Color { r, g, b, a: 255 })?;
@@ -225,7 +228,7 @@ impl<'context, 'game> Context<'context, 'game> {
         let Font(font) = self
             .fonts
             .iter()
-            .find_map(|(id, _, font)| if *id == font_id { Some(font) } else { None })
+            .find_map(|(id, _, _, font)| if *id == font_id { Some(font) } else { None })
             .ok_or("tried to render non-loaded text")?;
         Ok(font.size_of(text).map_err(|e| e.to_string())?)
     }
