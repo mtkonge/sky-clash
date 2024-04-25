@@ -5,6 +5,12 @@ use crate::engine;
 #[derive(Clone, Copy, PartialEq)]
 pub struct NodeId(u64);
 
+impl From<u64> for NodeId {
+    fn from(value: u64) -> Self {
+        Self(value)
+    }
+}
+
 pub enum Kind {
     Vert(Vec<NodeId>),
     Hori(Vec<NodeId>),
@@ -12,7 +18,7 @@ pub enum Kind {
 }
 
 pub struct Node {
-    kind: Kind,
+    pub kind: Kind,
     id: Option<u64>,
     width: Option<i32>,
     height: Option<i32>,
@@ -48,14 +54,16 @@ impl Dom {
         self.event_handlers.push((event_id, Rc::new(f)))
     }
 
-    pub fn select(&mut self, node_id: NodeId) -> Option<&mut Node> {
+    pub fn select<I>(&mut self, node_id: I) -> Option<&mut Node>
+    where
+        I: Into<NodeId>,
+    {
+        let node_id = node_id.into();
         self.nodes
             .iter_mut()
             .find(|(id, _)| *id == node_id)
             .map(|(_, node)| node)
     }
-
-    pub fn resolve_click(&mut self, pos: (i32, i32)) {}
 
     pub fn handle_events(&mut self, ctx: &mut engine::Context) {
         let drained = std::mem::take(&mut self.event_queue);
@@ -68,7 +76,17 @@ impl Dom {
         }
     }
 
+    pub fn resolve_click(&mut self, pos: (i32, i32)) {}
+
     pub fn draw(&self, ctx: &mut engine::Context) {}
+
+    pub fn update(&mut self, ctx: &mut engine::Context) {
+        if ctx.mouse_button_pressed(engine::MouseButton::Left) {
+            self.resolve_click(ctx.mouse_position())
+        }
+        self.handle_events(ctx);
+        self.draw(ctx);
+    }
 }
 
 pub mod builder {
