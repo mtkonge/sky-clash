@@ -19,9 +19,10 @@ impl System for Menu0 {
                 .into(),
                 Rect::from_size((200, 200)).into(),
                 Rect::from_size((150, 150)).into(),
-                WidgetPointer::new(Text::new(text)).with_id(100),
+                Text::new(text).with_id(100),
             ]),
         );
+
         spawn!(ctx, root);
         Ok(())
     }
@@ -31,11 +32,12 @@ impl System for Menu0 {
         _delta: f64,
     ) -> Result<(), crate::engine::Error> {
         for id in query!(ctx, Root) {
-            let root = ctx.entity_component::<Root>(id);
+            let root = ctx.entity_component::<Root>(id).clone();
             if root.creator_id != self.0 {
                 continue;
             }
-            let (root, text_pointer) = root.clone().into_inner().widget_with_id(100);
+
+            let (root, text_pointer) = root.widget_with_id(100);
             if let Some(text_pointer) = text_pointer {
                 if ctx.key_pressed(Keycode::O) {
                     let random_file =

@@ -33,8 +33,8 @@ impl Root {
         }
     }
 
-    pub fn into_inner(self) -> WidgetPointer {
-        self.inner
+    pub fn widget_with_id(self, id: Id) -> (WidgetPointer, Option<WidgetPointer>) {
+        (self.inner.clone(), self.inner.widget_with_id(id))
     }
 }
 
@@ -76,16 +76,16 @@ impl WidgetPointer {
         self.0 = Some(id);
         self
     }
-    pub fn widget_with_id(self, id: Id) -> (Self, Option<WidgetPointer>) {
+    pub fn widget_with_id(self, id: Id) -> Option<WidgetPointer> {
         let ptr = if self.0.is_some_and(|v| v == id) {
             Some(self.clone())
         } else {
             match self.child_pointers() {
-                Some(ptrs) => ptrs.into_iter().find_map(|w| w.widget_with_id(id).1),
+                Some(ptrs) => ptrs.into_iter().find_map(|w| w.widget_with_id(id)),
                 None => None,
             }
         };
-        (self, ptr)
+        ptr
     }
 }
 
@@ -99,6 +99,17 @@ pub trait Widget {
         None
     }
 }
+
+pub trait WidgetWithId: Widget
+where
+    Self: Sized + 'static,
+{
+    fn with_id(self, id: Id) -> WidgetPointer {
+        WidgetPointer::new(self).with_id(id)
+    }
+}
+
+impl<T> WidgetWithId for T where T: Widget + Sized + 'static {}
 
 pub trait WithChildren
 where
