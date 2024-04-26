@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 mod my_menu;
-mod ui;
 mod ui2;
 
 fn main() {
