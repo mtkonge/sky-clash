@@ -1,4 +1,4 @@
-use crate::engine::{font::Font, ui::prelude::Widget, Context, Id, Text as EngineText};
+use crate::{font::Font, ui::prelude::Widget, Context, Id, Text as EngineText};
 
 use super::super::units::*;
 
@@ -22,8 +22,8 @@ impl Widget for Button {
     fn render(
         &self,
         position: Offset,
-        canvas: &mut dyn crate::engine::ui::canvas::Canvas,
-    ) -> Result<(), crate::engine::Error> {
+        canvas: &mut dyn crate::ui::canvas::Canvas,
+    ) -> Result<(), crate::Error> {
         let Size(text_x, text_y) = (self.size - self.text.size()) / 2;
         let text_padding = Offset(text_x as i32, text_y as i32);
         canvas.draw_rect(self.size, position, Rgb(200, 200, 200))?;
@@ -46,8 +46,8 @@ impl Widget for Text {
     fn render(
         &self,
         offset: Offset,
-        canvas: &mut dyn crate::engine::ui::canvas::Canvas,
-    ) -> Result<(), crate::engine::Error> {
+        canvas: &mut dyn crate::ui::canvas::Canvas,
+    ) -> Result<(), crate::Error> {
         canvas.draw_text(self, offset)
     }
 

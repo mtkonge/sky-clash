@@ -2,7 +2,7 @@ use std::cell::{Cell, Ref, RefCell};
 use std::ops::Deref;
 use std::rc::Rc;
 
-use crate::engine::{Component, Context, Error, Id};
+use crate::{Component, Context, Error, Id};
 
 use super::canvas::Canvas;
 
@@ -77,7 +77,6 @@ impl WidgetPointer {
         self
     }
     pub fn widget_with_id(self, id: Id) -> Option<WidgetPointer> {
-        
         if self.0.is_some_and(|v| v == id) {
             Some(self.clone())
         } else {

@@ -1,11 +1,10 @@
-use sdl2::keyboard::Keycode;
-
-use crate::engine::{ui::prelude::*, System};
-use crate::{query, spawn};
+use engine::Keycode;
+use engine::{query, spawn};
+use engine::{ui::prelude::*, System};
 
 pub struct Menu0(pub u64);
 impl System for Menu0 {
-    fn on_add(&self, ctx: &mut crate::engine::Context) -> Result<(), crate::engine::Error> {
+    fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
         let font = ctx.load_font("textures/ttf/OpenSans.ttf", 24)?;
         let text = ctx.render_text(font, "hewwo", (255, 255, 255))?;
 
@@ -26,11 +25,7 @@ impl System for Menu0 {
         spawn!(ctx, root);
         Ok(())
     }
-    fn on_update(
-        &self,
-        ctx: &mut crate::engine::Context,
-        _delta: f64,
-    ) -> Result<(), crate::engine::Error> {
+    fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
         for id in query!(ctx, Root) {
             let root = ctx.entity_component::<Root>(id).clone();
             if root.creator_id != self.0 {
@@ -58,7 +53,7 @@ impl System for Menu0 {
         }
         Ok(())
     }
-    fn on_remove(&self, ctx: &mut crate::engine::Context) -> Result<(), crate::engine::Error> {
+    fn on_remove(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
         for id in query!(ctx, Root) {
             let widget = ctx.entity_component::<Root>(id);
             if widget.creator_id == self.0 {

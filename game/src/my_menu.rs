@@ -1,9 +1,9 @@
 use std::rc::Rc;
 use std::sync::Mutex;
 
-use crate::engine::{self};
-use crate::engine::{Component, System};
-use crate::{query, spawn, ui2};
+use crate::ui2;
+use engine::{query, spawn};
+use engine::{Component, System};
 
 #[derive(Component, Clone)]
 pub struct MyMenu {

@@ -114,6 +114,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "engine"
+version = "0.1.0"
+dependencies = [
+ "component-macro",
+ "sdl2",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -589,9 +597,8 @@ dependencies = [
 name = "pvp-game-dilapidation"
 version = "0.1.0"
 dependencies = [
- "component-macro",
+ "engine",
  "reqwest",
- "sdl2",
 ]
 
 [[package]]

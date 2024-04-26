@@ -1,4 +1,4 @@
-use crate::engine::{
+use crate::{
     ui::{
         canvas::Canvas,
         widget::{Widget, WithPos, WithSize},
@@ -6,7 +6,7 @@ use crate::engine::{
     Error,
 };
 
-use crate::engine::ui::units::*;
+use crate::ui::units::*;
 
 #[derive(Default)]
 pub struct Rect {
@@ -42,11 +42,7 @@ impl Rect {
 
 impl Widget for Rect {
     fn render(&self, pos: Offset, canvas: &mut dyn Canvas) -> Result<(), Error> {
-        canvas.draw_rect(
-            self.size,
-            pos + self.pos,
-            self.color,
-        )
+        canvas.draw_rect(self.size, pos + self.pos, self.color)
     }
 
     fn size(&self) -> Size {

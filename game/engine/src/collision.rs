@@ -1,5 +1,5 @@
-use super::{rigid_body::RigidBody, Component, Context, Error, System};
 use crate::query;
+use crate::{rigid_body::RigidBody, Component, Context, Error, System};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct V2 {
@@ -117,20 +117,16 @@ fn rects_within_reach(rect: Rect, delta_pos: V2, other_rect: Rect) -> bool {
 
 #[test]
 fn test_rects_within_reach() {
-    assert!(
-        rects_within_reach(
-            Rect::from_f64(0.0, 0.0, 10.0, 0.0),
-            V2::new(10.0, 10.0),
-            Rect::from_f64(15.0, 0.0, 10.0, 10.0)
-        ),
-    );
-    assert!(
-        !rects_within_reach(
-            Rect::from_f64(0.0, 0.0, 10.0, 0.0),
-            V2::new(10.0, 10.0),
-            Rect::from_f64(40.0, 0.0, 10.0, 10.0)
-        ),
-    );
+    assert!(rects_within_reach(
+        Rect::from_f64(0.0, 0.0, 10.0, 0.0),
+        V2::new(10.0, 10.0),
+        Rect::from_f64(15.0, 0.0, 10.0, 10.0)
+    ),);
+    assert!(!rects_within_reach(
+        Rect::from_f64(0.0, 0.0, 10.0, 0.0),
+        V2::new(10.0, 10.0),
+        Rect::from_f64(40.0, 0.0, 10.0, 10.0)
+    ),);
 }
 
 fn point_vec_line_intersect(
