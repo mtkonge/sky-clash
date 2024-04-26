@@ -1,3 +1,6 @@
+mod builder;
+pub use builder::constructors;
+
 use std::{path::PathBuf, rc::Rc};
 
 #[derive(Clone, Copy, PartialEq)]
@@ -10,6 +13,7 @@ impl From<u64> for NodeId {
 }
 
 pub enum Kind {
+    Rect,
     Vert(Vec<NodeId>),
     Hori(Vec<NodeId>),
     Text {
@@ -25,6 +29,11 @@ pub struct Node {
     width: Option<i32>,
     height: Option<i32>,
     on_click: Option<u64>,
+    background_color: Option<(u8, u8, u8)>,
+    color: Option<(u8, u8, u8)>,
+    border_thickness: Option<i32>,
+    padding: Option<i32>,
+    border_color: Option<(u8, u8, u8)>,
 }
 
 impl Node {
@@ -33,12 +42,17 @@ impl Node {
             Kind::Vert(children) | Kind::Hori(children) => {
                 children.iter().map(|id| dom.select(*id)).collect()
             }
-            Kind::Text { .. } => None,
+            _ => None,
         }
     }
 
     pub fn size(&self, dom: &Dom, ctx: &mut engine::Context) -> (i32, i32) {
+        let padding = (self.padding.unwrap_or(0) + self.border_thickness.unwrap_or(0)) * 2;
         match &self.kind {
+            Kind::Rect => (
+                self.width.unwrap_or(0) + padding,
+                self.height.unwrap_or(0) + padding,
+            ),
             node @ (Kind::Vert(_) | Kind::Hori(_)) => {
                 let children = self.children(dom).unwrap();
                 let mut size = (0, 0);
@@ -52,23 +66,38 @@ impl Node {
                         std::cmp::max(child_size.1, max_size.1),
                     );
                 }
-                match node {
+                let calculated_size = match node {
                     Kind::Vert(_) => (max_size.0, size.1),
                     Kind::Hori(_) => (size.0, max_size.1),
-                    Kind::Text { .. } => unreachable!(),
+                    _ => unreachable!(),
+                };
+                if self.width.is_some_and(|w| w < calculated_size.0)
+                    || self.width.is_some_and(|h| h < calculated_size.0)
+                {
+                    panic!("overflow >~<");
                 }
+                (
+                    self.width.unwrap_or(calculated_size.0) + padding,
+                    self.height.unwrap_or(calculated_size.1) + padding,
+                )
             }
             Kind::Text { text, font, size } => {
                 let font_id = ctx.load_font(font, *size).unwrap();
                 let (w, h) = ctx.text_size(font_id, text).unwrap();
-                (w as i32, h as i32)
+                (w as i32 + padding, h as i32 + padding)
             }
         }
     }
 
     pub fn draw(&self, dom: &Dom, ctx: &mut engine::Context, pos: (i32, i32)) {
         let size = self.size(dom, ctx);
+        if let Some(color) = self.background_color {
+            ctx.draw_rect(color, pos.0, pos.1, size.0 as u32, size.1 as u32)
+                .unwrap();
+        }
+        let offset = self.padding.unwrap_or(0) + self.border_thickness.unwrap_or(0);
         match &self.kind {
+            Kind::Rect => {}
             Kind::Vert(_) => {
                 let children = self.children(dom).unwrap();
                 let mut pos = pos;
@@ -77,7 +106,7 @@ impl Node {
                     let x = pos.0 + (size.0 - child_size.0) / 2;
                     let y = pos.1;
                     pos.1 += child_size.1;
-                    child.draw(dom, ctx, (x, y));
+                    child.draw(dom, ctx, (x + offset, y + offset));
                 }
             }
             Kind::Hori(_) => {
@@ -88,14 +117,41 @@ impl Node {
                     let x = pos.0;
                     let y = pos.1 + (size.1 - child_size.1) / 2;
                     pos.0 += child_size.0;
-                    child.draw(dom, ctx, (x, y));
+                    child.draw(dom, ctx, (x + offset, y + offset));
                 }
             }
             Kind::Text { text, size, font } => {
                 let font_id = ctx.load_font(font, *size).unwrap();
-                let text = ctx.render_text(font_id, text, (255, 255, 255)).unwrap();
-                ctx.draw_texture(text.texture, pos.0, pos.1).unwrap();
+                let text = ctx
+                    .render_text(font_id, text, self.color.unwrap_or((255, 255, 255)))
+                    .unwrap();
+                ctx.draw_texture(text.texture, pos.0 + offset, pos.1 + offset)
+                    .unwrap();
             }
+        }
+        if let Some(thickness) = self.border_thickness {
+            let thickness = thickness as u32;
+            let border_color = self.border_color.unwrap_or((255, 255, 255));
+            ctx.draw_rect(border_color, pos.0, pos.1, size.0 as u32, thickness)
+                .unwrap();
+            ctx.draw_rect(border_color, pos.0, pos.1, thickness, size.1 as u32)
+                .unwrap();
+            ctx.draw_rect(
+                border_color,
+                pos.0 + size.0 - thickness as i32,
+                pos.1,
+                thickness,
+                size.1 as u32,
+            )
+            .unwrap();
+            ctx.draw_rect(
+                border_color,
+                pos.0,
+                pos.1 + size.1 - thickness as i32,
+                size.0 as u32,
+                thickness,
+            )
+            .unwrap();
         }
     }
 }
@@ -114,7 +170,7 @@ impl Dom {
     pub fn new(mut build: builder::Box<builder::Node>) -> Self {
         let mut nodes = Vec::new();
         let mut id_counter = 0;
-        let root_id = build.build(&mut nodes, &mut id_counter);
+        let root_id = build.build(&mut nodes, &mut id_counter, builder::DerivedProps::new());
         Self {
             nodes,
             root_id,
@@ -181,161 +237,5 @@ impl Dom {
         }
         self.handle_events(ctx);
         self.draw(ctx, (0, 0));
-    }
-}
-
-pub mod builder {
-    use super::NodeId;
-    use std::{
-        boxed::Box as InnerBox,
-        ops::{Deref, DerefMut},
-        path::PathBuf,
-    };
-
-    pub struct Box<T> {
-        inner: InnerBox<T>,
-    }
-
-    impl<T> Box<T> {
-        pub fn new(v: T) -> Self {
-            Self {
-                inner: InnerBox::new(v),
-            }
-        }
-    }
-
-    impl<T> Deref for Box<T> {
-        type Target = T;
-
-        fn deref(&self) -> &Self::Target {
-            self.inner.deref()
-        }
-    }
-
-    impl<T> DerefMut for Box<T> {
-        fn deref_mut(&mut self) -> &mut Self::Target {
-            self.inner.deref_mut()
-        }
-    }
-
-    pub enum Kind {
-        Vert(Vec<Box<Node>>),
-        Hori(Vec<Box<Node>>),
-        Text(String),
-    }
-
-    pub mod constructors {
-        #![allow(non_snake_case)]
-        use super::*;
-        pub fn Vert<I: IntoIterator<Item = Box<Node>>>(nodes: I) -> Box<Node> {
-            Kind::Vert(nodes.into_iter().collect()).into()
-        }
-        pub fn Hori<I: IntoIterator<Item = Box<Node>>>(nodes: I) -> Box<Node> {
-            Kind::Hori(nodes.into_iter().collect()).into()
-        }
-        pub fn Text<S: Into<String>>(text: S) -> Box<Node> {
-            Kind::Text(text.into()).into()
-        }
-    }
-
-    pub struct Node {
-        kind: Kind,
-        id: Option<u64>,
-        width: Option<i32>,
-        height: Option<i32>,
-        on_click: Option<u64>,
-    }
-
-    impl Node {
-        pub fn new(kind: Kind) -> Box<Node> {
-            Box::new(Self {
-                kind,
-                id: None,
-                width: None,
-                height: None,
-                on_click: None,
-            })
-        }
-
-        pub fn build(
-            &mut self,
-            nodes: &mut Vec<(NodeId, super::Node)>,
-            id_counter: &mut u64,
-        ) -> super::NodeId {
-            let id = super::NodeId(*id_counter);
-            *id_counter += 1;
-            match &mut self.kind {
-                Kind::Vert(ref mut children) => {
-                    let mut children_ids = Vec::new();
-                    for mut child in children.drain(..) {
-                        children_ids.push(child.build(nodes, id_counter));
-                    }
-                    nodes.push((
-                        id,
-                        super::Node {
-                            kind: super::Kind::Vert(children_ids),
-                            id: self.id,
-                            width: self.width,
-                            height: self.height,
-                            on_click: self.on_click,
-                        },
-                    ));
-                }
-                Kind::Hori(ref mut children) => {
-                    let mut children_ids = Vec::new();
-                    for mut child in children.drain(..) {
-                        children_ids.push(child.build(nodes, id_counter));
-                    }
-                    nodes.push((
-                        id,
-                        super::Node {
-                            kind: super::Kind::Hori(children_ids),
-                            id: self.id,
-                            width: self.width,
-                            height: self.height,
-                            on_click: self.on_click,
-                        },
-                    ));
-                }
-                Kind::Text(v) => {
-                    nodes.push((
-                        id,
-                        super::Node {
-                            kind: super::Kind::Text {
-                                text: v.clone(),
-                                font: PathBuf::from("textures/ttf/OpenSans.ttf"),
-                                size: 16,
-                            },
-                            id: self.id,
-                            width: self.width,
-                            height: self.height,
-                            on_click: self.on_click,
-                        },
-                    ));
-                }
-            }
-            id
-        }
-    }
-
-    impl Box<Node> {
-        pub fn with_id(mut self, id: u64) -> Self {
-            self.id = Some(id);
-            self
-        }
-        pub fn with_width(mut self, width: i32) -> Self {
-            self.width = Some(width);
-            self
-        }
-        pub fn with_height(mut self, height: i32) -> Self {
-            self.height = Some(height);
-            self
-        }
-    }
-
-    impl From<Kind> for Box<Node> {
-        fn from(value: Kind) -> Self {
-            Node::new(value)
-        }
     }
 }
