@@ -36,6 +36,7 @@ pub enum Kind {
     Vert(Vec<Box<Node>>),
     Hori(Vec<Box<Node>>),
     Text(String),
+    Image(PathBuf),
 }
 
 pub mod constructors {
@@ -52,6 +53,9 @@ pub mod constructors {
     }
     pub fn Text<S: Into<String>>(text: S) -> Box<Node> {
         Kind::Text(text.into()).into()
+    }
+    pub fn Image<P: Into<PathBuf>>(path: P) -> Box<Node> {
+        Kind::Image(path.into()).into()
     }
 }
 
@@ -130,6 +134,7 @@ impl Node {
                 font: PathBuf::from("textures/ttf/OpenSans.ttf"),
                 size: 15,
             },
+            Kind::Image(src) => super::Kind::Image(src.clone()),
         };
         nodes.push((
             id,
