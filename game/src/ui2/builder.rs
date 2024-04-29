@@ -1,4 +1,4 @@
-use super::NodeId;
+use super::{NodeId, UserSpaceId};
 use std::{
     boxed::Box as InnerBox,
     ops::{Deref, DerefMut},
@@ -135,7 +135,7 @@ impl Node {
             id,
             super::Node {
                 kind,
-                id: self.id,
+                id: self.id.map(UserSpaceId),
                 width: self.width,
                 height: self.height,
                 on_click: self.on_click,
@@ -160,6 +160,7 @@ macro_rules! make_with_function {
 }
 
 impl Box<Node> {
+    make_with_function!(with_on_click, on_click, u64);
     make_with_function!(with_id, id, u64);
     make_with_function!(with_width, width, i32);
     make_with_function!(with_height, height, i32);

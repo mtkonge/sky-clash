@@ -3,10 +3,19 @@ pub use builder::constructors;
 
 use std::{path::PathBuf, rc::Rc};
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NodeId(u64);
 
 impl From<u64> for NodeId {
+    fn from(value: u64) -> Self {
+        Self(value)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct UserSpaceId(u64);
+
+impl From<u64> for UserSpaceId {
     fn from(value: u64) -> Self {
         Self(value)
     }
@@ -25,7 +34,7 @@ pub enum Kind {
 
 pub struct Node {
     pub kind: Kind,
-    id: Option<u64>,
+    id: Option<UserSpaceId>,
     width: Option<i32>,
     height: Option<i32>,
     on_click: Option<u64>,
@@ -40,7 +49,7 @@ impl Node {
     pub fn children<'dom>(&self, dom: &'dom Dom) -> Option<Vec<&'dom Node>> {
         match &self.kind {
             Kind::Vert(children) | Kind::Hori(children) => {
-                children.iter().map(|id| dom.select(*id)).collect()
+                children.iter().map(|id| dom.select_node(*id)).collect()
             }
             _ => None,
         }
@@ -85,6 +94,65 @@ impl Node {
                 let font_id = ctx.load_font(font, *size).unwrap();
                 let (w, h) = ctx.text_size(font_id, text).unwrap();
                 (w as i32 + padding, h as i32 + padding)
+            }
+        }
+    }
+
+    pub fn click_event(
+        &self,
+        events: &mut Vec<(u64, NodeId)>,
+        dom: &Dom,
+        ctx: &mut engine::Context,
+        pos: (i32, i32),
+        mouse_pos: (i32, i32),
+        id: NodeId,
+    ) {
+        let size = self.size(dom, ctx);
+        let offset = self.padding.unwrap_or(0) + self.border_thickness.unwrap_or(0);
+        if let Some(click_event) = self.on_click {
+            if (pos.0..pos.0 + size.0).contains(&mouse_pos.0)
+                && (pos.1..pos.1 + size.1).contains(&mouse_pos.1)
+            {
+                events.push((click_event, id));
+            }
+        }
+        match &self.kind {
+            Kind::Rect | Kind::Text { .. } => {}
+            Kind::Vert(children) => {
+                let mut pos = pos;
+                for child_id in children {
+                    let child = dom.select_node(*child_id).unwrap();
+                    let child_size = child.size(dom, ctx);
+                    let x = pos.0 + (size.0 - child_size.0) / 2;
+                    let y = pos.1;
+                    pos.1 += child_size.1;
+                    child.click_event(
+                        events,
+                        dom,
+                        ctx,
+                        (x + offset, y + offset),
+                        mouse_pos,
+                        *child_id,
+                    );
+                }
+            }
+            Kind::Hori(children) => {
+                let mut pos = pos;
+                for child_id in children {
+                    let child = dom.select_node(*child_id).unwrap();
+                    let child_size = child.size(dom, ctx);
+                    let x = pos.0;
+                    let y = pos.1 + (size.1 - child_size.1) / 2;
+                    pos.0 += child_size.0;
+                    child.click_event(
+                        events,
+                        dom,
+                        ctx,
+                        (x + offset, y + offset),
+                        mouse_pos,
+                        *child_id,
+                    );
+                }
             }
         }
     }
@@ -187,7 +255,7 @@ impl Dom {
         self.event_handlers.push((event_id, Rc::new(f)))
     }
 
-    pub fn select<I>(&self, node_id: I) -> Option<&Node>
+    fn select_node<I>(&self, node_id: I) -> Option<&Node>
     where
         I: Into<NodeId>,
     {
@@ -198,7 +266,7 @@ impl Dom {
             .map(|(_, node)| node)
     }
 
-    pub fn select_mut<I>(&mut self, node_id: I) -> Option<&mut Node>
+    fn select_node_mut<I>(&mut self, node_id: I) -> Option<&mut Node>
     where
         I: Into<NodeId>,
     {
@@ -206,6 +274,28 @@ impl Dom {
         self.nodes
             .iter_mut()
             .find(|(id, _)| *id == node_id)
+            .map(|(_, node)| node)
+    }
+
+    pub fn select<I>(&mut self, uid: I) -> Option<&Node>
+    where
+        I: Into<UserSpaceId>,
+    {
+        let uid = uid.into();
+        self.nodes
+            .iter()
+            .find(|(_, node)| node.id.is_some_and(|id| id == uid))
+            .map(|(_, node)| node)
+    }
+
+    pub fn select_mut<I>(&mut self, uid: I) -> Option<&mut Node>
+    where
+        I: Into<UserSpaceId>,
+    {
+        let uid = uid.into();
+        self.nodes
+            .iter_mut()
+            .find(|(_, node)| node.id.is_some_and(|id| id == uid))
             .map(|(_, node)| node)
     }
 
@@ -220,20 +310,36 @@ impl Dom {
         }
     }
 
-    pub fn resolve_click(&mut self, pos: (i32, i32)) {}
+    pub fn resolve_click(&mut self, ctx: &mut engine::Context, mouse_pos: (i32, i32)) {
+        let mut click_events = Vec::new();
+        self.nodes
+            .iter()
+            .find(|(id, _)| *id == self.root_id)
+            .map(|(_, node)| node)
+            .unwrap()
+            .click_event(
+                &mut click_events,
+                self,
+                ctx,
+                (0, 0),
+                mouse_pos,
+                self.root_id,
+            );
+        self.event_queue = click_events;
+    }
 
     pub fn draw(&self, ctx: &mut engine::Context, pos: (i32, i32)) {
         self.nodes
             .iter()
             .find(|(id, _)| *id == self.root_id)
             .map(|(_, node)| node)
-            .expect("")
+            .unwrap()
             .draw(self, ctx, pos);
     }
 
     pub fn update(&mut self, ctx: &mut engine::Context) {
         if ctx.mouse_button_pressed(engine::MouseButton::Left) {
-            self.resolve_click(ctx.mouse_position())
+            self.resolve_click(ctx, ctx.mouse_position())
         }
         self.handle_events(ctx);
         self.draw(ctx, (0, 0));

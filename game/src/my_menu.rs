@@ -23,9 +23,10 @@ impl System for MyMenuSystem {
                     .with_border_thickness(2)
                     .with_border_color((255, 255, 255)),
                 Hori([
-                    Text("world").with_id(12),
+                    Text("world"),
                     Text(":3").with_id(34).with_background_color((0, 255, 255)),
                 ])
+                .with_on_click(12)
                 .with_color((255, 150, 150)),
             ])
             .with_width(1280)
@@ -34,7 +35,9 @@ impl System for MyMenuSystem {
         );
 
         dom.add_event_handler(12, |dom, _ctx, _node_id| {
-            let Some(element) = dom.select_mut(34) else { return; };
+            let Some(element) = dom.select_mut(34) else {
+                return;
+            };
             if let ui2::Kind::Text { text, .. } = &mut element.kind {
                 *text = "some thing else".to_string();
             };
