@@ -2,6 +2,7 @@
 
 use std::sync::mpsc::channel;
 
+mod hero_creator;
 mod main_menu;
 mod my_menu;
 mod ui2;
@@ -13,7 +14,7 @@ fn main() {
         let mut game = engine::Game::new().unwrap();
 
         let mut ctx = game.context();
-        ctx.add_system(main_menu::MainMenuSystem);
+        ctx.add_system(hero_creator::HeroCreatorSystem);
 
         game.run();
     });

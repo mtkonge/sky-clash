@@ -1,5 +1,10 @@
 mod builder;
+
+pub mod components;
+
 pub use builder::constructors;
+
+pub type BoxedNode = builder::Box<builder::Node>;
 
 use std::{path::PathBuf, rc::Rc};
 
