@@ -26,7 +26,7 @@ impl System for MyMenuSystem {
                     Text("world"),
                     Text(":3").with_id(34).with_background_color((0, 255, 255)),
                 ])
-                .with_on_click(12)
+                .on_click(12)
                 .with_color((255, 150, 150)),
             ])
             .with_width(1280)

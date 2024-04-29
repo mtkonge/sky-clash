@@ -81,6 +81,7 @@ pub struct Node {
     border_thickness: Option<i32>,
     border_color: Option<(u8, u8, u8)>,
     padding: Option<i32>,
+    font_size: Option<u16>,
 }
 
 impl Node {
@@ -96,6 +97,7 @@ impl Node {
             border_thickness: None,
             border_color: None,
             padding: None,
+            font_size: None,
         })
     }
 
@@ -132,7 +134,6 @@ impl Node {
             Kind::Text(v) => super::Kind::Text {
                 text: v.clone(),
                 font: PathBuf::from("textures/ttf/OpenSans.ttf"),
-                size: 15,
             },
             Kind::Image(src) => super::Kind::Image(src.clone()),
         };
@@ -149,6 +150,7 @@ impl Node {
                 border_color: self.border_color,
                 border_thickness: self.border_thickness,
                 padding: self.padding,
+                font_size: self.font_size,
             },
         ));
         id
@@ -165,7 +167,7 @@ macro_rules! make_with_function {
 }
 
 impl Box<Node> {
-    make_with_function!(with_on_click, on_click, u64);
+    make_with_function!(on_click, on_click, u64);
     make_with_function!(with_id, id, u64);
     make_with_function!(with_width, width, i32);
     make_with_function!(with_height, height, i32);
@@ -174,6 +176,7 @@ impl Box<Node> {
     make_with_function!(with_border_color, border_color, (u8, u8, u8));
     make_with_function!(with_border_thickness, border_thickness, i32);
     make_with_function!(with_padding, padding, i32);
+    make_with_function!(with_font_size, font_size, u16);
 }
 
 impl From<Kind> for Box<Node> {

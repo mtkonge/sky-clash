@@ -25,11 +25,7 @@ pub enum Kind {
     Rect,
     Vert(Vec<NodeId>),
     Hori(Vec<NodeId>),
-    Text {
-        text: String,
-        font: PathBuf,
-        size: u16,
-    },
+    Text { text: String, font: PathBuf },
     Image(PathBuf),
 }
 
@@ -44,6 +40,7 @@ pub struct Node {
     border_thickness: Option<i32>,
     padding: Option<i32>,
     border_color: Option<(u8, u8, u8)>,
+    font_size: Option<u16>,
 }
 
 impl Node {
@@ -91,8 +88,9 @@ impl Node {
                     self.height.unwrap_or(calculated_size.1) + padding,
                 )
             }
-            Kind::Text { text, font, size } => {
-                let font_id = ctx.load_font(font, *size).unwrap();
+            Kind::Text { text, font } => {
+                let font_size = self.font_size.unwrap_or(15);
+                let font_id = ctx.load_font(font, font_size).unwrap();
                 let (w, h) = ctx.text_size(font_id, text).unwrap();
                 (w as i32 + padding, h as i32 + padding)
             }
@@ -189,8 +187,9 @@ impl Node {
                     child.draw(dom, ctx, (x + offset, y + offset));
                 }
             }
-            Kind::Text { text, size, font } => {
-                let font_id = ctx.load_font(font, *size).unwrap();
+            Kind::Text { text, font } => {
+                let font_size = self.font_size.unwrap_or(15);
+                let font_id = ctx.load_font(font, font_size).unwrap();
                 let text = ctx
                     .render_text(font_id, text, self.color.unwrap_or((255, 255, 255)))
                     .unwrap();
