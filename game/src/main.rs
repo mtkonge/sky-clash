@@ -1,13 +1,31 @@
 #![allow(dead_code)]
 
+use std::sync::mpsc::channel;
+
 mod my_menu;
 mod ui2;
 
 fn main() {
-    let mut game = engine::Game::new().unwrap();
+    let (sender, receiver) = channel::<String>();
 
-    let mut ctx = game.context();
-    ctx.add_system(my_menu::MyMenuSystem);
+    let game_thread = std::thread::spawn(|| {
+        let mut game = engine::Game::new().unwrap();
 
-    game.run();
+        let mut ctx = game.context();
+        ctx.add_system(my_menu::MyMenuSystem);
+
+        game.run();
+    });
+
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(async {
+            sender.send("hello".to_string()).unwrap();
+        });
+
+    println!("{}", receiver.recv().unwrap());
+
+    game_thread.join().unwrap();
 }
