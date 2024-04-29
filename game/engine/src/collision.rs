@@ -73,6 +73,8 @@ struct Rect {
 }
 
 impl Rect {
+    #![allow(dead_code)]
+
     pub fn new(pos: V2, size: V2) -> Self {
         Self { pos, size }
     }

@@ -23,8 +23,11 @@ use super::{context::Context, entity::Entity, id::Id, system::System};
 use super::{Component, Error};
 
 pub struct Game<'game> {
+    #[allow(unused)]
     sdl_context: Sdl,
+    #[allow(unused)]
     video_subsystem: VideoSubsystem,
+    #[allow(unused)]
     image_context: Sdl2ImageContext,
     ttf_context: Sdl2TtfContext,
     canvas: Canvas<Window>,
