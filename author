@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "dietz" ]; then
+    git config user.email "tphollebeek@gmail.com"
+    git config user.name "Theis Pieter Hollebeek"
+    echo "you are now $1"
+elif [ "$1" = "simon" ]; then
+    git config user.email "simonfromjakobsen@gmail.com"
+    git config user.name "SimonFJ20"
+    echo "you are now $1"
+elif [ "$1" = "mikkel" ]; then
+    git config user.email "mtkongsted@gmail.com"
+    git config user.name "Mikkel Kongsted"
+    echo "you are now $1"
+else
+    echo "expected 'dietz', 'simon' or 'mikkel', got '$1'"
+fi
