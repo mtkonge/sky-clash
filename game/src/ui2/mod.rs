@@ -30,6 +30,7 @@ pub enum Kind {
         font: PathBuf,
         size: u16,
     },
+    Image(PathBuf),
 }
 
 pub struct Node {
@@ -58,7 +59,7 @@ impl Node {
     pub fn size(&self, dom: &Dom, ctx: &mut engine::Context) -> (i32, i32) {
         let padding = (self.padding.unwrap_or(0) + self.border_thickness.unwrap_or(0)) * 2;
         match &self.kind {
-            Kind::Rect => (
+            Kind::Image(_) | Kind::Rect => (
                 self.width.unwrap_or(0) + padding,
                 self.height.unwrap_or(0) + padding,
             ),
@@ -117,7 +118,7 @@ impl Node {
             }
         }
         match &self.kind {
-            Kind::Rect | Kind::Text { .. } => {}
+            Kind::Rect | Kind::Text { .. } | Kind::Image(_) => {}
             Kind::Vert(children) => {
                 let mut pos = pos;
                 for child_id in children {
@@ -195,6 +196,18 @@ impl Node {
                     .unwrap();
                 ctx.draw_texture(text.texture, pos.0 + offset, pos.1 + offset)
                     .unwrap();
+            }
+            Kind::Image(src) => {
+                let texture = ctx.load_texture(src).unwrap();
+                let texture_size = ctx.texture_size(texture).unwrap();
+                ctx.draw_texture_sized(
+                    texture,
+                    pos.0 + offset,
+                    pos.1 + offset,
+                    self.width.unwrap_or(texture_size.0 as i32) as u32,
+                    self.height.unwrap_or(texture_size.1 as i32) as u32,
+                )
+                .unwrap();
             }
         }
         if let Some(thickness) = self.border_thickness {

@@ -235,6 +235,15 @@ impl<'context, 'game> Context<'context, 'game> {
         Ok(font.size_of(text.as_ref()).map_err(|e| e.to_string())?)
     }
 
+    pub fn texture_size(&mut self, texture: Texture) -> Result<(u32, u32), Error> {
+        let texture = self
+            .textures
+            .iter()
+            .find_map(|v| if v.0 == texture.0 { Some(&v.1) } else { None })
+            .ok_or("invalid sprite id")?;
+        Ok((texture.query().width, texture.query().height))
+    }
+
     pub fn draw_texture(&mut self, texture: Texture, x: i32, y: i32) -> Result<(), Error> {
         let texture = self
             .textures
@@ -246,6 +255,24 @@ impl<'context, 'game> Context<'context, 'game> {
             None,
             Rect::new(x, y, texture.query().width, texture.query().height),
         )?;
+        Ok(())
+    }
+
+    pub fn draw_texture_sized(
+        &mut self,
+        texture: Texture,
+        x: i32,
+        y: i32,
+        width: u32,
+        height: u32,
+    ) -> Result<(), Error> {
+        let texture = self
+            .textures
+            .iter()
+            .find_map(|v| if v.0 == texture.0 { Some(&v.1) } else { None })
+            .ok_or("invalid sprite id")?;
+        self.canvas
+            .copy(texture, None, Rect::new(x, y, width, height))?;
         Ok(())
     }
 
