@@ -43,7 +43,7 @@ impl System for MainMenuSystem {
             .with_background_color((100, 100, 100)),
         );
 
-        dom.add_event_handler(1, |dom, _ctx, _node_id| {
+        dom.add_event_handler(1, |_dom, _ctx, _node_id| {
             // let Some(element) = dom.select_mut(34) else {
             //     return;
             // };

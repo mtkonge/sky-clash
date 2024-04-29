@@ -48,7 +48,24 @@ pub struct Node {
     font_size: Option<u16>,
 }
 
+macro_rules! make_set_function {
+    ($fid:ident, $id:ident, $type:ty) => {
+        pub fn $fid(&mut self, $id: $type) {
+            self.$id = Some($id);
+        }
+    };
+}
+
 impl Node {
+    make_set_function!(set_width, width, i32);
+    make_set_function!(set_height, height, i32);
+    make_set_function!(set_background_color, background_color, (u8, u8, u8));
+    make_set_function!(set_color, color, (u8, u8, u8));
+    make_set_function!(set_border_color, border_color, (u8, u8, u8));
+    make_set_function!(set_border_thickness, border_thickness, i32);
+    make_set_function!(set_padding, padding, i32);
+    make_set_function!(set_font_size, font_size, u16);
+
     pub fn children<'dom>(&self, dom: &'dom Dom) -> Option<Vec<&'dom Node>> {
         match &self.kind {
             Kind::Vert(children) | Kind::Hori(children) => {
@@ -355,7 +372,7 @@ impl Dom {
     }
 
     pub fn update(&mut self, ctx: &mut engine::Context) {
-        if ctx.mouse_button_pressed(engine::MouseButton::Left) {
+        if ctx.mouse_button_just_pressed(engine::MouseButton::Left) {
             self.resolve_click(ctx, ctx.mouse_position())
         }
         self.handle_events(ctx);

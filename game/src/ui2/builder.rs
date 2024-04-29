@@ -1,4 +1,4 @@
-use super::{NodeId, UserSpaceId};
+use super::{Dom, NodeId, UserSpaceId};
 use std::{
     boxed::Box as InnerBox,
     ops::{Deref, DerefMut},
@@ -99,6 +99,10 @@ impl Node {
             padding: None,
             font_size: None,
         })
+    }
+
+    pub fn build_from_dom(&mut self, dom: &mut Dom) -> super::NodeId {
+        self.build(&mut dom.nodes, &mut dom.id_counter, DerivedProps::new())
     }
 
     pub fn build(

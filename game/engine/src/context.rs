@@ -16,6 +16,8 @@ use sdl2::{
     video::{Window, WindowContext},
 };
 
+use crate::texture::TextTextureKey;
+
 use super::{
     entity::Entity, font::Font, id::Id, system::System, text::Text, texture::Texture, Component,
     Error,
@@ -33,9 +35,10 @@ where
     pub(super) system_id_counter: &'context mut Id,
     pub(super) systems: &'context mut Vec<(u64, Rc<dyn System>)>,
     pub(super) textures: &'context mut Vec<(Id, SdlTexture<'game>)>,
+    pub(super) text_textures: &'context mut HashMap<TextTextureKey, Text>,
     pub(super) fonts: &'context mut Vec<(Id, u16, PathBuf, Font<'game>)>,
     pub(super) currently_pressed_keys: &'context HashSet<Keycode>,
-    pub(super) currently_pressed_mouse_buttons: &'context HashSet<MouseButton>,
+    pub(super) currently_pressed_mouse_buttons: &'context HashMap<MouseButton, bool>,
     pub(super) mouse_position: (i32, i32),
 }
 
@@ -195,35 +198,40 @@ impl<'context, 'game> Context<'context, 'game> {
         Ok(Texture(id))
     }
 
-    pub fn render_text<S: AsRef<str>>(
+    pub fn render_text<S: Into<String>>(
         &mut self,
         font_id: Id,
         text: S,
         rgb: (u8, u8, u8),
     ) -> Result<Text, Error> {
+        let text = text.into();
+        let key = TextTextureKey(font_id, text.clone(), rgb);
+        if let Some(existing) = self.text_textures.get(&key) {
+            return Ok(existing.clone());
+        };
         let Font(font) = self
             .fonts
             .iter()
             .find_map(|(id, _, _, font)| if *id == font_id { Some(font) } else { None })
             .ok_or("tried to render non-loaded text")?;
         let (r, g, b) = rgb;
-        let surface = font
-            .render(text.as_ref())
-            .blended(Color { r, g, b, a: 255 })?;
+        let surface = font.render(&text).blended(Color { r, g, b, a: 255 })?;
         let texture = unsafe {
             surface.as_texture(&*self.texture_creator as &TextureCreator<WindowContext>)
         }?;
         let id = *self.entity_id_counter;
         *self.entity_id_counter += 1;
         let texture_size = (texture.query().width, texture.query().height);
-        self.textures.push((id, texture));
-        Ok(Text {
+        let text = Text {
             texture: Texture(id),
             size: (
                 texture_size.0.try_into().unwrap(),
                 texture_size.1.try_into().unwrap(),
             ),
-        })
+        };
+        self.text_textures.insert(key, text.clone());
+        self.textures.push((id, texture));
+        Ok(text)
     }
 
     pub fn text_size<S: AsRef<str>>(&mut self, font_id: Id, text: S) -> Result<(u32, u32), Error> {
@@ -342,8 +350,11 @@ impl<'context, 'game> Context<'context, 'game> {
         self.currently_pressed_keys.contains(&keycode)
     }
 
-    pub fn mouse_button_pressed(&self, button: MouseButton) -> bool {
-        self.currently_pressed_mouse_buttons.contains(&button)
+    pub fn mouse_button_just_pressed(&self, button: MouseButton) -> bool {
+        *self
+            .currently_pressed_mouse_buttons
+            .get(&button)
+            .unwrap_or(&false)
     }
 
     pub fn mouse_position(&self) -> (i32, i32) {

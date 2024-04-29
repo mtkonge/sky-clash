@@ -15,6 +15,9 @@ use sdl2::{
     Sdl, VideoSubsystem,
 };
 
+use crate::texture::TextTextureKey;
+use crate::Text;
+
 use super::font::Font;
 use super::{context::Context, entity::Entity, id::Id, system::System};
 use super::{Component, Error};
@@ -32,9 +35,10 @@ pub struct Game<'game> {
     system_id_counter: Id,
     systems: Vec<(Id, Rc<dyn System>)>,
     textures: Vec<(Id, Texture<'game>)>,
+    text_textures: HashMap<TextTextureKey, Text>,
     fonts: Vec<(Id, u16, PathBuf, Font<'game>)>,
     currently_pressed_keys: HashSet<Keycode>,
-    currently_pressed_mouse_buttons: HashSet<MouseButton>,
+    currently_pressed_mouse_buttons: HashMap<MouseButton, bool>,
     mouse_position: (i32, i32),
 }
 
@@ -71,16 +75,23 @@ impl<'game> Game<'game> {
             system_id_counter: 0,
             systems: vec![],
             textures: vec![],
+            text_textures: HashMap::new(),
             fonts: vec![],
             currently_pressed_keys: HashSet::new(),
-            currently_pressed_mouse_buttons: HashSet::new(),
+            currently_pressed_mouse_buttons: HashMap::new(),
             mouse_position,
         })
     }
 
     pub fn run(&mut self) {
         let mut time_before = Instant::now();
+        let time_per_frame = 1_000_000_000 / 144;
         'running: loop {
+            self.currently_pressed_mouse_buttons
+                .values_mut()
+                .for_each(|value| {
+                    *value = false;
+                });
             for event in self.event_pump.poll_iter() {
                 match event {
                     Event::Quit { .. }
@@ -95,7 +106,7 @@ impl<'game> Game<'game> {
                         self.currently_pressed_keys.remove(&keycode.unwrap());
                     }
                     Event::MouseButtonDown { mouse_btn, .. } => {
-                        self.currently_pressed_mouse_buttons.insert(mouse_btn);
+                        self.currently_pressed_mouse_buttons.insert(mouse_btn, true);
                     }
                     Event::MouseButtonUp { mouse_btn, .. } => {
                         self.currently_pressed_mouse_buttons.remove(&mouse_btn);
@@ -112,6 +123,7 @@ impl<'game> Game<'game> {
             let now = Instant::now();
             let delta = (now - time_before).as_nanos() as f64 / 1_000_000_000.0;
             time_before = now;
+
             for (_id, system) in self.systems.clone() {
                 let Err(err) = system.on_update(&mut self.context(), delta) else {
                     continue;
@@ -119,7 +131,11 @@ impl<'game> Game<'game> {
                 println!("error occurred updating system: {err}");
             }
             self.canvas.present();
-            std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 144))
+            let update_duration = Instant::now() - now;
+            let update_duration = update_duration.as_nanos();
+            if time_per_frame > update_duration {
+                std::thread::sleep(Duration::new(0, (time_per_frame - update_duration) as u32))
+            }
         }
     }
 
@@ -136,6 +152,7 @@ impl<'game> Game<'game> {
             system_id_counter: &mut self.system_id_counter,
             systems: &mut self.systems,
             textures: &mut self.textures,
+            text_textures: &mut self.text_textures,
             fonts: &mut self.fonts,
             currently_pressed_keys: &mut self.currently_pressed_keys,
             currently_pressed_mouse_buttons: &mut self.currently_pressed_mouse_buttons,
