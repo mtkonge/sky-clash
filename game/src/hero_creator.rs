@@ -1,7 +1,8 @@
 use std::rc::Rc;
 use std::sync::Mutex;
 
-use crate::ui2::{self, BoxedNode, Dom, NodeId};
+use crate::ui2::{self, BoxedNode, Dom, Node, NodeId};
+use crate::Comms;
 use engine::{query, spawn};
 use engine::{Component, System};
 
@@ -87,6 +88,7 @@ impl System for HeroCreatorSystem {
 
         let mut dom = ui2::Dom::new(
             Hori([Vert([
+                Text("Retrieving board").with_id(0),
                 Hori([
                     Text("-").on_click(10).with_padding(8),
                     Text(" "),
@@ -167,6 +169,11 @@ impl System for HeroCreatorSystem {
             };
         }
 
+        for id in query!(ctx, Comms) {
+            let comms = ctx.entity_component::<Comms>(id);
+            comms.i_want_board_top.send(()).unwrap();
+        }
+
         impl_da_ting!(dom, 10, strength, "Strength", 100);
         impl_da_ting!(dom, 20, agility, "Agility", 200);
         impl_da_ting!(dom, 30, defence, "Defence", 300);
@@ -185,8 +192,22 @@ impl System for HeroCreatorSystem {
 
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
         for id in query!(ctx, HeroCreator) {
-            let my_menu = ctx.entity_component::<HeroCreator>(id).clone();
-            my_menu.dom.lock().unwrap().update(ctx);
+            let menu = ctx.entity_component::<HeroCreator>(id).clone();
+            menu.dom.lock().unwrap().update(ctx);
+
+            for id in query!(ctx, Comms) {
+                let comms = ctx.entity_component::<Comms>(id);
+                if let Ok(board) = comms.board_bottom.try_recv() {
+                    let mut d = menu.dom.lock().unwrap();
+                    let Some(ui2::Node {
+                        kind: ui2::Kind::Text { text, .. }, ..
+                    }) = d.select_mut(0) else {continue;};
+                    *text = format!(
+                        "board1 = {:?}, board2 = {:?}",
+                        board.hero_1_rfid, board.hero_2_rfid
+                    );
+                }
+            }
         }
         Ok(())
     }
