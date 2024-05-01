@@ -171,7 +171,7 @@ impl System for HeroCreatorSystem {
 
         for id in query!(ctx, Comms) {
             let comms = ctx.entity_component::<Comms>(id);
-            comms.i_want_board_top.send(()).unwrap();
+            comms.i_want_board_sender.send(()).unwrap();
         }
 
         impl_da_ting!(dom, 10, strength, "Strength", 100);
@@ -197,15 +197,20 @@ impl System for HeroCreatorSystem {
 
             for id in query!(ctx, Comms) {
                 let comms = ctx.entity_component::<Comms>(id);
-                if let Ok(board) = comms.board_bottom.try_recv() {
+                if let Ok(hero) = comms.board_receiver.try_recv() {
                     let mut d = menu.dom.lock().unwrap();
                     let Some(ui2::Node {
-                        kind: ui2::Kind::Text { text, .. }, ..
-                    }) = d.select_mut(0) else {continue;};
-                    *text = format!(
-                        "board1 = {:?}, board2 = {:?}",
-                        board.hero_1_rfid, board.hero_2_rfid
-                    );
+                        kind: ui2::Kind::Text { text, .. },
+                        ..
+                    }) = d.select_mut(0)
+                    else {
+                        continue;
+                    };
+                    match hero {
+                        Ok(Some(hero)) => *text = format!("known hero on boawd: {}", hero.rfid),
+                        Ok(None) => *text = "unknown hero on boawd".to_string(),
+                        Err(err) => *text = err,
+                    }
                 }
             }
         }
