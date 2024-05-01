@@ -47,11 +47,12 @@ fn main() {
 
         loop {
             let _ = i_want_board_bottom.recv();
-            let board: Board = match reqwest::get("http://localhost:8080/heroes_on_board").await {
+            let board: Board = match reqwest::get("http://sky.glowie.dk:8080/heroes_on_board").await
+            {
                 Ok(body) => body.json().await.unwrap(),
                 Err(error) => {
                     println!("e = {:?}", error);
-                    panic!();
+                    break;
                 }
             };
             board_top.send(board).unwrap();

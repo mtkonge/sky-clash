@@ -66,7 +66,7 @@ String Wifi::post(const String& path, const String& data) {
     }
     return response;
   } else {
-    Serial.println(String("Could not post to ") + ip + ":" + port + ", unresolved hostname" );
+    Serial.println(String("Could not post to ") + this->ip + ":" + this->port + ", unresolved hostname" );
     return "Unresolved hostname";
   }
 }

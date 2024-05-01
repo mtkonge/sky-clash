@@ -16,15 +16,14 @@ TwoWire otherWire(&sercom3, 0, 1);   // Create the new wire instance assigning i
 RfidScanner rfid_scanner(RfidI2C(IRQ_PIN, RSTO_PIN, &Wire));
 RfidScanner other_rfid_scanner(RfidI2C(OTHER_IRQ_PIN, OTHER_RSTO_PIN, &otherWire));
 
-Wifi wifi(IPAddress(192, 168, 132, 183), 8080);
+Wifi wifi(IPAddress(65, 108, 91, 32), 8080);
 
 void setup() {
   Serial.begin(9600);
-
   pinPeripheral(OTHER_SDA, PIO_SERCOM);
   pinPeripheral(OTHER_SCL, PIO_SERCOM);
   otherWire.begin(2);
-
+  Serial.println(availableMemory());
   while (!Serial) {
     delay(100);
   }
@@ -45,6 +44,15 @@ extern "C" {
   }
 }
 
+
+int availableMemory() {
+    // Use 1024 with ATmega168
+    int size = 2048;
+    byte *buf;
+    while ((buf = (byte *) malloc(--size)) == NULL);
+        free(buf);
+    return size;
+}
 
 String response;
 uint32_t last_hero_1_rfid = -1;
