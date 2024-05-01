@@ -14,7 +14,9 @@ pub type BoardState = Mutex<Board>;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dotenv::dotenv().unwrap();
+    if let Err(err) = dotenv::dotenv() {
+        println!("issue importing .env: {err}");
+    };
     std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
