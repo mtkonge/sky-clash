@@ -26,8 +26,8 @@ pub async fn create_hero(db: Data<DbParam>, req_body: Json<CreateHeroParams>) ->
 #[get("hero/{rfid}")]
 pub async fn get_hero(db: Data<DbParam>, rfid: Path<String>) -> impl Responder {
     match db.lock().await.hero_by_rfid(rfid.clone().as_str()).await {
-        Ok(Some(hero)) => HttpResponse::Ok().json(hero),
-        Ok(None) => HttpResponse::NotFound().into(),
+        Ok(Some(hero)) => HttpResponse::Ok().json(Some(hero)),
+        Ok(None) => HttpResponse::NotFound().json(None),
         Err(_) => HttpResponse::InternalServerError().into(),
     }
 }
