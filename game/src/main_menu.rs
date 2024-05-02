@@ -57,13 +57,13 @@ impl System for MainMenuSystem {
                     Text("this is a popup").with_padding(5),
                     Text("spurgt")
                         .with_background_color((100, 100, 100))
-                        .with_padding(5)
+                        .with_padding(2)
+                        .with_border_thickness(2)
                         .on_click(4),
                 ])
                 .with_background_color((0, 0, 0))
                 .with_border_thickness(2)
                 .with_border_color((255, 255, 255))
-                .with_padding(2)
                 .with_id(NodeId::Popup),
             ])
             .with_background_color((100, 100, 100))
