@@ -1,30 +1,19 @@
 #![allow(dead_code)]
 
+use comms::Hero;
 use engine::{spawn, Component};
 use serde::{Deserialize, Serialize};
 use std::sync::mpsc::{channel, Receiver, Sender};
 
+mod comms;
 mod hero_creator;
 mod main_menu;
-mod my_menu;
 mod ui2;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Board {
     pub hero_1_rfid: Option<String>,
     pub hero_2_rfid: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct Hero {
-    pub id: i64,
-    pub rfid: String,
-    pub level: i64,
-    pub hero_type: i64,
-    pub unallocated_skillpoints: i64,
-    pub strength_points: i64,
-    pub agility_points: i64,
-    pub defence_points: i64,
 }
 
 #[derive(Component)]

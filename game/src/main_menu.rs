@@ -16,6 +16,18 @@ pub struct MainMenuSystem(pub u64);
 impl System for MainMenuSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
         use ui2::constructors::*;
+
+        #[repr(u64)]
+        enum NodeId {
+            Popup = 100,
+        }
+
+        impl From<NodeId> for u64 {
+            fn from(value: NodeId) -> Self {
+                value as u64
+            }
+        }
+
         let system_id = self.0;
 
         let mut dom = ui2::Dom::new(
@@ -52,7 +64,7 @@ impl System for MainMenuSystem {
                 .with_border_thickness(2)
                 .with_border_color((255, 255, 255))
                 .with_padding(2)
-                .with_id(100),
+                .with_id(NodeId::Popup),
             ])
             .with_background_color((100, 100, 100))
             .with_width(1280)

@@ -186,7 +186,6 @@ macro_rules! make_with_function {
 
 impl Box<Node> {
     make_with_function!(on_click, on_click, u64);
-    make_with_function!(with_id, id, u64);
     make_with_function!(with_width, width, i32);
     make_with_function!(with_height, height, i32);
     make_with_function!(with_background_color, background_color, (u8, u8, u8));
@@ -195,8 +194,14 @@ impl Box<Node> {
     make_with_function!(with_border_thickness, border_thickness, i32);
     make_with_function!(with_padding, padding, i32);
     make_with_function!(with_font_size, font_size, u16);
+
     pub fn visible(mut self, visible: bool) -> Self {
         self.visible = visible;
+        self
+    }
+
+    pub fn with_id<T: Into<u64>>(mut self, id: T) -> Self {
+        self.id = Some(id.into());
         self
     }
 }
