@@ -455,20 +455,6 @@ impl Node {
             }
         }
     }
-
-    // pub fn draw(&self, dom: &Dom, ctx: &mut engine::Context, pos: (i32, i32)) {
-    //     if !self.visible {
-    //         return;
-    //     }
-    //     let size = self.size(dom, ctx);
-    //     if let Some(color) = self.background_color {
-    //         ctx.draw_rect(color, pos.0, pos.1, size.0 as u32, size.1 as u32)
-    //             .unwrap();
-    //     }
-    //     let offset = self.padding.unwrap_or(0) + self.border_thickness.unwrap_or(0);
-    //     match &self.kind {
-    //     }
-    // }
 }
 
 type EventHandler = Rc<dyn Fn(&mut Dom, &mut engine::Context, NodeId)>;
