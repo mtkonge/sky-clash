@@ -113,7 +113,7 @@ macro_rules! query {
 
 #[macro_export]
 macro_rules! query_one {
-    ($ctx:expr, $t:ty) => {{
+    ($ctx:expr, $t:ty) => {
         {
             #[allow(unused_imports)]
             use $crate::QueryRunner;
@@ -122,8 +122,8 @@ macro_rules! query_one {
             assert!(iter.next().is_none(), "could not query exactly one");
             value
         }
-    }};
-    ($ctx:expr, $($ts:ty),+) => {{
+    };
+    ($ctx:expr, $($ts:ty),+) => {
         {
             #[allow(unused_imports)]
             use $crate::QueryRunner;
@@ -132,7 +132,7 @@ macro_rules! query_one {
             assert!(iter.next().is_none(), "could not query exactly one");
             value
         }
-    }};
+    };
 }
 
 #[macro_export]
