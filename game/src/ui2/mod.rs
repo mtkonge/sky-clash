@@ -153,14 +153,7 @@ impl Node {
                     let child_size = child.size(dom, ctx);
                     let x = pos.0 + (size.0 - child_size.0) / 2;
                     let y = pos.1 + (size.1 - child_size.1) / 2;
-                    child.click_event(
-                        events,
-                        dom,
-                        ctx,
-                        (x + offset, y + offset),
-                        mouse_pos,
-                        *child_id,
-                    );
+                    child.click_event(events, dom, ctx, (x, y), mouse_pos, *child_id);
                     if events.len() > start_length {
                         break;
                     }
@@ -174,14 +167,7 @@ impl Node {
                     let x = pos.0 + (size.0 - child_size.0) / 2;
                     let y = pos.1;
                     pos.1 += child_size.1;
-                    child.click_event(
-                        events,
-                        dom,
-                        ctx,
-                        (x + offset, y + offset),
-                        mouse_pos,
-                        *child_id,
-                    );
+                    child.click_event(events, dom, ctx, (x, y + offset), mouse_pos, *child_id);
                 }
             }
             Kind::Hori(children) => {
@@ -192,14 +178,7 @@ impl Node {
                     let x = pos.0;
                     let y = pos.1 + (size.1 - child_size.1) / 2;
                     pos.0 += child_size.0;
-                    child.click_event(
-                        events,
-                        dom,
-                        ctx,
-                        (x + offset, y + offset),
-                        mouse_pos,
-                        *child_id,
-                    );
+                    child.click_event(events, dom, ctx, (x + offset, y), mouse_pos, *child_id);
                 }
             }
         }
@@ -218,21 +197,22 @@ impl Node {
         match &self.kind {
             Kind::Rect => {}
             v @ (Kind::Stack(_) | Kind::Hori(_) | Kind::Vert(_)) => {
-                type PositionFunction = fn((i32, i32), &mut (i32, i32), (i32, i32)) -> (i32, i32);
+                type PositionFunction =
+                    fn((i32, i32), &mut (i32, i32), (i32, i32), i32) -> (i32, i32);
                 let child_position: PositionFunction = match v {
-                    Kind::Vert(_) => |size, pos, child_size| {
+                    Kind::Vert(_) => |size, pos, child_size, offset| {
                         let x = pos.0 + (size.0 - child_size.0) / 2;
                         let y = pos.1;
                         pos.1 += child_size.1;
-                        (x, y)
+                        (x, y + offset)
                     },
-                    Kind::Hori(_) => |size, pos, child_size| {
+                    Kind::Hori(_) => |size, pos, child_size, offset| {
                         let x = pos.0;
                         let y = pos.1 + (size.1 - child_size.1) / 2;
                         pos.0 += child_size.0;
-                        (x, y)
+                        (x + offset, y)
                     },
-                    Kind::Stack(_) => |size, pos, child_size| {
+                    Kind::Stack(_) => |size, pos, child_size, _offset| {
                         let x = pos.0 + (size.0 - child_size.0) / 2;
                         let y = pos.1 + (size.1 - child_size.1) / 2;
                         (x, y)
@@ -246,8 +226,8 @@ impl Node {
                         continue;
                     }
                     let child_size = child.size(dom, ctx);
-                    let (x, y) = child_position(size, &mut pos, child_size);
-                    child.draw(dom, ctx, (x + offset, y + offset));
+                    let (x, y) = child_position(size, &mut pos, child_size, offset);
+                    child.draw(dom, ctx, (x, y));
                 }
             }
             Kind::Text { text, font } => {

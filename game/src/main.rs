@@ -29,13 +29,17 @@ pub struct Hero {
 
 #[derive(Component)]
 pub struct Comms {
-    i_want_board_sender: Sender<()>,
+    req_sender: Sender<CommReq>,
     board_receiver: Receiver<Result<Option<Hero>, String>>,
 }
 
+pub enum CommReq {
+    Quit,
+    BoardStatus,
+}
+
 fn main() {
-    let (sender, receiver) = channel::<String>();
-    let (i_want_board_sender, i_want_board_receiver) = channel::<()>();
+    let (req_sender, req_receever) = channel::<CommReq>();
     let (board_sender, board_receiver) = channel::<Result<Option<Hero>, String>>();
 
     let game_thread = std::thread::spawn(move || {
@@ -46,51 +50,56 @@ fn main() {
         spawn!(
             &mut ctx,
             Comms {
-                i_want_board_sender,
+                req_sender: req_sender.clone(),
                 board_receiver,
             }
         );
 
         game.run();
+        req_sender.clone().send(CommReq::Quit).unwrap();
     });
 
     tokio::runtime::Runtime::new().unwrap().block_on(async {
-        sender.send("hello".to_string()).unwrap();
-
         loop {
-            let _ = i_want_board_receiver.recv();
-            let board: Board = match reqwest::get("http://sky.glowie.dk:8080/heroes_on_board").await
-            {
-                Ok(body) => body.json().await.unwrap(),
-                Err(error) => {
-                    println!("e = {:?}", error);
+            match req_receever.recv().unwrap() {
+                CommReq::Quit => {
                     break;
                 }
-            };
+                CommReq::BoardStatus => {
+                    let board: Board =
+                        match reqwest::get("http://sky.glowie.dk:8080/heroes_on_board").await {
+                            Ok(body) => body.json().await.unwrap(),
+                            Err(error) => {
+                                println!("e = {:?}", error);
+                                break;
+                            }
+                        };
 
-            let hero_rfid = match (board.hero_1_rfid, board.hero_2_rfid) {
-                (None, Some(v)) | (Some(v), None) => Ok(v),
-                (None, None) => Err("atleast 1 hero on board plz".to_string()),
-                (Some(_), Some(_)) => Err("max 1 hero on board plz".to_string()),
-            };
-            let Ok(hero_rfid) = hero_rfid else {
-                board_sender.send(hero_rfid.map(|_| None)).unwrap();
-                break;
-            };
+                    let hero_rfid = match (board.hero_1_rfid, board.hero_2_rfid) {
+                        (None, Some(v)) | (Some(v), None) => Ok(v),
+                        (None, None) => Err("atleast 1 hero on board plz".to_string()),
+                        (Some(_), Some(_)) => Err("max 1 hero on board plz".to_string()),
+                    };
+                    let Ok(hero_rfid) = hero_rfid else {
+                        board_sender.send(hero_rfid.map(|_| None)).unwrap();
+                        break;
+                    };
 
-            match reqwest::get(format!("http://sky.glowie.dk:8080/hero/{}", hero_rfid)).await {
-                Ok(res) => board_sender
-                    .send(Ok(res.json::<Option<Hero>>().await.unwrap()))
-                    .unwrap(),
-                Err(error) => {
-                    println!("e = {:?}", error);
-                    break;
+                    match reqwest::get(format!("http://sky.glowie.dk:8080/hero/{}", hero_rfid))
+                        .await
+                    {
+                        Ok(res) => board_sender
+                            .send(Ok(res.json::<Option<Hero>>().await.unwrap()))
+                            .unwrap(),
+                        Err(error) => {
+                            println!("e = {:?}", error);
+                            break;
+                        }
+                    };
                 }
-            };
+            }
         }
     });
-
-    println!("{}", receiver.recv().unwrap());
 
     game_thread.join().unwrap();
 }
