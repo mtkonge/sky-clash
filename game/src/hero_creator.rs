@@ -6,6 +6,17 @@ use crate::Comms;
 use engine::{query, query_one, spawn};
 use engine::{Component, System};
 
+pub fn change_text_node_content<S: Into<String>>(node: Option<&mut ui2::Node>, new_text: S) {
+    let Some(ui2::Node {
+        kind: ui2::Kind::Text { ref mut text, .. },
+        ..
+    }) = node
+    else {
+        return;
+    };
+    *text = new_text.into()
+}
+
 #[derive(Component, Clone)]
 pub struct HeroCreator {
     dom: Rc<Mutex<ui2::Dom>>,
