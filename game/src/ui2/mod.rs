@@ -30,6 +30,7 @@ pub enum Kind {
     Rect,
     Vert(Vec<NodeId>),
     Hori(Vec<NodeId>),
+    Stack(Vec<NodeId>),
     Text { text: String, font: PathBuf },
     Image(PathBuf),
 }
@@ -46,6 +47,7 @@ pub struct Node {
     padding: Option<i32>,
     border_color: Option<(u8, u8, u8)>,
     font_size: Option<u16>,
+    visible: bool,
 }
 
 macro_rules! make_set_function {
@@ -66,9 +68,13 @@ impl Node {
     make_set_function!(set_padding, padding, i32);
     make_set_function!(set_font_size, font_size, u16);
 
+    pub fn set_visible(&mut self, visible: bool) {
+        self.visible = visible;
+    }
+
     pub fn children<'dom>(&self, dom: &'dom Dom) -> Option<Vec<&'dom Node>> {
         match &self.kind {
-            Kind::Vert(children) | Kind::Hori(children) => {
+            Kind::Vert(children) | Kind::Hori(children) | Kind::Stack(children) => {
                 children.iter().map(|id| dom.select_node(*id)).collect()
             }
             _ => None,
@@ -82,7 +88,7 @@ impl Node {
                 self.width.unwrap_or(0) + padding,
                 self.height.unwrap_or(0) + padding,
             ),
-            node @ (Kind::Vert(_) | Kind::Hori(_)) => {
+            node @ (Kind::Vert(_) | Kind::Hori(_) | Kind::Stack(_)) => {
                 let children = self.children(dom).unwrap();
                 let mut size = (0, 0);
                 let mut max_size = (0, 0);
@@ -98,6 +104,7 @@ impl Node {
                 let calculated_size = match node {
                     Kind::Vert(_) => (max_size.0, size.1),
                     Kind::Hori(_) => (size.0, max_size.1),
+                    Kind::Stack(_) => max_size,
                     _ => unreachable!(),
                 };
                 if self.width.is_some_and(|w| w < calculated_size.0)
@@ -139,6 +146,26 @@ impl Node {
         }
         match &self.kind {
             Kind::Rect | Kind::Text { .. } | Kind::Image(_) => {}
+            Kind::Stack(children) => {
+                let start_length = events.len();
+                for child_id in children.iter().rev() {
+                    let child = dom.select_node(*child_id).unwrap();
+                    let child_size = child.size(dom, ctx);
+                    let x = pos.0 + (size.0 - child_size.0) / 2;
+                    let y = pos.1 + (size.1 - child_size.1) / 2;
+                    child.click_event(
+                        events,
+                        dom,
+                        ctx,
+                        (x + offset, y + offset),
+                        mouse_pos,
+                        *child_id,
+                    );
+                    if events.len() > start_length {
+                        break;
+                    }
+                }
+            }
             Kind::Vert(children) => {
                 let mut pos = pos;
                 for child_id in children {
@@ -179,6 +206,9 @@ impl Node {
     }
 
     pub fn draw(&self, dom: &Dom, ctx: &mut engine::Context, pos: (i32, i32)) {
+        if !self.visible {
+            return;
+        }
         let size = self.size(dom, ctx);
         if let Some(color) = self.background_color {
             ctx.draw_rect(color, pos.0, pos.1, size.0 as u32, size.1 as u32)
@@ -187,25 +217,36 @@ impl Node {
         let offset = self.padding.unwrap_or(0) + self.border_thickness.unwrap_or(0);
         match &self.kind {
             Kind::Rect => {}
-            Kind::Vert(_) => {
-                let children = self.children(dom).unwrap();
+            v @ (Kind::Stack(_) | Kind::Hori(_) | Kind::Vert(_)) => {
+                type PositionFunction = fn((i32, i32), &mut (i32, i32), (i32, i32)) -> (i32, i32);
+                let child_position: PositionFunction = match v {
+                    Kind::Vert(_) => |size, pos, child_size| {
+                        let x = pos.0 + (size.0 - child_size.0) / 2;
+                        let y = pos.1;
+                        pos.1 += child_size.1;
+                        (x, y)
+                    },
+                    Kind::Hori(_) => |size, pos, child_size| {
+                        let x = pos.0;
+                        let y = pos.1 + (size.1 - child_size.1) / 2;
+                        pos.0 += child_size.0;
+                        (x, y)
+                    },
+                    Kind::Stack(_) => |size, pos, child_size| {
+                        let x = pos.0 + (size.0 - child_size.0) / 2;
+                        let y = pos.1 + (size.1 - child_size.1) / 2;
+                        (x, y)
+                    },
+                    _ => unreachable!(),
+                };
                 let mut pos = pos;
-                for child in children {
-                    let child_size = child.size(dom, ctx);
-                    let x = pos.0 + (size.0 - child_size.0) / 2;
-                    let y = pos.1;
-                    pos.1 += child_size.1;
-                    child.draw(dom, ctx, (x + offset, y + offset));
-                }
-            }
-            Kind::Hori(_) => {
                 let children = self.children(dom).unwrap();
-                let mut pos = pos;
                 for child in children {
+                    if !child.visible {
+                        continue;
+                    }
                     let child_size = child.size(dom, ctx);
-                    let x = pos.0;
-                    let y = pos.1 + (size.1 - child_size.1) / 2;
-                    pos.0 += child_size.0;
+                    let (x, y) = child_position(size, &mut pos, child_size);
                     child.draw(dom, ctx, (x + offset, y + offset));
                 }
             }

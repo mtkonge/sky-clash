@@ -37,6 +37,7 @@ pub enum Kind {
     Hori(Vec<Box<Node>>),
     Text(String),
     Image(PathBuf),
+    Stack(Vec<Box<Node>>),
 }
 
 pub mod constructors {
@@ -50,6 +51,9 @@ pub mod constructors {
     }
     pub fn Hori<I: IntoIterator<Item = Box<Node>>>(nodes: I) -> Box<Node> {
         Kind::Hori(nodes.into_iter().collect()).into()
+    }
+    pub fn Stack<I: IntoIterator<Item = Box<Node>>>(nodes: I) -> Box<Node> {
+        Kind::Stack(nodes.into_iter().collect()).into()
     }
     pub fn Text<S: Into<String>>(text: S) -> Box<Node> {
         Kind::Text(text.into()).into()
@@ -82,6 +86,7 @@ pub struct Node {
     border_color: Option<(u8, u8, u8)>,
     padding: Option<i32>,
     font_size: Option<u16>,
+    visible: bool,
 }
 
 impl Node {
@@ -98,6 +103,7 @@ impl Node {
             border_color: None,
             padding: None,
             font_size: None,
+            visible: true,
         })
     }
 
@@ -135,6 +141,13 @@ impl Node {
                 }
                 super::Kind::Hori(children_ids)
             }
+            Kind::Stack(ref mut children) => {
+                let mut children_ids = Vec::new();
+                for mut child in children.drain(..) {
+                    children_ids.push(child.build(nodes, id_counter, derived_props.clone()));
+                }
+                super::Kind::Stack(children_ids)
+            }
             Kind::Text(v) => super::Kind::Text {
                 text: v.clone(),
                 font: PathBuf::from("textures/ttf/OpenSans.ttf"),
@@ -155,6 +168,7 @@ impl Node {
                 border_thickness: self.border_thickness,
                 padding: self.padding,
                 font_size: self.font_size,
+                visible: self.visible,
             },
         ));
         id
@@ -181,6 +195,10 @@ impl Box<Node> {
     make_with_function!(with_border_thickness, border_thickness, i32);
     make_with_function!(with_padding, padding, i32);
     make_with_function!(with_font_size, font_size, u16);
+    pub fn visible(mut self, visible: bool) -> Self {
+        self.visible = visible;
+        self
+    }
 }
 
 impl From<Kind> for Box<Node> {

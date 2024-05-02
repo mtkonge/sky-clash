@@ -19,41 +19,52 @@ impl System for MainMenuSystem {
         let system_id = self.0;
 
         let mut dom = ui2::Dom::new(
-            Vert([
-                Rect().with_height(300),
-                Text("SkyTrash").with_font_size(48),
-                Text("Start Game")
-                    .with_color((255, 255, 255))
-                    .with_padding(15)
-                    .with_border_thickness(2)
-                    .with_border_color((0, 0, 0))
-                    .on_click(1),
-                Text("Hero Creator")
-                    .with_color((255, 255, 255))
-                    .with_padding(15)
-                    .with_border_thickness(2)
-                    .with_border_color((0, 0, 0))
-                    .on_click(2),
-                Text("Exit")
-                    .with_color((255, 255, 255))
-                    .with_padding(15)
-                    .with_border_thickness(2)
-                    .with_border_color((0, 0, 0))
-                    .on_click(3),
+            Stack([
+                Vert([
+                    Text("SkyTrash").with_font_size(48),
+                    Text("Start Game")
+                        .with_color((255, 255, 255))
+                        .with_padding(15)
+                        .with_border_thickness(2)
+                        .with_border_color((0, 0, 0))
+                        .on_click(1),
+                    Text("Hero Creator")
+                        .with_color((255, 255, 255))
+                        .with_padding(15)
+                        .with_border_thickness(2)
+                        .with_border_color((0, 0, 0))
+                        .on_click(2),
+                    Text("Exit")
+                        .with_color((255, 255, 255))
+                        .with_padding(15)
+                        .with_border_thickness(2)
+                        .with_border_color((0, 0, 0))
+                        .on_click(3),
+                ]),
+                Vert([
+                    Text("this is a popup").with_padding(5),
+                    Text("spurgt")
+                        .with_background_color((100, 100, 100))
+                        .with_padding(5)
+                        .on_click(4),
+                ])
+                .with_background_color((0, 0, 0))
+                .with_border_thickness(2)
+                .with_border_color((255, 255, 255))
+                .with_padding(2)
+                .with_id(100),
             ])
+            .with_background_color((100, 100, 100))
             .with_width(1280)
-            .with_height(720)
-            .with_background_color((100, 100, 100)),
+            .with_height(720),
         );
 
         dom.add_event_handler(1, |_dom, _ctx, _node_id| {
-            // let Some(element) = dom.select_mut(34) else {
-            //     return;
-            // };
-            // if let ui2::Kind::Text { text, .. } = &mut element.kind {
-            //     *text = "some thing else".to_string();
-            // };
             println!("button clicked");
+        });
+
+        dom.add_event_handler(4, |dom, _ctx, _node_id| {
+            dom.select_mut(100).unwrap().set_visible(false);
         });
 
         dom.add_event_handler(2, move |_dom, ctx, _node_id| {
@@ -61,7 +72,7 @@ impl System for MainMenuSystem {
             ctx.add_system(HeroCreatorSystem);
         });
 
-        dom.add_event_handler(3, |dom, _ctx, _node_id| {
+        dom.add_event_handler(3, |_dom, _ctx, _node_id| {
             panic!("exit");
         });
 
