@@ -203,6 +203,12 @@ macro_rules! make_set_function {
 
 trait TransformersRobotsInDisguise {
     fn pos(&mut self, size: (i32, i32)) -> (i32, i32);
+    fn boxed(self) -> Box<dyn TransformersRobotsInDisguise>
+    where
+        Self: Sized + 'static,
+    {
+        Box::new(self)
+    }
 }
 
 struct HoriTransform {
@@ -306,7 +312,7 @@ impl Node {
         dom: &'dom Dom,
         ctx: &mut engine::Context,
         parent_pos: (i32, i32),
-        pos_transformer: &mut impl TransformersRobotsInDisguise,
+        pos_transformer: &mut dyn TransformersRobotsInDisguise,
     ) -> LayoutTree<'dom> {
         if !self.visible {
             return LayoutTree::Single(LayoutTreeLeaf {
@@ -317,7 +323,7 @@ impl Node {
         }
         fn build_leaf<'a>(
             node: &'a Node,
-            pos_offset: &mut impl TransformersRobotsInDisguise,
+            pos_offset: &mut dyn TransformersRobotsInDisguise,
             parent_pos: (i32, i32),
             default_size: (i32, i32),
         ) -> LayoutTreeLeaf<'a> {
@@ -348,12 +354,26 @@ impl Node {
                 let leaf = build_leaf(self, pos_transformer, parent_pos, (0, 0));
                 LayoutTree::Single(leaf)
             }
-            Kind::Hori(children) => {
+            kind @ (Kind::Hori(children) | Kind::Vert(children) | Kind::Stack(children)) => {
                 let padding = self.padding.unwrap_or(0) + self.border_thickness.unwrap_or(0);
 
-                let calc_content_size = |acc: (i32, i32), curr: LayoutTree| {
-                    let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
-                    (acc.0 + leaf.size.0, std::cmp::max(acc.1, leaf.size.1))
+                let calc_content_size = match kind {
+                    Kind::Vert(_) => |acc: (i32, i32), curr: LayoutTree| {
+                        let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
+                        (std::cmp::max(acc.0, leaf.size.0), acc.1 + leaf.size.1)
+                    },
+                    Kind::Hori(_) => |acc: (i32, i32), curr: LayoutTree| {
+                        let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
+                        (acc.0 + leaf.size.0, std::cmp::max(acc.1, leaf.size.1))
+                    },
+                    Kind::Stack(_) => |acc: (i32, i32), curr: LayoutTree| {
+                        let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
+                        (
+                            std::cmp::max(acc.0, leaf.size.0),
+                            std::cmp::max(acc.1, leaf.size.1),
+                        )
+                    },
+                    _ => unreachable!("not matched prior"),
                 };
 
                 let size = children
@@ -367,82 +387,16 @@ impl Node {
                 let pos = pos_transformer.pos(size);
                 let pos = (pos.0 + parent_pos.0, pos.1 + parent_pos.1);
 
-                let mut transformer = HoriTransform::new(size, padding);
+                let mut transformer = match kind {
+                    Kind::Vert(_) => VertTransform::new(size, padding).boxed(),
+                    Kind::Hori(_) => HoriTransform::new(size, padding).boxed(),
+                    Kind::Stack(_) => StackTransform::new(size, padding).boxed(),
+                    _ => unreachable!(),
+                };
                 let children: Vec<_> = children
                     .iter()
                     .filter_map(|id| dom.select_node(*id))
-                    .map(|node| node.build_layout_tree(dom, ctx, pos, &mut transformer))
-                    .collect();
-
-                let leaf = LayoutTreeLeaf {
-                    size: (size.0 + padding * 2, size.1 + padding * 2),
-                    pos,
-                    inner: self,
-                };
-
-                LayoutTree::Multiple(leaf, children)
-            }
-            Kind::Vert(children) => {
-                let padding = self.padding.unwrap_or(0) + self.border_thickness.unwrap_or(0);
-
-                let calc_content_size = |acc: (i32, i32), curr: LayoutTree| {
-                    let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
-                    (std::cmp::max(acc.0, leaf.size.0), acc.1 + leaf.size.1)
-                };
-
-                let size = children
-                    .iter()
-                    .filter_map(|id| dom.select_node(*id))
-                    .map(|node| node.build_layout_tree(dom, ctx, (0, 0), &mut NoTransform))
-                    .fold((0, 0), calc_content_size);
-
-                let size = (self.width.unwrap_or(size.0), self.height.unwrap_or(size.1));
-
-                let pos = pos_transformer.pos(size);
-                let pos = (pos.0 + parent_pos.0, pos.1 + parent_pos.1);
-
-                let mut transformer = VertTransform::new(size, padding);
-                let children: Vec<LayoutTree<'dom>> = children
-                    .iter()
-                    .filter_map(|i| dom.select_node(*i))
-                    .map(|node| node.build_layout_tree(dom, ctx, pos, &mut transformer))
-                    .collect();
-
-                let leaf = LayoutTreeLeaf {
-                    size: (size.0 + padding * 2, size.1 + padding * 2),
-                    pos,
-                    inner: self,
-                };
-
-                LayoutTree::Multiple(leaf, children)
-            }
-            Kind::Stack(children) => {
-                let padding = self.padding.unwrap_or(0) + self.border_thickness.unwrap_or(0);
-
-                let calc_content_size = |acc: (i32, i32), curr: LayoutTree| {
-                    let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
-                    (
-                        std::cmp::max(acc.0, leaf.size.0),
-                        std::cmp::max(acc.1, leaf.size.1),
-                    )
-                };
-
-                let size = children
-                    .iter()
-                    .filter_map(|id| dom.select_node(*id))
-                    .map(|node| node.build_layout_tree(dom, ctx, (0, 0), &mut NoTransform))
-                    .fold((0, 0), calc_content_size);
-
-                let size = (self.width.unwrap_or(size.0), self.height.unwrap_or(size.1));
-
-                let pos = pos_transformer.pos(size);
-                let pos = (pos.0 + parent_pos.0, pos.1 + parent_pos.1);
-
-                let mut transformer = StackTransform::new(size, padding);
-                let children: Vec<LayoutTree<'dom>> = children
-                    .iter()
-                    .filter_map(|i| dom.select_node(*i))
-                    .map(|node| node.build_layout_tree(dom, ctx, pos, &mut transformer))
+                    .map(|node| node.build_layout_tree(dom, ctx, pos, transformer.as_mut()))
                     .collect();
 
                 let leaf = LayoutTreeLeaf {
