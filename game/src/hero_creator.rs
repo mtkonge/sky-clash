@@ -1,14 +1,14 @@
 use std::rc::Rc;
 use std::sync::Mutex;
 
-use crate::ui2;
+use crate::ui;
 use crate::Comms;
 use engine::{query, query_one, spawn};
 use engine::{Component, System};
 
-pub fn change_text_node_content<S: Into<String>>(node: Option<&mut ui2::Node>, new_text: S) {
-    let Some(ui2::Node {
-        kind: ui2::Kind::Text { ref mut text, .. },
+pub fn change_text_node_content<S: Into<String>>(node: Option<&mut ui::Node>, new_text: S) {
+    let Some(ui::Node {
+        kind: ui::Kind::Text { ref mut text, .. },
         ..
     }) = node
     else {
@@ -19,16 +19,16 @@ pub fn change_text_node_content<S: Into<String>>(node: Option<&mut ui2::Node>, n
 
 #[derive(Component, Clone)]
 pub struct HeroCreator {
-    dom: Rc<Mutex<ui2::Dom>>,
-    strength_bar: Rc<Mutex<ui2::components::ProgressBar>>,
-    defence_bar: Rc<Mutex<ui2::components::ProgressBar>>,
-    agility_bar: Rc<Mutex<ui2::components::ProgressBar>>,
+    dom: Rc<Mutex<ui::Dom>>,
+    strength_bar: Rc<Mutex<ui::components::ProgressBar>>,
+    defence_bar: Rc<Mutex<ui::components::ProgressBar>>,
+    agility_bar: Rc<Mutex<ui::components::ProgressBar>>,
 }
 
 pub struct HeroCreatorSystem(pub u64);
 impl System for HeroCreatorSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
-        use ui2::constructors::*;
+        use ui::constructors::*;
 
         #[repr(u64)]
         enum NodeId {
@@ -47,11 +47,11 @@ impl System for HeroCreatorSystem {
             }
         }
 
-        let strength_bar = ui2::components::ProgressBar::new("Strength", 24, 100);
-        let agility_bar = ui2::components::ProgressBar::new("Agility", 24, 300);
-        let defence_bar = ui2::components::ProgressBar::new("Defence", 24, 200);
+        let strength_bar = ui::components::ProgressBar::new("Strength", 24, 100);
+        let agility_bar = ui::components::ProgressBar::new("Agility", 24, 300);
+        let defence_bar = ui::components::ProgressBar::new("Defence", 24, 200);
 
-        let mut dom = ui2::Dom::new(
+        let mut dom = ui::Dom::new(
             Stack([
                 Hori([
                     Vert([
@@ -76,7 +76,7 @@ impl System for HeroCreatorSystem {
                         strength_bar.build(),
                         agility_bar.build(),
                         defence_bar.build(),
-                        Hori([ui2::components::Button("Confirm")]),
+                        Hori([ui::components::Button("Confirm")]),
                         Rect().with_height(720 / 2 - 100),
                     ]),
                 ]),

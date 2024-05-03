@@ -8,7 +8,7 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 mod comms;
 mod hero_creator;
 mod main_menu;
-mod ui2;
+mod ui;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Board {

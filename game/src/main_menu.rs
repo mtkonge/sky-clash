@@ -2,24 +2,24 @@ use std::rc::Rc;
 use std::sync::Mutex;
 
 use crate::hero_creator::HeroCreatorSystem;
-use crate::ui2;
+use crate::ui;
 use engine::{query, spawn};
 use engine::{Component, System};
 
 #[derive(Component, Clone)]
 pub struct MainMenu {
     system_id: u64,
-    dom: Rc<Mutex<ui2::Dom>>,
+    dom: Rc<Mutex<ui::Dom>>,
 }
 
 pub struct MainMenuSystem(pub u64);
 impl System for MainMenuSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
-        use ui2::constructors::*;
+        use ui::constructors::*;
 
         let system_id = self.0;
 
-        let mut dom = ui2::Dom::new(
+        let mut dom = ui::Dom::new(
             Stack([Vert([
                 Text("SkyTrash").with_font_size(48),
                 Text("Start Game")
