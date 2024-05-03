@@ -50,11 +50,10 @@ pub enum CommReq {
     CreateHero(CreateHeroParams),
 }
 
-pub fn comms_listen(
+pub async fn listen(
     req_receiver: Receiver<CommReq>,
     board_sender: Sender<Result<Option<Hero>, String>>,
 ) {
-    tokio::runtime::Runtime::new().unwrap().block_on(async {
         loop {
             match req_receiver.recv().unwrap() {
                 CommReq::Quit => {
@@ -86,9 +85,7 @@ pub fn comms_listen(
                         break;
                     };
 
-                    match reqwest::get(format!("http://sky.glowie.dk:8080/hero/{}", hero_rfid))
-                        .await
-                    {
+                match reqwest::get(format!("http://sky.glowie.dk:8080/hero/{}", hero_rfid)).await {
                         Ok(res) => board_sender
                             .send(Ok(res.json::<Option<Hero>>().await.unwrap()))
                             .unwrap(),
@@ -124,5 +121,4 @@ pub fn comms_listen(
                 }
             }
         }
-    });
 }

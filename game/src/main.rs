@@ -45,7 +45,9 @@ fn main() {
         req_sender.clone().send(CommReq::Quit).unwrap();
     });
 
-    comms_listen(req_receiver, board_sender);
+    tokio::runtime::Runtime::new().unwrap().block_on(async {
+        comms::listen(req_receiver, board_sender).await;
+    });
 
     game_thread.join().unwrap();
 }
