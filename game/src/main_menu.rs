@@ -17,55 +17,30 @@ impl System for MainMenuSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
         use ui2::constructors::*;
 
-        #[repr(u64)]
-        enum NodeId {
-            Popup = 100,
-        }
-
-        impl From<NodeId> for u64 {
-            fn from(value: NodeId) -> Self {
-                value as u64
-            }
-        }
-
         let system_id = self.0;
 
         let mut dom = ui2::Dom::new(
-            Stack([
-                Vert([
-                    Text("SkyTrash").with_font_size(48),
-                    Text("Start Game")
-                        .with_color((255, 255, 255))
-                        .with_padding(15)
-                        .with_border_thickness(2)
-                        .with_border_color((0, 0, 0))
-                        .on_click(1),
-                    Text("Hero Creator")
-                        .with_color((255, 255, 255))
-                        .with_padding(15)
-                        .with_border_thickness(2)
-                        .with_border_color((0, 0, 0))
-                        .on_click(2),
-                    Text("Exit")
-                        .with_color((255, 255, 255))
-                        .with_padding(15)
-                        .with_border_thickness(2)
-                        .with_border_color((0, 0, 0))
-                        .on_click(3),
-                ]),
-                Vert([
-                    Text("this is a popup").with_padding(5),
-                    Text("spurgt")
-                        .with_background_color((100, 100, 100))
-                        .with_padding(2)
-                        .with_border_thickness(2)
-                        .on_click(4),
-                ])
-                .with_background_color((0, 0, 0))
-                .with_border_thickness(2)
-                .with_border_color((255, 255, 255))
-                .with_id(NodeId::Popup),
-            ])
+            Stack([Vert([
+                Text("SkyTrash").with_font_size(48),
+                Text("Start Game")
+                    .with_color((255, 255, 255))
+                    .with_padding(15)
+                    .with_border_thickness(2)
+                    .with_border_color((0, 0, 0))
+                    .on_click(1),
+                Text("Hero Creator")
+                    .with_color((255, 255, 255))
+                    .with_padding(15)
+                    .with_border_thickness(2)
+                    .with_border_color((0, 0, 0))
+                    .on_click(2),
+                Text("Exit")
+                    .with_color((255, 255, 255))
+                    .with_padding(15)
+                    .with_border_thickness(2)
+                    .with_border_color((0, 0, 0))
+                    .on_click(3),
+            ])])
             .with_background_color((100, 100, 100))
             .with_width(1280)
             .with_height(720),

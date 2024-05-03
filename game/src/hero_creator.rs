@@ -48,8 +48,8 @@ impl System for HeroCreatorSystem {
         }
 
         let strength_bar = ui2::components::ProgressBar::new("Strength", 24, 100);
+        let agility_bar = ui2::components::ProgressBar::new("Agility", 24, 300);
         let defence_bar = ui2::components::ProgressBar::new("Defence", 24, 200);
-        let agility_bar = ui2::components::ProgressBar::new("Strength", 24, 300);
 
         let mut dom = ui2::Dom::new(
             Stack([
@@ -74,8 +74,8 @@ impl System for HeroCreatorSystem {
                         Text("Retrieving board").with_id(NodeId::BoardRetrieverText),
                         Text("Available points: 0").with_id(NodeId::AvailablePoints),
                         strength_bar.build(),
-                        defence_bar.build(),
                         agility_bar.build(),
+                        defence_bar.build(),
                         Hori([ui2::components::Button("Confirm")]),
                         Rect().with_height(720 / 2 - 100),
                     ]),
@@ -105,8 +105,8 @@ impl System for HeroCreatorSystem {
             .with_background_color((0, 0, 0)),
         );
         strength_bar.add_event_handlers(&mut dom);
-        defence_bar.add_event_handlers(&mut dom);
         agility_bar.add_event_handlers(&mut dom);
+        defence_bar.add_event_handlers(&mut dom);
 
         for id in query!(ctx, Comms) {
             let comms = ctx.entity_component::<Comms>(id);
@@ -125,8 +125,8 @@ impl System for HeroCreatorSystem {
             HeroCreator {
                 dom: Rc::new(Mutex::new(dom)),
                 strength_bar: Rc::new(Mutex::new(strength_bar)),
-                defence_bar: Rc::new(Mutex::new(defence_bar)),
                 agility_bar: Rc::new(Mutex::new(agility_bar)),
+                defence_bar: Rc::new(Mutex::new(defence_bar)),
             }
         );
 
@@ -140,8 +140,8 @@ impl System for HeroCreatorSystem {
             dom.update(ctx);
 
             menu.strength_bar.lock().unwrap().update(&mut dom);
-            menu.defence_bar.lock().unwrap().update(&mut dom);
             menu.agility_bar.lock().unwrap().update(&mut dom);
+            menu.defence_bar.lock().unwrap().update(&mut dom);
 
             let comms = ctx.entity_component::<Comms>(query_one!(ctx, Comms));
             if let Ok(hero) = comms.board_receiver.try_recv() {

@@ -108,9 +108,7 @@ impl LayoutTreeLeaf<'_> {
             return None;
         }
 
-        let Some(event_id) = self.inner.on_click else {
-            return None;
-        };
+        let event_id = self.inner.on_click?;
 
         if !((self.pos.0..self.pos.0 + self.size.0).contains(&mouse_position.0)
             && (self.pos.1..self.pos.1 + self.size.1).contains(&mouse_position.1))
