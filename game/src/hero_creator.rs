@@ -1,6 +1,8 @@
 use std::rc::Rc;
 use std::sync::Mutex;
 
+use crate::comms::CreateHeroParams;
+use crate::comms::HeroType;
 use crate::ui;
 use crate::Comms;
 use engine::{query, query_one, spawn};
@@ -32,7 +34,6 @@ impl System for HeroCreatorSystem {
 
         #[repr(u64)]
         enum NodeId {
-            BoardRetrieverText = 0,
             HeroTypeText = 1,
             HeroImage = 2,
             AvailablePoints = 3,
@@ -71,7 +72,6 @@ impl System for HeroCreatorSystem {
                     ]),
                     Rect().with_width(1280 / 4),
                     Vert([
-                        Text("Retrieving board").with_id(NodeId::BoardRetrieverText),
                         Text("Available points: 0").with_id(NodeId::AvailablePoints),
                         strength_bar.build(),
                         agility_bar.build(),
@@ -89,7 +89,9 @@ impl System for HeroCreatorSystem {
                         .on_click(0),
                 ])
                 .with_id(NodeId::HeroSelectPopup)
-                .visible(false),
+                .visible(false)
+                .with_border_thickness(2)
+                .with_padding(5),
                 Vert([
                     Text("Error").with_id(NodeId::ErrorText).with_padding(5),
                     Text("Ok")
@@ -98,7 +100,9 @@ impl System for HeroCreatorSystem {
                         .on_click(1),
                 ])
                 .with_id(NodeId::ErrorPopup)
-                .visible(false),
+                .visible(false)
+                .with_border_thickness(2)
+                .with_padding(5),
             ])
             .with_width(1280)
             .with_height(720)
@@ -113,8 +117,21 @@ impl System for HeroCreatorSystem {
             comms.req_sender.send(crate::CommReq::BoardStatus).unwrap();
         }
 
-        dom.add_event_handler(0, |dom, _ctx, _node_id| {
-            dom.select_mut(4).unwrap().set_visible(false);
+        dom.add_event_handler(0, |dom, ctx, _node_id| {
+            let comms = ctx.entity_component::<Comms>(query_one!(ctx, Comms));
+            let rfid = "12321414".to_string();
+            let hero_type = HeroType::Centrist;
+            match comms
+                .req_sender
+                .send(crate::CommReq::CreateHero(CreateHeroParams {
+                    rfid,
+                    hero_type,
+                })) {
+                Ok(_) => {
+                    dom.select_mut(4).unwrap().set_visible(false);
+                }
+                Err(_) => println!("Nooooooo :("),
+            }
         });
         dom.add_event_handler(1, |dom, _ctx, _node_id| {
             dom.select_mut(5).unwrap().set_visible(false);
@@ -146,22 +163,12 @@ impl System for HeroCreatorSystem {
             let comms = ctx.entity_component::<Comms>(query_one!(ctx, Comms));
             if let Ok(hero) = comms.board_receiver.try_recv() {
                 match hero {
-                    Ok(Some(hero)) => {
-                        change_text_node_content(
-                            dom.select_mut(0),
-                            format!("known hero on boawd: {}", hero.rfid),
-                        );
-                        change_text_node_content(
-                            dom.select_mut(3),
-                            format!("Available points: {}", hero.level * 3),
-                        )
-                    }
-                    Ok(None) => {
-                        change_text_node_content(dom.select_mut(0), "unknown hero on boawd");
-                        dom.select_mut(4).unwrap().set_visible(true)
-                    }
+                    Ok(Some(hero)) => change_text_node_content(
+                        dom.select_mut(3),
+                        format!("Available points: {}", hero.level * 3),
+                    ),
+                    Ok(None) => dom.select_mut(4).unwrap().set_visible(true),
                     Err(err) => {
-                        change_text_node_content(dom.select_mut(0), err.clone());
                         dom.select_mut(5).unwrap().set_visible(true);
                         change_text_node_content(dom.select_mut(6), err);
                     }
