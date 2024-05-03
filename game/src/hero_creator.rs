@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Mutex;
 
@@ -5,6 +6,7 @@ use crate::comms::CreateHeroParams;
 use crate::comms::HeroType;
 use crate::ui;
 use crate::Comms;
+use crate::HeroInfo;
 use engine::{query, query_one, spawn};
 use engine::{Component, System};
 
@@ -17,6 +19,17 @@ pub fn change_text_node_content<S: Into<String>>(node: Option<&mut ui::Node>, ne
         return;
     };
     *text = new_text.into()
+}
+
+pub fn change_image_node_content<P: Into<PathBuf>>(node: Option<&mut ui::Node>, new_path: P) {
+    let Some(ui::Node {
+        kind: ui::Kind::Image(ref mut image),
+        ..
+    }) = node
+    else {
+        return;
+    };
+    *image = new_path.into()
 }
 
 #[derive(Component, Clone)]
@@ -119,15 +132,19 @@ impl System for HeroCreatorSystem {
 
         dom.add_event_handler(0, |dom, ctx, _node_id| {
             let comms = ctx.entity_component::<Comms>(query_one!(ctx, Comms));
-            let rfid = "12321414".to_string();
+            let rfid = "1232141234".to_string();
             let hero_type = HeroType::Centrist;
             match comms
                 .req_sender
                 .send(crate::CommReq::CreateHero(CreateHeroParams {
                     rfid,
-                    hero_type,
+                    hero_type: hero_type.clone(),
                 })) {
                 Ok(_) => {
+                    change_image_node_content(
+                        dom.select_mut(2),
+                        HeroInfo::from(hero_type).texture_path,
+                    );
                     dom.select_mut(4).unwrap().set_visible(false);
                 }
                 Err(_) => println!("Nooooooo :("),
@@ -163,10 +180,13 @@ impl System for HeroCreatorSystem {
             let comms = ctx.entity_component::<Comms>(query_one!(ctx, Comms));
             if let Ok(hero) = comms.board_receiver.try_recv() {
                 match hero {
-                    Ok(Some(hero)) => change_text_node_content(
-                        dom.select_mut(3),
-                        format!("Available points: {}", hero.level * 3),
-                    ),
+                    Ok(Some(hero)) => {
+                        change_text_node_content(
+                            dom.select_mut(3),
+                            format!("Available points: {}", hero.level * 3),
+                        );
+                    }
+
                     Ok(None) => dom.select_mut(4).unwrap().set_visible(true),
                     Err(err) => {
                         dom.select_mut(5).unwrap().set_visible(true);
