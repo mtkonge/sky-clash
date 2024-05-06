@@ -1,9 +1,17 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct HeroStats {
+    pub strength: i64,
+    pub agility: i64,
+    pub defence: i64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct CreateHeroParams {
     pub rfid: String,
     pub hero_type: i64,
+    pub base_stats: HeroStats,
 }
 #[derive(Deserialize, Serialize, Clone)]
 
