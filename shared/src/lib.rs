@@ -85,7 +85,6 @@ pub struct Hero {
     pub rfid: String,
     pub level: i64,
     pub hero_type: HeroKind,
-    pub unallocated_skillpoints: i64,
     pub strength_points: i64,
     pub agility_points: i64,
     pub defence_points: i64,
