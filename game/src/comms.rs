@@ -5,6 +5,8 @@ use engine::Component;
 use reqwest::header::HeaderMap;
 use serde::{Deserialize, Serialize};
 
+use crate::hero_info::HeroType;
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Hero {
     pub id: i64,
@@ -23,19 +25,15 @@ pub struct Board {
     pub hero_2_rfid: Option<String>,
 }
 
-#[derive(Component)]
-pub struct Comms {
-    req_sender: Sender<CommReq>,
-    board_receiver: Receiver<Result<Option<Hero>, String>>,
+pub enum HeroOrRfid {
+    Hero(Hero),
+    Rfid(String),
 }
 
-#[repr(i64)]
-#[derive(serde_repr::Serialize_repr, Clone)]
-pub enum HeroType {
-    Centrist = 0,
-    Strong = 1,
-    Fast = 2,
-    Tankie = 3,
+#[derive(Component)]
+pub struct Comms {
+    pub req_sender: Sender<CommReq>,
+    pub board_receiver: Receiver<Result<HeroOrRfid, String>>,
 }
 
 #[derive(Serialize)]
@@ -52,7 +50,7 @@ pub enum CommReq {
 
 pub async fn listen(
     req_receiver: Receiver<CommReq>,
-    board_sender: Sender<Result<Option<Hero>, String>>,
+    board_sender: Sender<Result<HeroOrRfid, String>>,
 ) {
     loop {
         match req_receiver.recv().unwrap() {
@@ -62,7 +60,7 @@ pub async fn listen(
 
             CommReq::BoardStatus => {
                 let mut board: Board =
-                    match reqwest::get("http://sky.glowie.dk:8080/heroes_on_board").await {
+                    match reqwest::get("http://65.108.91.32:8080/heroes_on_board").await {
                         Ok(body) => body.json().await.unwrap(),
                         Err(error) => {
                             println!("e = {:?}", error);
@@ -80,15 +78,23 @@ pub async fn listen(
                     (None, None) => Err("please put 1 hero on board".to_string()),
                     (Some(_), Some(_)) => Err("please put only 1 hero on board".to_string()),
                 };
-                let Ok(hero_rfid) = hero_rfid else {
-                    board_sender.send(hero_rfid.map(|_| None)).unwrap();
-                    break;
+                let hero_rfid = match hero_rfid {
+                    Ok(rfid) => rfid,
+                    Err(err) => {
+                        board_sender.send(Err(err)).unwrap();
+                        break;
+                    }
                 };
 
-                match reqwest::get(format!("http://sky.glowie.dk:8080/hero/{}", hero_rfid)).await {
-                    Ok(res) => board_sender
-                        .send(Ok(res.json::<Option<Hero>>().await.unwrap()))
-                        .unwrap(),
+                match reqwest::get(format!("http://65.108.91.32:8080/hero/{}", hero_rfid)).await {
+                    Ok(res) => {
+                        let body = res.json::<Option<Hero>>().await.unwrap();
+                        let body = body
+                            .map(HeroOrRfid::Hero)
+                            .unwrap_or(HeroOrRfid::Rfid(hero_rfid));
+
+                        board_sender.send(Ok(body)).unwrap();
+                    }
                     Err(error) => {
                         println!("e = {:?}", error);
                         break;
@@ -106,7 +112,7 @@ pub async fn listen(
                 let mut headers = HeaderMap::new();
                 headers.insert("Content-Type", "application/json".parse().unwrap());
                 match client
-                    .post("http://sky.glowie.dk:8080/create_hero")
+                    .post("http://65.108.91.32:8080/create_hero")
                     .headers(headers)
                     .body(body_json)
                     .send()

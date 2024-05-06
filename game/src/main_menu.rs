@@ -3,6 +3,7 @@ use std::sync::Mutex;
 
 use crate::hero_creator::HeroCreatorSystem;
 use crate::ui;
+use crate::ui::components::Button;
 use engine::{query, spawn};
 use engine::{Component, System};
 
@@ -22,26 +23,23 @@ impl System for MainMenuSystem {
         let mut dom = ui::Dom::new(
             Stack([Vert([
                 Text("SkyTrash").with_font_size(48),
-                Text("Start Game")
+                Button("Start Game")
                     .with_color((255, 255, 255))
                     .with_padding(15)
                     .with_border_thickness(2)
-                    .with_border_color((0, 0, 0))
                     .on_click(1),
-                Text("Hero Creator")
+                Button("Hero Creator")
                     .with_color((255, 255, 255))
                     .with_padding(15)
                     .with_border_thickness(2)
-                    .with_border_color((0, 0, 0))
                     .on_click(2),
-                Text("Exit")
+                Button("Exit")
                     .with_color((255, 255, 255))
                     .with_padding(15)
                     .with_border_thickness(2)
-                    .with_border_color((0, 0, 0))
                     .on_click(3),
             ])])
-            .with_background_color((100, 100, 100))
+            .with_background_color((50, 50, 50))
             .with_width(1280)
             .with_height(720),
         );
