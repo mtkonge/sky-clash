@@ -3,25 +3,10 @@ use std::sync::mpsc::{Receiver, Sender};
 
 use engine::Component;
 use reqwest::header::HeaderMap;
-use serde::{Deserialize, Serialize};
-
-use crate::hero_info::{HeroStats, HeroType};
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Hero {
-    pub id: i64,
-    pub rfid: String,
-    pub level: i64,
-    pub hero_type: HeroType,
-    pub unallocated_skillpoints: i64,
-    pub strength_points: i64,
-    pub agility_points: i64,
-    pub defence_points: i64,
-}
 
 #[derive(Clone, Debug)]
 pub enum HeroOrUnknownRfid {
-    Hero(Hero),
+    Hero(shared::Hero),
     Rfid(String),
 }
 
@@ -31,24 +16,11 @@ pub struct Comms {
     pub board_receiver: Receiver<Result<HeroOrUnknownRfid, String>>,
 }
 
-#[derive(Serialize)]
-pub struct CreateHeroParams {
-    pub rfid: String,
-    pub hero_type: HeroType,
-    pub base_stats: HeroStats,
-}
-
-#[derive(Serialize)]
-pub struct UpdateHeroStatsParams {
-    pub rfid: String,
-    pub stats: HeroStats,
-}
-
 pub enum Message {
     Quit,
     BoardStatus,
-    CreateHero(CreateHeroParams),
-    UpdateHeroStats(UpdateHeroStatsParams),
+    CreateHero(shared::CreateHeroParams),
+    UpdateHeroStats(shared::UpdateHeroStatsParams),
 }
 
 pub async fn listen(
@@ -91,7 +63,7 @@ pub async fn listen(
 
                 match reqwest::get(format!("http://65.108.91.32:8080/hero/{}", hero_rfid)).await {
                     Ok(res) => {
-                        let body = res.json::<Option<Hero>>().await.unwrap();
+                        let body = res.json::<Option<shared::Hero>>().await.unwrap();
                         let body = body
                             .map(HeroOrUnknownRfid::Hero)
                             .unwrap_or(HeroOrUnknownRfid::Rfid(hero_rfid));

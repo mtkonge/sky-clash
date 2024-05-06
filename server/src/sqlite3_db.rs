@@ -23,9 +23,10 @@ impl Sqlite3Db {
 
 impl Database for Sqlite3Db {
     async fn create_hero(&mut self, hero: shared::CreateHeroParams) -> Result<(), eyre::Report> {
+        let hero_type = hero.hero_type as i64;
         sqlx::query!(
             "INSERT INTO heroes (rfid, level, hero_type, unallocated_skillpoints, strength_points, agility_points, defence_points) VALUES (?, 0, ?, 0, ?, ?, ?);",
-            hero.rfid, hero.hero_type, hero.base_stats.strength, hero.base_stats.agility, hero.base_stats.defence,
+            hero.rfid, hero_type, hero.base_stats.strength, hero.base_stats.agility, hero.base_stats.defence,
         )
         .execute(&self.pool)
         .await

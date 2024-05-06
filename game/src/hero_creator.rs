@@ -2,8 +2,8 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Mutex;
 
-use crate::hero_info::{HeroInfo, HeroStats, HeroType};
-use crate::message::{CreateHeroParams, HeroOrUnknownRfid, UpdateHeroStatsParams};
+use crate::hero_info::HeroInfo;
+use crate::message::HeroOrUnknownRfid;
 use crate::ui;
 use crate::ui::components::Button;
 use crate::Comms;
@@ -170,7 +170,7 @@ impl System for HeroCreatorSystem {
                 .entity_component::<HeroCreator>(query_one!(ctx, HeroCreator))
                 .clone();
 
-            let stats = HeroStats {
+            let stats = shared::HeroStats {
                 strength: menu.strength_bar.lock().unwrap().steps_filled() as u8,
                 agility: menu.agility_bar.lock().unwrap().steps_filled() as u8,
                 defence: menu.defence_bar.lock().unwrap().steps_filled() as u8,
@@ -180,19 +180,14 @@ impl System for HeroCreatorSystem {
 
             comms
                 .req_sender
-                .send(crate::Message::UpdateHeroStats(UpdateHeroStatsParams {
-                    rfid,
-                    stats,
-                }))
+                .send(crate::Message::UpdateHeroStats(
+                    shared::UpdateHeroStatsParams { rfid, stats },
+                ))
                 .unwrap()
         });
 
-        for (id, hero_type) in [
-            (10, HeroType::Centrist),
-            (11, HeroType::Speed),
-            (12, HeroType::Strong),
-            (13, HeroType::Tankie),
-        ] {
+        use shared::HeroKind::*;
+        for (id, hero_type) in [(10, Centrist), (11, Speed), (12, Strong), (13, Tankie)] {
             dom.add_event_handler(id, move |dom, ctx, _node_id| {
                 let hero_type = hero_type.clone();
                 let Rfid(Some(rfid)) = ctx.entity_component::<Rfid>(query_one!(ctx, Rfid)).clone()
@@ -206,10 +201,10 @@ impl System for HeroCreatorSystem {
                 let comms = ctx.entity_component::<Comms>(query_one!(ctx, Comms));
                 match comms
                     .req_sender
-                    .send(crate::Message::CreateHero(CreateHeroParams {
+                    .send(crate::Message::CreateHero(shared::CreateHeroParams {
                         rfid,
-                        hero_type: hero_type.clone(),
-                        base_stats: HeroStats::from(hero_type.clone()),
+                        hero_type: hero_type.clone() as _,
+                        base_stats: shared::HeroStats::from(hero_type.clone()),
                     })) {
                     Ok(_) => {
                         dom.select_mut(4).unwrap().set_visible(false);
