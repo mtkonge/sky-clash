@@ -3,7 +3,7 @@ use std::rc::Rc;
 use std::sync::Mutex;
 
 use crate::hero_info::{HeroInfo, HeroStats, HeroType};
-use crate::message::{CreateHeroParams, Hero, HeroOrUnknownRfid, UpdateHeroStatsParams};
+use crate::message::{CreateHeroParams, HeroOrUnknownRfid, UpdateHeroStatsParams};
 use crate::ui;
 use crate::ui::components::Button;
 use crate::Comms;
