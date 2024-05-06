@@ -4,9 +4,7 @@ use eyre::eyre;
 use eyre::Context;
 use sqlx::SqlitePool;
 
-use crate::database::Hero;
-use crate::database::UpdateHeroStatsParams;
-use crate::database::{CreateHeroParams, Database};
+use crate::database::Database;
 
 pub struct Sqlite3Db {
     pool: SqlitePool,
@@ -24,7 +22,7 @@ impl Sqlite3Db {
 }
 
 impl Database for Sqlite3Db {
-    async fn create_hero(&mut self, hero: CreateHeroParams) -> Result<(), eyre::Report> {
+    async fn create_hero(&mut self, hero: shared::CreateHeroParams) -> Result<(), eyre::Report> {
         sqlx::query!(
             "INSERT INTO heroes (rfid, level, hero_type, unallocated_skillpoints, strength_points, agility_points, defence_points) VALUES (?, 0, ?, 0, ?, ?, ?);",
             hero.rfid, hero.hero_type, hero.base_stats.strength, hero.base_stats.agility, hero.base_stats.defence,
@@ -35,11 +33,8 @@ impl Database for Sqlite3Db {
         Ok(())
     }
 
-    async fn hero_by_rfid(
-        &mut self,
-        rfid: &str,
-    ) -> Result<Option<crate::database::Hero>, eyre::Report> {
-        let result = sqlx::query_as!(Hero, "SELECT * FROM heroes WHERE rfid=?", rfid)
+    async fn hero_by_rfid(&mut self, rfid: &str) -> Result<Option<shared::Hero>, eyre::Report> {
+        let result = sqlx::query_as!(shared::Hero, "SELECT * FROM heroes WHERE rfid=?", rfid)
             .fetch_optional(&self.pool)
             .await;
         match result {
@@ -50,7 +45,7 @@ impl Database for Sqlite3Db {
 
     async fn update_hero_stats(
         &mut self,
-        params: UpdateHeroStatsParams,
+        params: shared::UpdateHeroStatsParams,
     ) -> Result<(), eyre::Report> {
         sqlx::query!(
             "UPDATE heroes SET strength_points=?, agility_points=?, defence_points=? WHERE rfid = ?",

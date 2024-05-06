@@ -1,16 +1,15 @@
-use crate::{
-    database::{CreateHeroParams, Database, UpdateHeroStatsParams},
-    BoardState, DbParam,
-};
+use crate::{database::Database, BoardState, DbParam};
 use actix_web::{
     get, post,
     web::{Data, Json, Path},
     HttpResponse, Responder,
 };
-use shared::Board;
 
 #[post("/create_hero")]
-pub async fn create_hero(db: Data<DbParam>, req_body: Json<CreateHeroParams>) -> impl Responder {
+pub async fn create_hero(
+    db: Data<DbParam>,
+    req_body: Json<shared::CreateHeroParams>,
+) -> impl Responder {
     match db.lock().await.hero_by_rfid(&req_body.0.rfid).await {
         Ok(Some(_)) => return HttpResponse::BadRequest(),
         Ok(None) => (),
@@ -25,7 +24,7 @@ pub async fn create_hero(db: Data<DbParam>, req_body: Json<CreateHeroParams>) ->
 #[post("/update_hero_stats")]
 pub async fn update_hero_stats(
     db: Data<DbParam>,
-    req_body: Json<UpdateHeroStatsParams>,
+    req_body: Json<shared::UpdateHeroStatsParams>,
 ) -> impl Responder {
     match db.lock().await.hero_by_rfid(&req_body.0.rfid).await {
         Ok(Some(_)) => (),
@@ -50,7 +49,7 @@ pub async fn get_hero(db: Data<DbParam>, rfid: Path<String>) -> impl Responder {
 #[post("/update_heroes_on_board")]
 pub async fn update_heroes_on_board(
     board_state: Data<BoardState>,
-    req_body: Json<Board>,
+    req_body: Json<shared::Board>,
 ) -> impl Responder {
     board_state.lock().await.hero_1_rfid = req_body.0.hero_1_rfid;
     board_state.lock().await.hero_2_rfid = req_body.0.hero_2_rfid;
