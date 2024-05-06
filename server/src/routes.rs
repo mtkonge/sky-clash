@@ -1,5 +1,4 @@
 use crate::{
-    board::Board,
     database::{CreateHeroParams, Database, UpdateHeroStatsParams},
     BoardState, DbParam,
 };
@@ -8,6 +7,7 @@ use actix_web::{
     web::{Data, Json, Path},
     HttpResponse, Responder,
 };
+use shared::Board;
 
 #[post("/create_hero")]
 pub async fn create_hero(db: Data<DbParam>, req_body: Json<CreateHeroParams>) -> impl Responder {

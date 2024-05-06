@@ -19,12 +19,6 @@ pub struct Hero {
     pub defence_points: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct Board {
-    pub hero_1_rfid: Option<String>,
-    pub hero_2_rfid: Option<String>,
-}
-
 #[derive(Clone, Debug)]
 pub enum HeroOrUnknownRfid {
     Hero(Hero),
@@ -68,7 +62,7 @@ pub async fn listen(
             }
 
             Message::BoardStatus => {
-                let mut board: Board =
+                let mut board: shared::Board =
                     match reqwest::get("http://65.108.91.32:8080/heroes_on_board").await {
                         Ok(body) => body.json().await.unwrap(),
                         Err(error) => {
@@ -77,7 +71,7 @@ pub async fn listen(
                         }
                     };
 
-                board = Board {
+                board = shared::Board {
                     hero_1_rfid: Some("1234523".to_string()),
                     hero_2_rfid: None,
                 };

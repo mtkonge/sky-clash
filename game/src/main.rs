@@ -2,7 +2,6 @@
 
 use engine::spawn;
 use message::HeroOrUnknownRfid;
-use serde::{Deserialize, Serialize};
 use std::sync::mpsc::channel;
 
 use crate::message::{Comms, Message};
@@ -12,12 +11,6 @@ mod hero_info;
 mod main_menu;
 mod message;
 mod ui;
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct Board {
-    pub hero_1_rfid: Option<String>,
-    pub hero_2_rfid: Option<String>,
-}
 
 fn main() {
     let (req_sender, req_receiver) = channel::<Message>();

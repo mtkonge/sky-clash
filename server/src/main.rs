@@ -1,16 +1,14 @@
-mod board;
 mod database;
 mod routes;
 mod sqlite3_db;
 
 use actix_web::{middleware::Logger, web, App, HttpServer};
-use board::Board;
 use routes::{create_hero, get_hero, heroes_on_board, update_hero_stats, update_heroes_on_board};
 use sqlite3_db::Sqlite3Db;
 use tokio::sync::Mutex;
 
 pub type DbParam = Mutex<Sqlite3Db>;
-pub type BoardState = Mutex<Board>;
+pub type BoardState = Mutex<shared::Board>;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -21,7 +19,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     let db_param = web::Data::new(Mutex::new(Sqlite3Db::new().await.unwrap()));
-    let board_state = web::Data::new(Mutex::new(Board::new(None, None)));
+    let board_state = web::Data::new(Mutex::new(shared::Board::new(None, None)));
 
     HttpServer::new(move || {
         App::new()
