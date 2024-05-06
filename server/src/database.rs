@@ -13,8 +13,14 @@ pub struct CreateHeroParams {
     pub hero_type: i64,
     pub base_stats: HeroStats,
 }
-#[derive(Deserialize, Serialize, Clone)]
 
+#[derive(Deserialize, Serialize, Clone)]
+pub struct UpdateHeroStatsParams {
+    pub rfid: String,
+    pub stats: HeroStats,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct Hero {
     pub id: i64,
     pub rfid: String,
@@ -28,5 +34,6 @@ pub struct Hero {
 
 pub trait Database {
     async fn create_hero(&mut self, hero: CreateHeroParams) -> Result<(), eyre::Report>;
+    async fn update_hero_stats(&mut self, hero: UpdateHeroStatsParams) -> Result<(), eyre::Report>;
     async fn hero_by_rfid(&mut self, rfid: &str) -> Result<Option<Hero>, eyre::Report>;
 }

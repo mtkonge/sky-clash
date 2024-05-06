@@ -5,6 +5,7 @@ use eyre::Context;
 use sqlx::SqlitePool;
 
 use crate::database::Hero;
+use crate::database::UpdateHeroStatsParams;
 use crate::database::{CreateHeroParams, Database};
 
 pub struct Sqlite3Db {
@@ -45,5 +46,16 @@ impl Database for Sqlite3Db {
             Ok(result) => Ok(result),
             Err(_) => Err(eyre!("Server error")),
         }
+    }
+
+    async fn update_hero_stats(
+        &mut self,
+        params: UpdateHeroStatsParams,
+    ) -> Result<(), eyre::Report> {
+        sqlx::query!(
+            "UPDATE heroes SET strength_points=?, agility_points=?, defence_points=? WHERE rfid = ?",
+            params.stats.strength, params.stats.agility, params.stats.defence, params.rfid
+        ).execute(&self.pool).await.with_context(|| "could not update hero stats")?;
+        Ok(())
     }
 }

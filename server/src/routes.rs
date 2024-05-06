@@ -1,13 +1,12 @@
+use crate::{
+    board::Board,
+    database::{CreateHeroParams, Database, UpdateHeroStatsParams},
+    BoardState, DbParam,
+};
 use actix_web::{
     get, post,
     web::{Data, Json, Path},
     HttpResponse, Responder,
-};
-
-use crate::{
-    board::Board,
-    database::{CreateHeroParams, Database},
-    BoardState, DbParam,
 };
 
 #[post("/create_hero")]
@@ -19,6 +18,22 @@ pub async fn create_hero(db: Data<DbParam>, req_body: Json<CreateHeroParams>) ->
     }
     match db.lock().await.create_hero(req_body.0).await {
         Ok(()) => HttpResponse::Created(),
+        Err(_) => HttpResponse::InternalServerError(),
+    }
+}
+
+#[post("/update_hero_stats")]
+pub async fn update_hero_stats(
+    db: Data<DbParam>,
+    req_body: Json<UpdateHeroStatsParams>,
+) -> impl Responder {
+    match db.lock().await.hero_by_rfid(&req_body.0.rfid).await {
+        Ok(Some(_)) => (),
+        Ok(None) => return HttpResponse::BadRequest(),
+        Err(_) => return HttpResponse::InternalServerError(),
+    };
+    match db.lock().await.update_hero_stats(req_body.0).await {
+        Ok(_) => HttpResponse::Ok(),
         Err(_) => HttpResponse::InternalServerError(),
     }
 }
