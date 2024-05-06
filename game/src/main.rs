@@ -1,16 +1,16 @@
 #![allow(dead_code)]
 
-use comms::HeroOrUnknownRfid;
 use engine::spawn;
+use message::HeroOrUnknownRfid;
 use serde::{Deserialize, Serialize};
 use std::sync::mpsc::channel;
 
-use crate::comms::{CommReq, Comms};
+use crate::message::{Comms, Message};
 
-mod comms;
 mod hero_creator;
 mod hero_info;
 mod main_menu;
+mod message;
 mod ui;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -20,7 +20,7 @@ pub struct Board {
 }
 
 fn main() {
-    let (req_sender, req_receiver) = channel::<CommReq>();
+    let (req_sender, req_receiver) = channel::<Message>();
     let (board_sender, board_receiver) = channel::<Result<HeroOrUnknownRfid, String>>();
 
     let game_thread = std::thread::spawn(move || {
@@ -37,11 +37,11 @@ fn main() {
         );
 
         game.run();
-        req_sender.clone().send(CommReq::Quit).unwrap();
+        req_sender.clone().send(Message::Quit).unwrap();
     });
 
     tokio::runtime::Runtime::new().unwrap().block_on(async {
-        comms::listen(req_receiver, board_sender).await;
+        message::listen(req_receiver, board_sender).await;
     });
 
     game_thread.join().unwrap();

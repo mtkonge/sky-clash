@@ -33,7 +33,7 @@ pub enum HeroOrUnknownRfid {
 
 #[derive(Component)]
 pub struct Comms {
-    pub req_sender: Sender<CommReq>,
+    pub req_sender: Sender<Message>,
     pub board_receiver: Receiver<Result<HeroOrUnknownRfid, String>>,
 }
 
@@ -44,23 +44,30 @@ pub struct CreateHeroParams {
     pub base_stats: HeroStats,
 }
 
-pub enum CommReq {
+#[derive(Serialize)]
+pub struct UpdateHeroStatsParams {
+    pub rfid: String,
+    pub stats: HeroStats,
+}
+
+pub enum Message {
     Quit,
     BoardStatus,
     CreateHero(CreateHeroParams),
+    UpdateHeroStats(UpdateHeroStatsParams),
 }
 
 pub async fn listen(
-    req_receiver: Receiver<CommReq>,
+    req_receiver: Receiver<Message>,
     board_sender: Sender<Result<HeroOrUnknownRfid, String>>,
 ) {
     loop {
         match req_receiver.recv().unwrap() {
-            CommReq::Quit => {
+            Message::Quit => {
                 break;
             }
 
-            CommReq::BoardStatus => {
+            Message::BoardStatus => {
                 let mut board: Board =
                     match reqwest::get("http://65.108.91.32:8080/heroes_on_board").await {
                         Ok(body) => body.json().await.unwrap(),
@@ -103,7 +110,7 @@ pub async fn listen(
                     }
                 };
             }
-            CommReq::CreateHero(body) => {
+            Message::CreateHero(body) => {
                 let client = reqwest::Client::new();
                 let body = match serde_json::to_string(&body) {
                     Ok(body) => body,
@@ -121,7 +128,41 @@ pub async fn listen(
                     .await
                 {
                     Ok(response) => {
-                        println!("create_hero response: '{}'", response.text().await.unwrap())
+                        println!(
+                            "create_hero response: {} '{}'",
+                            response.status().as_str(),
+                            response.text().await.unwrap()
+                        )
+                    }
+                    Err(err) => {
+                        println!("{}", err);
+                        continue;
+                    }
+                };
+            }
+            Message::UpdateHeroStats(body) => {
+                let client = reqwest::Client::new();
+                let body = match serde_json::to_string(&body) {
+                    Ok(body) => body,
+                    Err(err) => {
+                        panic!("Failed to serialize UpdateHeroStatsParams Err: {}", err)
+                    }
+                };
+                let mut headers = HeaderMap::new();
+                headers.insert("Content-Type", "application/json".parse().unwrap());
+                match client
+                    .post("http://65.108.91.32:8080/update_hero_stats")
+                    .headers(headers)
+                    .body(body)
+                    .send()
+                    .await
+                {
+                    Ok(response) => {
+                        println!(
+                            "update_hero_stats response: {} '{}'",
+                            response.status().as_str(),
+                            response.text().await.unwrap()
+                        )
                     }
                     Err(err) => {
                         println!("{}", err);

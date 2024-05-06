@@ -2,8 +2,8 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Mutex;
 
-use crate::comms::{CreateHeroParams, HeroOrUnknownRfid};
 use crate::hero_info::{HeroInfo, HeroStats, HeroType};
+use crate::message::{CreateHeroParams, Hero, HeroOrUnknownRfid, UpdateHeroStatsParams};
 use crate::ui;
 use crate::ui::components::Button;
 use crate::Comms;
@@ -98,7 +98,7 @@ impl System for HeroCreatorSystem {
                         strength_bar.build(),
                         agility_bar.build(),
                         defence_bar.build(),
-                        Hori([ui::components::Button("Confirm")]),
+                        Hori([ui::components::Button("Confirm").on_click(20)]),
                         Rect().with_height(720 / 2 - 100),
                     ]),
                 ]),
@@ -157,6 +157,36 @@ impl System for HeroCreatorSystem {
             dom.select_mut(5).unwrap().set_visible(false);
         });
 
+        dom.add_event_handler(20, move |_dom, ctx, _node_id| {
+            let Rfid(Some(rfid)) = ctx.entity_component::<Rfid>(query_one!(ctx, Rfid)).clone()
+            else {
+                return;
+            };
+            let rfid = match rfid {
+                HeroOrUnknownRfid::Hero(hero) => hero.rfid,
+                HeroOrUnknownRfid::Rfid(_) => panic!("tried to update non existing hero"),
+            };
+            let menu = ctx
+                .entity_component::<HeroCreator>(query_one!(ctx, HeroCreator))
+                .clone();
+
+            let stats = HeroStats {
+                strength: menu.strength_bar.lock().unwrap().steps_filled() as u8,
+                agility: menu.agility_bar.lock().unwrap().steps_filled() as u8,
+                defence: menu.defence_bar.lock().unwrap().steps_filled() as u8,
+            };
+
+            let comms = ctx.entity_component::<Comms>(query_one!(ctx, Comms));
+
+            comms
+                .req_sender
+                .send(crate::Message::UpdateHeroStats(UpdateHeroStatsParams {
+                    rfid,
+                    stats,
+                }))
+                .unwrap()
+        });
+
         for (id, hero_type) in [
             (10, HeroType::Centrist),
             (11, HeroType::Speed),
@@ -176,7 +206,7 @@ impl System for HeroCreatorSystem {
                 let comms = ctx.entity_component::<Comms>(query_one!(ctx, Comms));
                 match comms
                     .req_sender
-                    .send(crate::CommReq::CreateHero(CreateHeroParams {
+                    .send(crate::Message::CreateHero(CreateHeroParams {
                         rfid,
                         hero_type: hero_type.clone(),
                         base_stats: HeroStats::from(hero_type.clone()),
@@ -210,7 +240,7 @@ impl System for HeroCreatorSystem {
         if since_last.0 > 1.0 {
             since_last.0 = 0.0;
             let comms = ctx.entity_component::<Comms>(query_one!(ctx, Comms));
-            comms.req_sender.send(crate::CommReq::BoardStatus).unwrap();
+            comms.req_sender.send(crate::Message::BoardStatus).unwrap();
         }
 
         let menu = ctx

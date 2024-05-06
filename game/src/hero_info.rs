@@ -2,9 +2,9 @@ use std::path::PathBuf;
 
 #[derive(serde::Serialize)]
 pub struct HeroStats {
-    strength: u8,
-    agility: u8,
-    defence: u8,
+    pub strength: u8,
+    pub agility: u8,
+    pub defence: u8,
 }
 
 impl From<HeroType> for HeroStats {
