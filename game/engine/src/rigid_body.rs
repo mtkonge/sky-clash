@@ -13,7 +13,7 @@ pub struct VelocitySystem;
 impl System for VelocitySystem {
     fn on_update(&self, ctx: &mut Context, delta: f64) -> Result<(), Error> {
         for id in query!(ctx, RigidBody) {
-            let body = ctx.entity_component::<RigidBody>(id);
+            let body = ctx.select::<RigidBody>(id);
             body.pos.0 += body.vel.0 * delta;
             body.pos.1 += body.vel.1 * delta;
         }
@@ -25,7 +25,7 @@ pub struct GravitySystem;
 impl System for GravitySystem {
     fn on_update(&self, ctx: &mut Context, delta: f64) -> Result<(), Error> {
         for id in query!(ctx, RigidBody) {
-            let body = ctx.entity_component::<RigidBody>(id);
+            let body = ctx.select::<RigidBody>(id);
             if !body.gravity {
                 continue;
             }

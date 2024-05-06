@@ -74,7 +74,7 @@ impl System for MainMenuSystem {
 
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
         for id in query!(ctx, MainMenu) {
-            let main_menu = ctx.entity_component::<MainMenu>(id).clone();
+            let main_menu = ctx.select::<MainMenu>(id).clone();
             main_menu.dom.lock().unwrap().update(ctx);
         }
         Ok(())
@@ -82,7 +82,7 @@ impl System for MainMenuSystem {
 
     fn on_remove(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
         for id in query!(ctx, MainMenu) {
-            let main_menu = ctx.entity_component::<MainMenu>(id).clone();
+            let main_menu = ctx.select::<MainMenu>(id).clone();
             if main_menu.system_id == self.0 {
                 ctx.despawn(id);
             }

@@ -165,7 +165,7 @@ impl<'context, 'game> Context<'context, 'game> {
             .collect()
     }
 
-    pub fn entity_component<T: 'static + Component>(&mut self, entity_id: u64) -> &mut T {
+    pub fn select<T: 'static + Component>(&mut self, entity_id: u64) -> &mut T {
         let entity_type_id = TypeId::of::<T>();
         let Entity(_id, components) = self
             .entities
@@ -186,6 +186,54 @@ impl<'context, 'game> Context<'context, 'game> {
             })
             .unwrap();
         component
+    }
+
+    pub fn select_one<T: 'static + Component>(&mut self) -> &mut T {
+        let entity_id = query_one!(self, T);
+        let entity_type_id = TypeId::of::<T>();
+        let Entity(_id, components) = self
+            .entities
+            .iter_mut()
+            .find(|opt| opt.as_ref().is_some_and(|Entity(id, _)| *id == entity_id))
+            .and_then(|v| v.as_mut())
+            .expect("tried to get entity_component of removed id, are you removing it while looping over it?");
+
+        let component = components
+            .iter_mut()
+            .find_map(|entity| {
+                let is_id = (*entity).inner_type_id() == entity_type_id;
+                if is_id {
+                    Some(entity.as_any().downcast_mut::<T>().unwrap())
+                } else {
+                    None
+                }
+            })
+            .unwrap();
+        component
+    }
+
+    pub fn clone_one<T: 'static + Component + Clone>(&mut self) -> T {
+        let entity_id = query_one!(self, T);
+        let entity_type_id = TypeId::of::<T>();
+        let Entity(_id, components) = self
+            .entities
+            .iter_mut()
+            .find(|opt| opt.as_ref().is_some_and(|Entity(id, _)| *id == entity_id))
+            .and_then(|v| v.as_mut())
+            .expect("tried to get entity_component of removed id, are you removing it while looping over it?");
+
+        let component = components
+            .iter_mut()
+            .find_map(|entity| {
+                let is_id = (*entity).inner_type_id() == entity_type_id;
+                if is_id {
+                    Some(entity.as_any().downcast_mut::<T>().unwrap())
+                } else {
+                    None
+                }
+            })
+            .unwrap();
+        component.clone()
     }
 
     pub fn load_font<P>(&mut self, path: P, size: u16) -> Result<Id, Error>

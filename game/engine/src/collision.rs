@@ -466,18 +466,18 @@ pub struct CollisionSystem;
 impl System for CollisionSystem {
     fn on_update(&self, ctx: &mut Context, delta: f64) -> Result<(), Error> {
         for id in query!(ctx, RigidBody, Collider) {
-            let collider = ctx.entity_component::<Collider>(id).clone();
+            let collider = ctx.select::<Collider>(id).clone();
             if !collider.resolve {
                 continue;
             }
-            let collider = ctx.entity_component::<Collider>(id);
+            let collider = ctx.select::<Collider>(id);
             collider.colliding = None;
-            let body = ctx.entity_component::<RigidBody>(id).clone();
+            let body = ctx.select::<RigidBody>(id).clone();
             for other_id in query!(ctx, RigidBody, Collider) {
                 if id == other_id {
                     continue;
                 }
-                let other_body = ctx.entity_component::<RigidBody>(other_id).clone();
+                let other_body = ctx.select::<RigidBody>(other_id).clone();
 
                 let pos = V2::from(body.pos);
                 let rect = V2::from(body.rect);
@@ -493,7 +493,7 @@ impl System for CollisionSystem {
 
                 match Direction::from(dp) {
                     dir @ Direction::None => {
-                        let collider = ctx.entity_component::<Collider>(id);
+                        let collider = ctx.select::<Collider>(id);
                         collider.colliding = Some(dir);
                     }
                     dir @ (Direction::Top
@@ -548,9 +548,9 @@ impl System for CollisionSystem {
                     .into_iter()
                     .min_by(|(.., t0), (.., t1)| t0.total_cmp(t1))
                 {
-                    let collider = ctx.entity_component::<Collider>(id);
+                    let collider = ctx.select::<Collider>(id);
                     collider.colliding = Some(dir);
-                    let body = ctx.entity_component::<RigidBody>(id);
+                    let body = ctx.select::<RigidBody>(id);
                     resolve_collision(body, p, rect, dir)
                 }
             }
