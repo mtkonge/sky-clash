@@ -2,12 +2,12 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Mutex;
 
-use crate::comms::{CreateHeroParams, HeroOrRfid};
-use crate::hero_info::{HeroInfo, HeroType};
+use crate::comms::{CreateHeroParams, HeroOrUnknownRfid};
+use crate::hero_info::{HeroInfo, HeroStats, HeroType};
 use crate::ui;
 use crate::ui::components::Button;
 use crate::Comms;
-use engine::{query, query_one, spawn};
+use engine::{query_one, spawn};
 use engine::{Component, System};
 
 pub fn change_text_node_content<S: Into<String>>(node: Option<&mut ui::Node>, new_text: S) {
@@ -41,7 +41,10 @@ pub struct HeroCreator {
 }
 
 #[derive(Component, Clone)]
-pub struct Rfid(Option<String>);
+pub struct Rfid(Option<HeroOrUnknownRfid>);
+
+#[derive(Component, Clone)]
+pub struct SinceLastRequest(f64);
 
 pub struct HeroCreatorSystem(pub u64);
 impl System for HeroCreatorSystem {
@@ -69,6 +72,7 @@ impl System for HeroCreatorSystem {
         let defence_bar = ui::components::ProgressBar::new("Defence", 24, 200);
 
         spawn!(ctx, Rfid(None));
+        spawn!(ctx, SinceLastRequest(f64::MAX));
 
         let mut dom = ui::Dom::new(
             Stack([
@@ -135,6 +139,11 @@ impl System for HeroCreatorSystem {
                 .visible(false)
                 .with_border_thickness(2)
                 .with_padding(5),
+                Text("Loading...")
+                    .with_width(1280)
+                    .with_height(720)
+                    .with_background_color((50, 50, 50))
+                    .with_id(50u64),
             ])
             .with_width(1280)
             .with_height(720)
@@ -143,11 +152,6 @@ impl System for HeroCreatorSystem {
         strength_bar.add_event_handlers(&mut dom);
         agility_bar.add_event_handlers(&mut dom);
         defence_bar.add_event_handlers(&mut dom);
-
-        for id in query!(ctx, Comms) {
-            let comms = ctx.entity_component::<Comms>(id);
-            comms.req_sender.send(crate::CommReq::BoardStatus).unwrap();
-        }
 
         dom.add_event_handler(1, |dom, _ctx, _node_id| {
             dom.select_mut(5).unwrap().set_visible(false);
@@ -165,18 +169,19 @@ impl System for HeroCreatorSystem {
                 else {
                     return;
                 };
+                let rfid = match rfid {
+                    HeroOrUnknownRfid::Hero(_) => panic!("tried to create existing hero"),
+                    HeroOrUnknownRfid::Rfid(rfid) => rfid,
+                };
                 let comms = ctx.entity_component::<Comms>(query_one!(ctx, Comms));
                 match comms
                     .req_sender
                     .send(crate::CommReq::CreateHero(CreateHeroParams {
                         rfid,
                         hero_type: hero_type.clone(),
+                        base_stats: HeroStats::from(hero_type.clone()),
                     })) {
                     Ok(_) => {
-                        change_image_node_content(
-                            dom.select_mut(2),
-                            HeroInfo::from(hero_type).texture_path,
-                        );
                         dom.select_mut(4).unwrap().set_visible(false);
                     }
                     Err(_) => println!("Nooooooo :("),
@@ -197,48 +202,102 @@ impl System for HeroCreatorSystem {
         Ok(())
     }
 
-    fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
-        let comms = ctx.entity_component::<Comms>(query_one!(ctx, Comms));
-        comms.req_sender.send(crate::CommReq::BoardStatus).unwrap();
+    fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
+        let since_last =
+            ctx.entity_component::<SinceLastRequest>(query_one!(ctx, SinceLastRequest));
+        since_last.0 += delta;
 
-        for id in query!(ctx, HeroCreator) {
-            let menu = ctx.entity_component::<HeroCreator>(id).clone();
-            let mut dom = menu.dom.lock().unwrap();
-            dom.update(ctx);
-
-            menu.strength_bar.lock().unwrap().update(&mut dom);
-            menu.agility_bar.lock().unwrap().update(&mut dom);
-            menu.defence_bar.lock().unwrap().update(&mut dom);
-
+        if since_last.0 > 1.0 {
+            since_last.0 = 0.0;
             let comms = ctx.entity_component::<Comms>(query_one!(ctx, Comms));
-            if let Ok(hero) = comms.board_receiver.try_recv() {
-                match hero {
-                    Ok(HeroOrRfid::Hero(hero)) => {
-                        let rfid = ctx.entity_component::<Rfid>(query_one!(ctx, Rfid));
-                        rfid.0.replace(hero.rfid);
+            comms.req_sender.send(crate::CommReq::BoardStatus).unwrap();
+        }
 
-                        change_text_node_content(
-                            dom.select_mut(3),
-                            format!("Available points: {}", hero.level * 3),
-                        );
+        let menu = ctx
+            .entity_component::<HeroCreator>(query_one!(ctx, HeroCreator))
+            .clone();
+        let mut dom = menu.dom.lock().unwrap();
+        dom.update(ctx);
+
+        menu.strength_bar.lock().unwrap().update(&mut dom);
+        menu.agility_bar.lock().unwrap().update(&mut dom);
+        menu.defence_bar.lock().unwrap().update(&mut dom);
+
+        let comms = ctx.entity_component::<Comms>(query_one!(ctx, Comms));
+        'handle_hero: {
+            let Ok(hero) = comms.board_receiver.try_recv() else {
+                break 'handle_hero;
+            };
+            dom.select_mut(50).unwrap().set_visible(false);
+
+            let hero = match hero {
+                Ok(v) => v,
+                Err(err) => {
+                    dom.select_mut(5).unwrap().set_visible(true);
+                    change_text_node_content(
+                        dom.select_mut(6),
+                        format!("an error occurred: {err}"),
+                    );
+                    break 'handle_hero;
+                }
+            };
+            use HeroOrUnknownRfid as HOUR;
+            match hero {
+                HOUR::Hero(hero) => {
+                    let old_hero_info = ctx.entity_component::<Rfid>(query_one!(ctx, Rfid));
+                    if let Some(ref old_rfid) = old_hero_info.0 {
+                        match old_rfid {
+                            HOUR::Hero(old_hero) if hero.rfid == old_hero.rfid => {
+                                break 'handle_hero
+                            }
+                            _ => {}
+                        };
                     }
 
-                    Ok(HeroOrRfid::Rfid(rfid_value)) => {
-                        let rfid = ctx.entity_component::<Rfid>(query_one!(ctx, Rfid));
-                        rfid.0.replace(rfid_value);
+                    change_text_node_content(
+                        dom.select_mut(3),
+                        format!("Available points: {}", hero.level * 3),
+                    );
 
-                        dom.select_mut(4).unwrap().set_visible(true);
+                    menu.strength_bar
+                        .lock()
+                        .unwrap()
+                        .set_steps_filled(hero.strength_points as i32);
+                    menu.agility_bar
+                        .lock()
+                        .unwrap()
+                        .set_steps_filled(hero.agility_points as i32);
+                    menu.defence_bar
+                        .lock()
+                        .unwrap()
+                        .set_steps_filled(hero.defence_points as i32);
+
+                    change_image_node_content(
+                        dom.select_mut(2),
+                        HeroInfo::from(&hero.hero_type).texture_path,
+                    );
+
+                    let Rfid(rfid) = ctx.entity_component::<Rfid>(query_one!(ctx, Rfid));
+                    *rfid = Some(HOUR::Hero(hero));
+                }
+                HOUR::Rfid(rfid) => {
+                    let old_rfid = ctx.entity_component::<Rfid>(query_one!(ctx, Rfid));
+                    if let Some(ref old_rfid) = old_rfid.0 {
+                        let old_rfid = match old_rfid {
+                            HOUR::Hero(hero) => &hero.rfid,
+                            HOUR::Rfid(rfid) => rfid,
+                        };
+                        if old_rfid == &rfid {
+                            break 'handle_hero;
+                        }
                     }
-                    Err(err) => {
-                        dom.select_mut(5).unwrap().set_visible(true);
-                        change_text_node_content(
-                            dom.select_mut(6),
-                            format!("an error occurred: {err}"),
-                        );
-                    }
+                    old_rfid.0 = Some(HOUR::Rfid(rfid));
+
+                    dom.select_mut(4).unwrap().set_visible(true);
                 }
             }
         }
+
         Ok(())
     }
 

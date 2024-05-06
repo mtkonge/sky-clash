@@ -5,14 +5,14 @@ use engine::Component;
 use reqwest::header::HeaderMap;
 use serde::{Deserialize, Serialize};
 
-use crate::hero_info::HeroType;
+use crate::hero_info::{HeroStats, HeroType};
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Hero {
     pub id: i64,
     pub rfid: String,
     pub level: i64,
-    pub hero_type: i64,
+    pub hero_type: HeroType,
     pub unallocated_skillpoints: i64,
     pub strength_points: i64,
     pub agility_points: i64,
@@ -25,7 +25,8 @@ pub struct Board {
     pub hero_2_rfid: Option<String>,
 }
 
-pub enum HeroOrRfid {
+#[derive(Clone, Debug)]
+pub enum HeroOrUnknownRfid {
     Hero(Hero),
     Rfid(String),
 }
@@ -33,13 +34,14 @@ pub enum HeroOrRfid {
 #[derive(Component)]
 pub struct Comms {
     pub req_sender: Sender<CommReq>,
-    pub board_receiver: Receiver<Result<HeroOrRfid, String>>,
+    pub board_receiver: Receiver<Result<HeroOrUnknownRfid, String>>,
 }
 
 #[derive(Serialize)]
 pub struct CreateHeroParams {
     pub rfid: String,
     pub hero_type: HeroType,
+    pub base_stats: HeroStats,
 }
 
 pub enum CommReq {
@@ -50,7 +52,7 @@ pub enum CommReq {
 
 pub async fn listen(
     req_receiver: Receiver<CommReq>,
-    board_sender: Sender<Result<HeroOrRfid, String>>,
+    board_sender: Sender<Result<HeroOrUnknownRfid, String>>,
 ) {
     loop {
         match req_receiver.recv().unwrap() {
@@ -90,8 +92,8 @@ pub async fn listen(
                     Ok(res) => {
                         let body = res.json::<Option<Hero>>().await.unwrap();
                         let body = body
-                            .map(HeroOrRfid::Hero)
-                            .unwrap_or(HeroOrRfid::Rfid(hero_rfid));
+                            .map(HeroOrUnknownRfid::Hero)
+                            .unwrap_or(HeroOrUnknownRfid::Rfid(hero_rfid));
 
                         board_sender.send(Ok(body)).unwrap();
                     }
@@ -103,7 +105,7 @@ pub async fn listen(
             }
             CommReq::CreateHero(body) => {
                 let client = reqwest::Client::new();
-                let body_json = match serde_json::to_string(&body) {
+                let body = match serde_json::to_string(&body) {
                     Ok(body) => body,
                     Err(err) => {
                         panic!("Failed to serialize CreateHeroParams Err: {}", err)
@@ -114,11 +116,13 @@ pub async fn listen(
                 match client
                     .post("http://65.108.91.32:8080/create_hero")
                     .headers(headers)
-                    .body(body_json)
+                    .body(body)
                     .send()
                     .await
                 {
-                    Ok(v) => v,
+                    Ok(response) => {
+                        println!("create_hero response: '{}'", response.text().await.unwrap())
+                    }
                     Err(err) => {
                         println!("{}", err);
                         continue;

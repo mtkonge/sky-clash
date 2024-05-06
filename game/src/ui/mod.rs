@@ -146,6 +146,14 @@ impl Dom {
         I: Into<UserSpaceId>,
     {
         let uid = uid.into();
+        let count = self
+            .nodes
+            .iter()
+            .filter(|(_, node)| node.id.is_some_and(|id| id == uid))
+            .count();
+        if count > 1 {
+            println!("ui warning: colliding ids: {}", uid.0);
+        };
         self.nodes
             .iter()
             .find(|(_, node)| node.id.is_some_and(|id| id == uid))
@@ -157,6 +165,15 @@ impl Dom {
         I: Into<UserSpaceId>,
     {
         let uid = uid.into();
+        let count = self
+            .nodes
+            .iter()
+            .filter(|(_, node)| node.id.is_some_and(|id| id == uid))
+            .count();
+        if count > 1 {
+            println!("ui warning: colliding ids: {}", uid.0);
+        };
+
         self.nodes
             .iter_mut()
             .find(|(_, node)| node.id.is_some_and(|id| id == uid))

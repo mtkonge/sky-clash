@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use comms::HeroOrRfid;
+use comms::HeroOrUnknownRfid;
 use engine::spawn;
 use serde::{Deserialize, Serialize};
 use std::sync::mpsc::channel;
@@ -21,7 +21,7 @@ pub struct Board {
 
 fn main() {
     let (req_sender, req_receiver) = channel::<CommReq>();
-    let (board_sender, board_receiver) = channel::<Result<HeroOrRfid, String>>();
+    let (board_sender, board_receiver) = channel::<Result<HeroOrUnknownRfid, String>>();
 
     let game_thread = std::thread::spawn(move || {
         let mut game = engine::Game::new().unwrap();
