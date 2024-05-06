@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use engine::spawn;
-use message::HeroOrUnknownRfid;
+use message::HeroResult;
 use std::sync::mpsc::channel;
 
 use crate::message::{Comms, Message};
@@ -14,7 +14,7 @@ mod ui;
 
 fn main() {
     let (req_sender, req_receiver) = channel::<Message>();
-    let (board_sender, board_receiver) = channel::<Result<HeroOrUnknownRfid, String>>();
+    let (board_sender, board_receiver) = channel::<Result<HeroResult, String>>();
 
     let game_thread = std::thread::spawn(move || {
         let mut game = engine::Game::new().unwrap();

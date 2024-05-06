@@ -5,15 +5,15 @@ use engine::Component;
 use reqwest::header::HeaderMap;
 
 #[derive(Clone, Debug)]
-pub enum HeroOrUnknownRfid {
+pub enum HeroResult {
     Hero(shared::Hero),
-    Rfid(String),
+    UnknownRfid(String),
 }
 
 #[derive(Component)]
 pub struct Comms {
     pub req_sender: Sender<Message>,
-    pub board_receiver: Receiver<Result<HeroOrUnknownRfid, String>>,
+    pub board_receiver: Receiver<Result<HeroResult, String>>,
 }
 
 pub enum Message {
@@ -25,7 +25,7 @@ pub enum Message {
 
 pub async fn listen(
     req_receiver: Receiver<Message>,
-    board_sender: Sender<Result<HeroOrUnknownRfid, String>>,
+    board_sender: Sender<Result<HeroResult, String>>,
 ) {
     loop {
         match req_receiver.recv().unwrap() {
@@ -65,8 +65,8 @@ pub async fn listen(
                     Ok(res) => {
                         let body = res.json::<Option<shared::Hero>>().await.unwrap();
                         let body = body
-                            .map(HeroOrUnknownRfid::Hero)
-                            .unwrap_or(HeroOrUnknownRfid::Rfid(hero_rfid));
+                            .map(HeroResult::Hero)
+                            .unwrap_or(HeroResult::UnknownRfid(hero_rfid));
 
                         board_sender.send(Ok(body)).unwrap();
                     }

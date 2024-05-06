@@ -10,11 +10,15 @@ pub fn Button<S: Into<String>>(text: S) -> builder::Box<builder::Node> {
         .with_border_color((255, 255, 255))
 }
 
+type EventHandlerFn = dyn Fn(&mut Dom, &mut engine::Context);
+
 pub struct ProgressBar {
     title: String,
     steps_filled: Rc<Mutex<i32>>,
     steps_total: i32,
     id_mask: u64,
+    increase_handler: Option<Box<EventHandlerFn>>,
+    decrease_handler: Option<Box<EventHandlerFn>>,
 }
 
 impl ProgressBar {
@@ -24,6 +28,8 @@ impl ProgressBar {
             steps_filled: Rc::new(Mutex::new(0)),
             steps_total,
             id_mask,
+            increase_handler: None,
+            decrease_handler: None,
         }
     }
 
@@ -102,6 +108,14 @@ impl ProgressBar {
                 *steps_filled.lock().unwrap() += 1;
             },
         );
+    }
+
+    pub fn on_increase<F: Fn(&mut Dom, &mut engine::Context) + 'static>(&mut self, f: F) {
+        self.increase_handler = Some(Box::new(f));
+    }
+
+    pub fn on_decrease<F: Fn(&mut Dom, &mut engine::Context) + 'static>(&mut self, f: F) {
+        self.decrease_handler = Some(Box::new(f));
     }
 
     pub fn update(&mut self, dom: &mut Dom) {
