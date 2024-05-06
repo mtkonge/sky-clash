@@ -5,7 +5,7 @@ mod sqlite3_db;
 
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use board::Board;
-use routes::{create_hero, get_hero, heroes_on_board, update_heroes_on_board};
+use routes::{create_hero, get_hero, heroes_on_board, update_hero_stats, update_heroes_on_board};
 use sqlite3_db::Sqlite3Db;
 use tokio::sync::Mutex;
 
@@ -27,6 +27,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(db_param.clone())
             .app_data(board_state.clone())
+            .service(update_hero_stats)
             .service(create_hero)
             .service(update_heroes_on_board)
             .service(heroes_on_board)
