@@ -461,8 +461,7 @@ pub struct Collider {
     pub resolve: bool,
     pub colliding: Option<Direction>,
 }
-
-pub struct CollisionSystem;
+pub struct CollisionSystem(pub u64);
 impl System for CollisionSystem {
     fn on_update(&self, ctx: &mut Context, delta: f64) -> Result<(), Error> {
         for id in query!(ctx, RigidBody, Collider) {

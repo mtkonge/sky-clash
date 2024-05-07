@@ -1,6 +1,7 @@
 use std::rc::Rc;
 use std::sync::Mutex;
 
+use crate::game::GameSystem;
 use crate::hero_creator::HeroCreatorSystem;
 use crate::ui;
 use crate::ui::components::Button;
@@ -44,7 +45,9 @@ impl System for MainMenuSystem {
             .with_height(720),
         );
 
-        dom.add_event_handler(1, |_dom, _ctx, _node_id| {
+        dom.add_event_handler(1, move |_dom, ctx, _node_id| {
+            ctx.remove_system(system_id);
+            ctx.add_system(GameSystem);
             println!("button clicked");
         });
 

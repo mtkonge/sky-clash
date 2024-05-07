@@ -1,16 +1,20 @@
 #![allow(dead_code)]
 
+use std::sync::mpsc::channel;
+
 use engine::spawn;
 use message::HeroResult;
-use std::sync::mpsc::channel;
 
 use crate::message::{Comms, Message};
 
+mod game;
 mod hero_creator;
 mod hero_info;
 mod main_menu;
 mod message;
+mod player_movement;
 mod shared_ptr;
+mod sprite_renderer;
 mod ui;
 
 fn main() {

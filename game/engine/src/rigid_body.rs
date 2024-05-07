@@ -9,7 +9,7 @@ pub struct RigidBody {
     pub gravity: bool,
 }
 
-pub struct VelocitySystem;
+pub struct VelocitySystem(pub u64);
 impl System for VelocitySystem {
     fn on_update(&self, ctx: &mut Context, delta: f64) -> Result<(), Error> {
         for id in query!(ctx, RigidBody) {
@@ -21,7 +21,7 @@ impl System for VelocitySystem {
     }
 }
 
-pub struct GravitySystem;
+pub struct GravitySystem(pub u64);
 impl System for GravitySystem {
     fn on_update(&self, ctx: &mut Context, delta: f64) -> Result<(), Error> {
         for id in query!(ctx, RigidBody) {
