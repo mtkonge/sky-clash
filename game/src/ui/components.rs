@@ -75,7 +75,7 @@ impl ProgressBar {
             .collect();
         children.insert(
             middle,
-            Text(self.text()).with_id(self.id(0)).with_padding(8),
+            Vert([Text(self.text()).with_id(self.id(0))]).with_width(130),
         );
 
         Hori([
