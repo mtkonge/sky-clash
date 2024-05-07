@@ -2,8 +2,8 @@ use crate::hero_info::HeroInfo;
 use crate::message::HeroResult;
 use crate::shared_ptr::SharedPtr;
 use crate::ui;
-use crate::Comms;
-use engine::{query_one, spawn};
+use crate::GameActor;
+use engine::spawn;
 use engine::{Component, System};
 
 pub fn change_text_node_content<S: Into<String>>(node: Option<&mut ui::Node>, new_text: S) {
@@ -89,10 +89,10 @@ impl System for HeroCreatorSystem {
                 defence: menu.defence_bar.lock().steps_filled() as u8,
             };
 
-            let comms = ctx.select_one::<Comms>();
+            let comms = ctx.select_one::<GameActor>();
 
             comms
-                .req_sender
+                .mothership_handle
                 .send_important(crate::Message::UpdateHeroStats(
                     shared::UpdateHeroStatsParams { rfid, stats },
                 ))
@@ -110,14 +110,14 @@ impl System for HeroCreatorSystem {
                     HeroResult::Hero(_) => panic!("tried to create existing hero"),
                     HeroResult::UnknownRfid(rfid) => rfid,
                 };
-                let comms = ctx.select_one::<Comms>();
-                comms.req_sender.send_important(crate::Message::CreateHero(
-                    shared::CreateHeroParams {
+                let comms = ctx.select_one::<GameActor>();
+                comms
+                    .mothership_handle
+                    .send_important(crate::Message::CreateHero(shared::CreateHeroParams {
                         rfid,
                         hero_type: hero_type.clone() as _,
                         base_stats: shared::HeroStats::from(hero_type.clone()),
-                    },
-                ));
+                    }));
             });
         }
 
@@ -136,7 +136,7 @@ impl System for HeroCreatorSystem {
         Ok(())
     }
 
-    fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
+    fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
         let menu = ctx.clone_one::<HeroCreator>();
         let mut dom = menu.dom.lock();
         dom.update(ctx);
@@ -266,11 +266,9 @@ impl HeroCreatorSystem {
         ctx: &mut engine::Context,
         mut dom: std::sync::MutexGuard<ui::Dom>,
     ) {
-        let comms = ctx.select::<Comms>(query_one!(ctx, Comms));
-        comms.req_sender.send(crate::Message::BoardStatus);
-
-        let comms = ctx.select::<Comms>(query_one!(ctx, Comms));
-        let Some(hero) = comms.board_receiver.try_receive() else {
+        let comms = ctx.select_one::<GameActor>();
+        comms.mothership_handle.send(crate::Message::BoardStatus);
+        let Some(hero) = comms.inner.try_receive() else {
             return;
         };
         dom.select_mut(50).unwrap().set_visible(false);

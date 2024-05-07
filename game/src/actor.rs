@@ -23,35 +23,36 @@ mod aptr {
     }
 }
 
-pub struct Receiver<T>(Aptr<VecDeque<T>>);
+pub struct Actor<T>(Aptr<VecDeque<T>>);
 
-impl<T> Receiver<T> {
+impl<T> Actor<T> {
+    pub fn new() -> Self {
+        Self(Aptr::new(VecDeque::new()))
+    }
+    pub fn handle(&self) -> Handle<T> {
+        Handle::from_actor(self)
+    }
     pub fn try_receive(&mut self) -> Option<T> {
         self.0.lock().pop_front()
     }
 }
 
-pub struct Sender<T>(Aptr<VecDeque<T>>);
+pub struct Handle<T>(Aptr<VecDeque<T>>);
 
-impl<T> Clone for Sender<T> {
+impl<T> Clone for Handle<T> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }
 }
 
-impl<T> Sender<T> {
+impl<T> Handle<T> {
     pub fn send(&mut self, value: T) {
         self.0.lock().push_back(value);
     }
     pub fn send_important(&mut self, value: T) {
         self.0.lock().push_front(value);
     }
-}
-
-pub struct Actor(());
-impl Actor {
-    pub fn new<T>() -> (Sender<T>, Receiver<T>) {
-        let queue = Aptr::new(VecDeque::new());
-        (Sender(queue.clone()), Receiver(queue.clone()))
+    pub fn from_actor(actor: &Actor<T>) -> Self {
+        Self(actor.0.clone())
     }
 }

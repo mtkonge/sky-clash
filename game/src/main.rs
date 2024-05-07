@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
-use engine::spawn;
-use message::HeroResult;
-
-use crate::message::{Comms, Message};
+use crate::message::{HeroResult, Message, MothershipActor};
+use actor::Actor;
+use engine::{spawn, Component};
+use message::MothershipHandle;
 
 mod actor;
 mod game;
@@ -17,29 +17,34 @@ mod sprite_renderer;
 mod start_game;
 mod ui;
 
+#[derive(Component)]
+pub struct GameActor {
+    inner: Actor<Result<HeroResult, String>>,
+    mothership_handle: MothershipHandle,
+}
+
 fn main() {
-    let (req_sender, req_receiver) = actor::Actor::new::<Message>();
-    let (board_sender, board_receiver) = actor::Actor::new::<Result<HeroResult, String>>();
+    let game_actor = Actor::new();
+    let mothership_actor = MothershipActor::new(game_actor.handle());
+    let game_actor = GameActor {
+        inner: game_actor,
+        mothership_handle: mothership_actor.handle(),
+    };
 
     let game_thread = std::thread::spawn(move || {
         let mut game = engine::Game::new().unwrap();
 
         let mut ctx = game.context();
         ctx.add_system(main_menu::MainMenuSystem);
-        spawn!(
-            &mut ctx,
-            Comms {
-                req_sender: req_sender.clone(),
-                board_receiver,
-            }
-        );
+        let mut quit_handle = game_actor.mothership_handle.clone();
+        spawn!(&mut ctx, game_actor);
 
         game.run();
-        req_sender.clone().send(Message::Quit);
+        quit_handle.send(Message::Quit);
     });
 
     tokio::runtime::Runtime::new().unwrap().block_on(async {
-        message::listen(req_receiver, board_sender).await;
+        mothership_actor.run().await;
     });
 
     game_thread.join().unwrap();
