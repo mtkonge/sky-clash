@@ -10,6 +10,7 @@ mod hero_creator;
 mod hero_info;
 mod main_menu;
 mod message;
+mod shared_ptr;
 mod ui;
 
 fn main() {

@@ -90,6 +90,16 @@ pub struct Hero {
     pub defence_points: i64,
 }
 
+impl Hero {
+    pub fn total_skill_points(&self) -> i64 {
+        self.level * 3 + 24
+    }
+    pub fn unallocated_skill_points(&self) -> i64 {
+        let total_allocated = self.strength_points + self.agility_points + self.defence_points;
+        self.total_skill_points() - total_allocated
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CreateHeroParams {
     pub rfid: String,

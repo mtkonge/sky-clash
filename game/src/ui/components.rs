@@ -1,4 +1,4 @@
-use std::{rc::Rc, sync::Mutex};
+use crate::shared_ptr::SharedPtr;
 
 use super::{builder, constructors::Text, BoxedNode, Dom, Kind, Node, NodeId};
 
@@ -10,26 +10,26 @@ pub fn Button<S: Into<String>>(text: S) -> builder::Box<builder::Node> {
         .with_border_color((255, 255, 255))
 }
 
-type EventHandlerFn = dyn Fn(&mut Dom, &mut engine::Context);
+type Int = i64;
 
 pub struct ProgressBar {
     title: String,
-    steps_filled: Rc<Mutex<i32>>,
-    steps_total: i32,
+    filled: SharedPtr<Int>,
+    total: Int,
+    lower_limit: SharedPtr<Int>,
+    upper_limit: SharedPtr<Int>,
     id_mask: u64,
-    increase_handler: Option<Box<EventHandlerFn>>,
-    decrease_handler: Option<Box<EventHandlerFn>>,
 }
 
 impl ProgressBar {
-    pub fn new<S: Into<String>>(title: S, steps_total: i32, id_mask: u64) -> Self {
+    pub fn new<S: Into<String>>(title: S, steps_total: Int, id_mask: u64) -> Self {
         Self {
             title: title.into(),
-            steps_filled: Rc::new(Mutex::new(0)),
-            steps_total,
+            filled: SharedPtr::new(0),
+            total: steps_total,
+            lower_limit: SharedPtr::new(0),
+            upper_limit: SharedPtr::new(steps_total),
             id_mask,
-            increase_handler: None,
-            decrease_handler: None,
         }
     }
 
@@ -37,16 +37,35 @@ impl ProgressBar {
         self.id_mask + id
     }
 
-    pub fn steps_filled(&self) -> i32 {
-        *self.steps_filled.lock().unwrap()
+    pub fn steps_filled(&self) -> Int {
+        *self.filled.lock()
     }
 
-    pub fn set_steps_filled(&mut self, steps_filled: i32) {
-        *self.steps_filled.lock().unwrap() = steps_filled;
+    pub fn set_steps_filled(&mut self, steps_filled: Int) -> &mut Self {
+        *self.filled.lock() = steps_filled;
+        self
     }
 
-    pub fn change_steps_filled(&mut self, delta: i32) {
-        *self.steps_filled.lock().unwrap() += delta;
+    pub fn change_steps_filled(&mut self, delta: Int) -> &mut Self {
+        *self.filled.lock() += delta;
+        self
+    }
+
+    pub fn set_lower_limit(&mut self, limit: Int) -> &mut Self {
+        println!("{}", limit);
+        *self.lower_limit.lock() = limit;
+        if self.steps_filled() < limit {
+            self.set_steps_filled(limit);
+        }
+        self
+    }
+
+    pub fn set_upper_limit(&mut self, limit: Int) -> &mut Self {
+        *self.upper_limit.lock() = limit;
+        if self.steps_filled() > limit {
+            self.set_steps_filled(limit);
+        }
+        self
     }
 
     fn text(&self) -> String {
@@ -54,15 +73,15 @@ impl ProgressBar {
             "{} ({:02}/{:02})",
             self.title,
             self.steps_filled(),
-            self.steps_total
+            self.total
         )
     }
 
     pub fn build(&self) -> BoxedNode {
         use super::constructors::*;
 
-        let middle = (self.steps_total / 2) as usize;
-        let mut children: Vec<_> = (0..self.steps_total)
+        let middle = (self.total / 2) as usize;
+        let mut children: Vec<_> = (0..self.total)
             .map(|i| {
                 let color = if i < self.steps_filled() {
                     (255, 255, 255)
@@ -87,35 +106,36 @@ impl ProgressBar {
     }
 
     pub fn add_event_handlers(&self, dom: &mut Dom) {
-        let steps_filled = self.steps_filled.clone();
-        let steps_total = self.steps_total;
+        let steps_filled = self.filled.clone();
+        let steps_total = self.total;
+        let lower_limit = self.lower_limit.clone();
+        let upper_limit = self.upper_limit.clone();
         dom.add_event_handler(
             self.id(0),
             move |_dom: &mut Dom, _ctx: &mut engine::Context, _id: NodeId| {
-                if *steps_filled.lock().unwrap() == 0 {
+                if *steps_filled.lock() == 0 {
                     return;
                 }
-                *steps_filled.lock().unwrap() -= 1;
+                println!("sdlkfsdf {} {}", *steps_filled.lock(), *lower_limit.lock());
+                if *steps_filled.lock() <= *lower_limit.lock() {
+                    return;
+                }
+                *steps_filled.lock() -= 1;
             },
         );
-        let steps_filled = self.steps_filled.clone();
+        let steps_filled = self.filled.clone();
         dom.add_event_handler(
             self.id(1),
             move |_dom: &mut Dom, _ctx: &mut engine::Context, _id: NodeId| {
-                if *steps_filled.lock().unwrap() == steps_total {
+                if *steps_filled.lock() == steps_total {
                     return;
                 }
-                *steps_filled.lock().unwrap() += 1;
+                if *steps_filled.lock() >= *upper_limit.lock() {
+                    return;
+                }
+                *steps_filled.lock() += 1;
             },
         );
-    }
-
-    pub fn on_increase<F: Fn(&mut Dom, &mut engine::Context) + 'static>(&mut self, f: F) {
-        self.increase_handler = Some(Box::new(f));
-    }
-
-    pub fn on_decrease<F: Fn(&mut Dom, &mut engine::Context) + 'static>(&mut self, f: F) {
-        self.decrease_handler = Some(Box::new(f));
     }
 
     pub fn update(&mut self, dom: &mut Dom) {
@@ -130,7 +150,7 @@ impl ProgressBar {
         };
         *node_text = self.text();
 
-        for i in 0..self.steps_total {
+        for i in 0..self.total {
             let Some(node) = dom.select_mut(self.id(i as u64 + 1)) else {
                 panic!("percentage does not exist");
             };
