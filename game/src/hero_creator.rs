@@ -193,7 +193,7 @@ impl HeroCreatorSystem {
                                 .with_id(NodeId::HeroImage)
                                 .with_width(128)
                                 .with_height(128),
-                            Text("Hero type: boykisser")
+                            Text("Boykisser")
                                 .with_id(NodeId::HeroTypeText)
                                 .with_padding(30),
                             Rect().with_height(720 / 16),
@@ -335,9 +335,11 @@ fn update_hero(
         .lock()
         .set_steps_filled(hero.defence_points)
         .set_lower_limit(hero.defence_points);
+    let hero_info = HeroInfo::from(&hero.hero_type);
+    change_text_node_content(dom.select_mut(NodeId::HeroTypeText as u64), hero_info.name);
     change_image_node_content(
-        dom.select_mut(2),
-        HeroInfo::from(&hero.hero_type).texture_path,
+        dom.select_mut(NodeId::HeroImage as u64),
+        hero_info.texture_path,
     );
     menu.hero = Some(HeroResult::Hero(hero));
 }
