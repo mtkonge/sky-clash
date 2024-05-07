@@ -1,3 +1,4 @@
+#![allow(unused)]
 #![allow(dead_code)]
 
 use std::sync::mpsc::channel;
@@ -7,6 +8,7 @@ use message::HeroResult;
 
 use crate::message::{Comms, Message};
 
+mod actor;
 mod game;
 mod hero_creator;
 mod hero_info;
