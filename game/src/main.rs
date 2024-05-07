@@ -1,7 +1,4 @@
-#![allow(unused)]
 #![allow(dead_code)]
-
-use std::sync::mpsc::channel;
 
 use engine::spawn;
 use message::HeroResult;
@@ -21,8 +18,8 @@ mod start_game;
 mod ui;
 
 fn main() {
-    let (req_sender, req_receiver) = channel::<Message>();
-    let (board_sender, board_receiver) = channel::<Result<HeroResult, String>>();
+    let (req_sender, req_receiver) = actor::Actor::new::<Message>();
+    let (board_sender, board_receiver) = actor::Actor::new::<Result<HeroResult, String>>();
 
     let game_thread = std::thread::spawn(move || {
         let mut game = engine::Game::new().unwrap();
@@ -38,7 +35,7 @@ fn main() {
         );
 
         game.run();
-        req_sender.clone().send(Message::Quit).unwrap();
+        req_sender.clone().send(Message::Quit);
     });
 
     tokio::runtime::Runtime::new().unwrap().block_on(async {

@@ -52,8 +52,6 @@ impl ProgressBar {
     }
 
     pub fn set_lower_limit(&mut self, limit: Int) -> &mut Self {
-        println!("{}", limit);
-        *self.lower_limit.lock() = limit;
         if self.steps_filled() < limit {
             self.set_steps_filled(limit);
         }
@@ -116,7 +114,6 @@ impl ProgressBar {
                 if *steps_filled.lock() == 0 {
                     return;
                 }
-                println!("sdlkfsdf {} {}", *steps_filled.lock(), *lower_limit.lock());
                 if *steps_filled.lock() <= *lower_limit.lock() {
                     return;
                 }

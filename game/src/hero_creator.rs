@@ -41,9 +41,6 @@ pub struct HeroCreator {
     hero: Option<HeroResult>,
 }
 
-#[derive(Component, Clone)]
-pub struct SinceLastRequest(f64);
-
 #[repr(u64)]
 enum NodeId {
     HeroTypeText = 1,
@@ -65,8 +62,6 @@ impl System for HeroCreatorSystem {
         let strength_bar = ui::components::ProgressBar::new("Strength", 24, 100);
         let agility_bar = ui::components::ProgressBar::new("Agility", 24, 300);
         let defence_bar = ui::components::ProgressBar::new("Defence", 24, 200);
-
-        spawn!(ctx, SinceLastRequest(f64::MAX));
 
         let mut dom = self.build_dom(&strength_bar, &agility_bar, &defence_bar);
 
@@ -98,15 +93,14 @@ impl System for HeroCreatorSystem {
 
             comms
                 .req_sender
-                .send(crate::Message::UpdateHeroStats(
+                .send_important(crate::Message::UpdateHeroStats(
                     shared::UpdateHeroStatsParams { rfid, stats },
                 ))
-                .unwrap()
         });
 
         use shared::HeroKind::*;
         for (id, hero_type) in [(10, Centrist), (11, Speed), (12, Strong), (13, Tankie)] {
-            dom.add_event_handler(id, move |dom, ctx, _node_id| {
+            dom.add_event_handler(id, move |_dom, ctx, _node_id| {
                 let hero_type = hero_type.clone();
                 let menu = ctx.clone_one::<HeroCreator>();
                 let Some(hero) = menu.hero else {
@@ -117,18 +111,13 @@ impl System for HeroCreatorSystem {
                     HeroResult::UnknownRfid(rfid) => rfid,
                 };
                 let comms = ctx.select_one::<Comms>();
-                match comms
-                    .req_sender
-                    .send(crate::Message::CreateHero(shared::CreateHeroParams {
+                comms.req_sender.send_important(crate::Message::CreateHero(
+                    shared::CreateHeroParams {
                         rfid,
                         hero_type: hero_type.clone() as _,
                         base_stats: shared::HeroStats::from(hero_type.clone()),
-                    })) {
-                    Ok(_) => {
-                        dom.select_mut(4).unwrap().set_visible(false);
-                    }
-                    Err(_) => println!("Nooooooo :("),
-                }
+                    },
+                ));
             });
         }
 
@@ -169,12 +158,6 @@ impl System for HeroCreatorSystem {
             let unallocated = hero.total_skill_points() - total_allocated;
             for bar in [&menu.strength_bar, &menu.agility_bar, &menu.defence_bar] {
                 let filled = bar.lock().steps_filled();
-                println!(
-                    "so hawd = {}, {}, {}",
-                    filled,
-                    unallocated,
-                    filled + unallocated
-                );
                 bar.lock().set_upper_limit(filled + unallocated);
             }
         }
@@ -182,7 +165,7 @@ impl System for HeroCreatorSystem {
         menu.strength_bar.lock().update(&mut dom);
         menu.agility_bar.lock().update(&mut dom);
         menu.defence_bar.lock().update(&mut dom);
-        self.try_receive_and_update_hero(ctx, delta, dom);
+        self.try_receive_and_update_hero(ctx, dom);
 
         Ok(())
     }
@@ -281,20 +264,13 @@ impl HeroCreatorSystem {
     fn try_receive_and_update_hero(
         &self,
         ctx: &mut engine::Context,
-        delta: f64,
         mut dom: std::sync::MutexGuard<ui::Dom>,
     ) {
-        let since_last = ctx.select_one::<SinceLastRequest>();
-        since_last.0 += delta;
-
-        if since_last.0 > 1.0 {
-            since_last.0 = 0.0;
-            let comms = ctx.select::<Comms>(query_one!(ctx, Comms));
-            comms.req_sender.send(crate::Message::BoardStatus).unwrap();
-        }
+        let comms = ctx.select::<Comms>(query_one!(ctx, Comms));
+        comms.req_sender.send(crate::Message::BoardStatus);
 
         let comms = ctx.select::<Comms>(query_one!(ctx, Comms));
-        let Ok(hero) = comms.board_receiver.try_recv() else {
+        let Some(hero) = comms.board_receiver.try_receive() else {
             return;
         };
         dom.select_mut(50).unwrap().set_visible(false);

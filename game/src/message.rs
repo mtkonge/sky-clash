@@ -1,5 +1,5 @@
+use crate::actor::{Receiver, Sender};
 use core::panic;
-use std::sync::mpsc::{Receiver, Sender};
 
 use engine::Component;
 use reqwest::header::HeaderMap;
@@ -24,11 +24,14 @@ pub enum Message {
 }
 
 pub async fn listen(
-    req_receiver: Receiver<Message>,
-    board_sender: Sender<Result<HeroResult, String>>,
+    mut req_receiver: Receiver<Message>,
+    mut board_sender: Sender<Result<HeroResult, String>>,
 ) {
     loop {
-        match req_receiver.recv().unwrap() {
+        let Some(message) = req_receiver.try_receive() else {
+            continue;
+        };
+        match message {
             Message::Quit => {
                 break;
             }
@@ -56,7 +59,7 @@ pub async fn listen(
                 let hero_rfid = match hero_rfid {
                     Ok(rfid) => rfid,
                     Err(err) => {
-                        board_sender.send(Err(err)).unwrap();
+                        board_sender.send(Err(err));
                         break;
                     }
                 };
@@ -68,7 +71,7 @@ pub async fn listen(
                             .map(HeroResult::Hero)
                             .unwrap_or(HeroResult::UnknownRfid(hero_rfid));
 
-                        board_sender.send(Ok(body)).unwrap();
+                        board_sender.send(Ok(body));
                     }
                     Err(error) => {
                         println!("e = {:?}", error);

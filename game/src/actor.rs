@@ -1,9 +1,4 @@
 use std::collections::VecDeque;
-use std::sync::atomic::AtomicBool;
-use std::sync::mpsc::Receiver as RawReceiver;
-use std::sync::mpsc::Sender as RawSender;
-use std::sync::Arc;
-use std::sync::Mutex;
 
 use aptr::*;
 
@@ -53,7 +48,10 @@ impl<T> Sender<T> {
     }
 }
 
-pub fn new<T>() -> (Sender<T>, Receiver<T>) {
-    let queue = Aptr::new(VecDeque::new());
-    (Sender(queue.clone()), Receiver(queue.clone()))
+pub struct Actor(());
+impl Actor {
+    pub fn new<T>() -> (Sender<T>, Receiver<T>) {
+        let queue = Aptr::new(VecDeque::new());
+        (Sender(queue.clone()), Receiver(queue.clone()))
+    }
 }
