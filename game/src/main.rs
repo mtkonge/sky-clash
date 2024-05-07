@@ -1,16 +1,16 @@
 #![allow(dead_code)]
 
-use crate::message::{HeroResult, Message, MothershipActor};
+use crate::mothership::{HeroResult, Message, MothershipActor};
 use actor::Actor;
 use engine::{spawn, Component};
-use message::MothershipHandle;
+use mothership::MothershipHandle;
 
 mod actor;
 mod game;
 mod hero_creator;
 mod hero_info;
 mod main_menu;
-mod message;
+mod mothership;
 mod player_movement;
 mod shared_ptr;
 mod sprite_renderer;

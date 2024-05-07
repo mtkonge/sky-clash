@@ -1,5 +1,5 @@
 use crate::hero_info::HeroInfo;
-use crate::message::HeroResult;
+use crate::mothership::HeroResult;
 use crate::shared_ptr::SharedPtr;
 use crate::ui;
 use crate::GameActor;
