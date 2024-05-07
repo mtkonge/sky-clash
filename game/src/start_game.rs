@@ -17,13 +17,30 @@ impl System for StartGameSystem {
         let system_id = self.0;
 
         let mut dom = ui::Dom::new(
-            Stack([Vert([
-                Text("Doing you mom!, doing-doing your mom!").with_font_size(48),
-                Button("Start Game")
-                    .with_color((255, 255, 255))
-                    .with_padding(15)
-                    .with_border_thickness(2)
-                    .on_click(0),
+            Stack([Hori([
+                Vert([
+                    Rect().with_height(300),
+                    Rect()
+                        .with_width(200)
+                        .with_height(200)
+                        .with_background_color((255, 0, 0)),
+                ]),
+                Rect().with_width(200),
+                Vert([
+                    Rect().with_height(400),
+                    Button("Start Game")
+                        .with_color((255, 255, 255))
+                        .with_padding(15)
+                        .on_click(0),
+                ]),
+                Rect().with_width(200),
+                Vert([
+                    Rect().with_height(300),
+                    Rect()
+                        .with_width(200)
+                        .with_height(200)
+                        .with_background_color((0, 255, 0)),
+                ]),
             ])])
             .with_background_color((50, 50, 50))
             .with_width(1280)
