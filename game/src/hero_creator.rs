@@ -42,7 +42,7 @@ pub struct HeroCreator {
 }
 
 #[derive(Component, Clone)]
-pub struct Rfid(Option<HeroResult>);
+pub struct HeroResultComponent(Option<HeroResult>);
 
 #[derive(Component, Clone)]
 pub struct SinceLastRequest(f64);
@@ -69,7 +69,7 @@ impl System for HeroCreatorSystem {
         let mut agility_bar = ui::components::ProgressBar::new("Agility", 24, 300);
         let mut defence_bar = ui::components::ProgressBar::new("Defence", 24, 200);
 
-        spawn!(ctx, Rfid(None));
+        spawn!(ctx, HeroResultComponent(None));
         spawn!(ctx, SinceLastRequest(f64::MAX));
 
         let mut dom = self.build_dom(&strength_bar, &agility_bar, &defence_bar);
@@ -90,10 +90,10 @@ impl System for HeroCreatorSystem {
         });
 
         dom.add_event_handler(20, move |_dom, ctx, _node_id| {
-            let Rfid(Some(rfid)) = ctx.clone_one::<Rfid>() else {
+            let HeroResultComponent(Some(hero)) = ctx.clone_one::<HeroResultComponent>() else {
                 return;
             };
-            let rfid = match rfid {
+            let rfid = match hero {
                 HeroResult::Hero(hero) => hero.rfid,
                 HeroResult::UnknownRfid(_) => panic!("tried to update non existing hero"),
             };
@@ -121,10 +121,10 @@ impl System for HeroCreatorSystem {
         for (id, hero_type) in [(10, Centrist), (11, Speed), (12, Strong), (13, Tankie)] {
             dom.add_event_handler(id, move |dom, ctx, _node_id| {
                 let hero_type = hero_type.clone();
-                let Rfid(Some(rfid)) = ctx.clone_one::<Rfid>() else {
+                let HeroResultComponent(Some(hero)) = ctx.clone_one::<HeroResultComponent>() else {
                     return;
                 };
-                let rfid = match rfid {
+                let rfid = match hero {
                     HeroResult::Hero(_) => panic!("tried to create existing hero"),
                     HeroResult::UnknownRfid(rfid) => rfid,
                 };
@@ -290,9 +290,10 @@ impl HeroCreatorSystem {
         };
         match hero {
             HeroResult::Hero(hero) => {
-                let old_hero_info = ctx.select::<Rfid>(query_one!(ctx, Rfid));
-                if let Some(ref old_rfid) = old_hero_info.0 {
-                    match old_rfid {
+                let old_hero_info =
+                    ctx.select::<HeroResultComponent>(query_one!(ctx, HeroResultComponent));
+                if let Some(ref old_hero) = old_hero_info.0 {
+                    match old_hero {
                         HeroResult::Hero(old_hero) if hero.rfid == old_hero.rfid => {
                             return;
                         }
@@ -324,11 +325,11 @@ impl HeroCreatorSystem {
                     HeroInfo::from(&hero.hero_type).texture_path,
                 );
 
-                let Rfid(rfid) = ctx.select_one::<Rfid>();
-                *rfid = Some(HeroResult::Hero(hero));
+                let HeroResultComponent(hero_ref) = ctx.select_one::<HeroResultComponent>();
+                *hero_ref = Some(HeroResult::Hero(hero));
             }
             HeroResult::UnknownRfid(rfid) => {
-                let old_rfid = ctx.select_one::<Rfid>();
+                let old_rfid = ctx.select_one::<HeroResultComponent>();
                 if let Some(ref old_rfid) = old_rfid.0 {
                     let old_rfid = match old_rfid {
                         HeroResult::Hero(hero) => &hero.rfid,
