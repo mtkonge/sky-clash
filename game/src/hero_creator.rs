@@ -2,7 +2,6 @@ use crate::hero_info::HeroInfo;
 use crate::message::HeroResult;
 use crate::shared_ptr::SharedPtr;
 use crate::ui;
-use crate::ui::components::Button;
 use crate::Comms;
 use engine::{query_one, spawn};
 use engine::{Component, System};
@@ -200,6 +199,7 @@ impl HeroCreatorSystem {
         agility_bar: &ui::components::ProgressBar,
         defence_bar: &ui::components::ProgressBar,
     ) -> ui::Dom {
+        use ui::components::*;
         use ui::constructors::*;
         ui::Dom::new(
             Stack([

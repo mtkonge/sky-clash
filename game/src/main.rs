@@ -15,6 +15,7 @@ mod message;
 mod player_movement;
 mod shared_ptr;
 mod sprite_renderer;
+mod start_game;
 mod ui;
 
 fn main() {

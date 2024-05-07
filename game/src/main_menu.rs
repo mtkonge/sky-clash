@@ -1,8 +1,6 @@
-use std::rc::Rc;
-use std::sync::Mutex;
-
-use crate::game::GameSystem;
 use crate::hero_creator::HeroCreatorSystem;
+use crate::shared_ptr::SharedPtr;
+use crate::start_game::StartGameSystem;
 use crate::ui;
 use crate::ui::components::Button;
 use engine::{query, spawn};
@@ -11,7 +9,7 @@ use engine::{Component, System};
 #[derive(Component, Clone)]
 pub struct MainMenu {
     system_id: u64,
-    dom: Rc<Mutex<ui::Dom>>,
+    dom: SharedPtr<ui::Dom>,
 }
 
 pub struct MainMenuSystem(pub u64);
@@ -47,8 +45,7 @@ impl System for MainMenuSystem {
 
         dom.add_event_handler(1, move |_dom, ctx, _node_id| {
             ctx.remove_system(system_id);
-            ctx.add_system(GameSystem);
-            println!("button clicked");
+            ctx.add_system(StartGameSystem);
         });
 
         dom.add_event_handler(4, |dom, _ctx, _node_id| {
@@ -68,7 +65,7 @@ impl System for MainMenuSystem {
             ctx,
             MainMenu {
                 system_id: self.0,
-                dom: Rc::new(Mutex::new(dom))
+                dom: SharedPtr::new(dom)
             }
         );
 
@@ -78,7 +75,7 @@ impl System for MainMenuSystem {
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
         for id in query!(ctx, MainMenu) {
             let main_menu = ctx.select::<MainMenu>(id).clone();
-            main_menu.dom.lock().unwrap().update(ctx);
+            main_menu.dom.lock().update(ctx);
         }
         Ok(())
     }
