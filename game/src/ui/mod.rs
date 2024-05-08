@@ -3,6 +3,7 @@ mod builder;
 pub mod components;
 pub mod handle;
 mod layout;
+pub mod utils;
 
 pub use builder::constructors;
 use engine::Context;

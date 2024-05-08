@@ -93,7 +93,7 @@ impl ServerActor {
                             }
                         };
                     let board = shared::Board {
-                        hero_1_rfid: Some("1234523".to_string()),
+                        hero_1_rfid: Some("123452sda3".to_string()),
                         hero_2_rfid: None,
                     };
 

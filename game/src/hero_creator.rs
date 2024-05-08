@@ -3,34 +3,11 @@ use crate::server::BoardStateGoBrr;
 use crate::server::HeroResult;
 use crate::shared_ptr::SharedPtr;
 use crate::ui;
+use crate::ui::utils::change_image_node_content;
+use crate::ui::utils::change_text_node_content;
 use crate::GameActor;
 use engine::spawn;
 use engine::{Component, System};
-
-pub fn change_text_node_content<S: Into<String>>(node: Option<&mut ui::Node>, new_text: S) {
-    let Some(ui::Node {
-        kind: ui::Kind::Text { ref mut text, .. },
-        ..
-    }) = node
-    else {
-        return;
-    };
-    *text = new_text.into()
-}
-
-pub fn change_image_node_content<P: Into<std::path::PathBuf>>(
-    node: Option<&mut ui::Node>,
-    new_path: P,
-) {
-    let Some(ui::Node {
-        kind: ui::Kind::Image(ref mut image),
-        ..
-    }) = node
-    else {
-        return;
-    };
-    *image = new_path.into()
-}
 
 #[derive(Component, Clone)]
 pub struct HeroCreator {
