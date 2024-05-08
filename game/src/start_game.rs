@@ -1,11 +1,39 @@
-use engine::{query, spawn, Component, System};
+use std::sync::MutexGuard;
 
-use crate::{game::GameSystem, shared_ptr::SharedPtr, ui};
+use engine::{query, spawn, Component, System};
+use shared::Hero;
+
+use crate::{
+    game::GameSystem, hero_creator::change_image_node_content, hero_info::HeroInfo,
+    server::HeroResult, shared_ptr::SharedPtr, ui, GameActor,
+};
 
 #[derive(Component, Clone)]
 pub struct StartGame {
     system_id: u64,
     dom: SharedPtr<ui::Dom>,
+}
+
+fn handle_hero_result(
+    hero: Option<HeroResult>,
+    dom_id: u64,
+    dom: &mut MutexGuard<ui::Dom>,
+) -> Result<Hero, String> {
+    match hero {
+        Some(hero) => match hero {
+            HeroResult::Hero(hero) => {
+                change_image_node_content(
+                    dom.select_mut(dom_id),
+                    HeroInfo::from(&hero.hero_type).texture_path,
+                );
+                Ok(hero)
+            }
+            HeroResult::UnknownRfid(_) => {
+                Err("uhhmm hero with rfid does not acshually exist :nerd:".to_string())
+            }
+        },
+        None => Err("No hero found".to_string()),
+    }
 }
 
 pub struct StartGameSystem(pub u64);
@@ -20,7 +48,8 @@ impl System for StartGameSystem {
             Stack([Hori([
                 Vert([
                     Rect().with_height(300),
-                    Rect()
+                    Image("./textures/placeholder.png")
+                        .with_id(10u64)
                         .with_width(200)
                         .with_height(200)
                         .with_background_color((255, 0, 0)),
@@ -63,11 +92,33 @@ impl System for StartGameSystem {
     }
 
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
-        for id in query!(ctx, StartGame) {
-            let start_game = ctx.select::<StartGame>(id).clone();
-            start_game.dom.lock().update(ctx);
-        }
+        let start_game = ctx.clone_one::<StartGame>();
+        start_game.dom.lock().update(ctx);
 
+        let mut dom = start_game.dom.lock();
+
+        let comms = ctx.select_one::<GameActor>();
+        comms.server.send(crate::Message::BoardStatus);
+
+        let heroes = comms.inner.try_receive();
+
+        match heroes {
+            Some(heroes) => {
+                match handle_hero_result(heroes.hero_1, 10u64, &mut dom) {
+                    Ok(_) => (),
+                    Err(err) => {
+                        println!("{}", err);
+                    }
+                };
+                match handle_hero_result(heroes.hero_2, 10u64, &mut dom) {
+                    Ok(_) => (),
+                    Err(err) => {
+                        println!("{}", err);
+                    }
+                };
+            }
+            None => return Ok(()),
+        }
         Ok(())
     }
 

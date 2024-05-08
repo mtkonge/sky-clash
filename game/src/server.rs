@@ -1,5 +1,6 @@
 use crate::actor::{self, Actor, Handle};
 use core::panic;
+use std::ops::ControlFlow;
 
 use reqwest::header::HeaderMap;
 
@@ -16,7 +17,12 @@ pub enum Message {
     UpdateHeroStats(shared::UpdateHeroStatsParams),
 }
 
-type ResponseHandle = Handle<Result<HeroResult, String>>;
+pub struct BoardStateGoBrr {
+    pub hero_1: Option<HeroResult>,
+    pub hero_2: Option<HeroResult>,
+}
+
+type ResponseHandle = Handle<BoardStateGoBrr>;
 
 pub struct ServerActor {
     inner: Actor<Message>,
@@ -40,8 +46,24 @@ impl std::ops::DerefMut for Server {
     }
 }
 
+async fn hero_by_rfid(rfid: String) -> ControlFlow<(), HeroResult> {
+    match reqwest::get(format!("http://65.108.91.32:8080/hero/{}", rfid)).await {
+        Ok(res) => {
+            let body = res.json::<Option<shared::Hero>>().await.unwrap();
+            let body = body
+                .map(HeroResult::Hero)
+                .unwrap_or(HeroResult::UnknownRfid(rfid));
+            ControlFlow::Continue(body)
+        }
+        Err(error) => {
+            println!("e = {:?}", error);
+            ControlFlow::Break(())
+        }
+    }
+}
+
 impl ServerActor {
-    pub fn new(response_handle: Handle<Result<HeroResult, String>>) -> Self {
+    pub fn new(response_handle: ResponseHandle) -> Self {
         Self {
             inner: actor::Actor::new(),
             response_handle,
@@ -61,8 +83,8 @@ impl ServerActor {
                 }
 
                 Message::BoardStatus => {
-                    #[allow(unused_assignments)]
-                    let mut board: shared::Board =
+                    #[allow(unused_variables)]
+                    let board: shared::Board =
                         match reqwest::get("http://65.108.91.32:8080/heroes_on_board").await {
                             Ok(body) => body.json().await.unwrap(),
                             Err(error) => {
@@ -70,41 +92,30 @@ impl ServerActor {
                                 break;
                             }
                         };
-
-                    board = shared::Board {
+                    let board = shared::Board {
                         hero_1_rfid: Some("1234523".to_string()),
                         hero_2_rfid: None,
                     };
 
-                    let hero_rfid = match (board.hero_1_rfid, board.hero_2_rfid) {
-                        (None, Some(v)) | (Some(v), None) => Ok(v),
-                        (None, None) => Err("please put 1 hero on board".to_string()),
-                        (Some(_), Some(_)) => Err("please put only 1 hero on board".to_string()),
+                    let hero_1 = match board.hero_1_rfid {
+                        Some(rfid) => match hero_by_rfid(rfid).await {
+                            ControlFlow::Continue(hero) => Some(hero),
+                            ControlFlow::Break(()) => break,
+                        },
+                        None => None,
                     };
-                    let hero_rfid = match hero_rfid {
-                        Ok(rfid) => rfid,
-                        Err(err) => {
-                            self.response_handle.send(Err(err));
-                            break;
-                        }
+                    let hero_2 = match board.hero_2_rfid {
+                        Some(rfid) => match hero_by_rfid(rfid).await {
+                            ControlFlow::Continue(hero) => Some(hero),
+                            ControlFlow::Break(()) => break,
+                        },
+                        None => None,
                     };
 
-                    match reqwest::get(format!("http://65.108.91.32:8080/hero/{}", hero_rfid)).await
-                    {
-                        Ok(res) => {
-                            let body = res.json::<Option<shared::Hero>>().await.unwrap();
-                            let body = body
-                                .map(HeroResult::Hero)
-                                .unwrap_or(HeroResult::UnknownRfid(hero_rfid));
-
-                            self.response_handle.send(Ok(body));
-                        }
-                        Err(error) => {
-                            println!("e = {:?}", error);
-                            break;
-                        }
-                    };
+                    self.response_handle
+                        .send(BoardStateGoBrr { hero_1, hero_2 })
                 }
+
                 Message::CreateHero(body) => {
                     let client = reqwest::Client::new();
                     let body = match serde_json::to_string(&body) {

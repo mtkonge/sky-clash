@@ -1,4 +1,5 @@
 use crate::hero_info::HeroInfo;
+use crate::server::BoardStateGoBrr;
 use crate::server::HeroResult;
 use crate::shared_ptr::SharedPtr;
 use crate::ui;
@@ -272,10 +273,30 @@ impl HeroCreatorSystem {
         dom.select_mut(50).unwrap().set_visible(false);
 
         let hero = match hero {
-            Ok(v) => v,
+            BoardStateGoBrr {
+                hero_1: Some(hero),
+                hero_2: None,
+            }
+            | BoardStateGoBrr {
+                hero_1: None,
+                hero_2: Some(hero),
+            } => Ok(hero),
+            BoardStateGoBrr {
+                hero_1: None,
+                hero_2: None,
+            } => Err("please put 1 hero on board"),
+            BoardStateGoBrr {
+                hero_1: Some(_),
+                hero_2: Some(_),
+            } => Err("please put only 1 hero on board"),
+        };
+        let hero = match hero {
+            Ok(hero) => hero,
             Err(err) => {
-                dom.select_mut(5).unwrap().set_visible(true);
-                change_text_node_content(dom.select_mut(6), format!("an error occurred: {err}"));
+                change_text_node_content(dom.select_mut(NodeId::ErrorText as u64), err);
+                dom.select_mut(NodeId::ErrorPopup as u64)
+                    .unwrap()
+                    .set_visible(true);
                 return;
             }
         };

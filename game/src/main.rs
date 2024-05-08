@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::server::{HeroResult, Message, ServerActor};
+use crate::server::{Message, ServerActor};
 use actor::Actor;
 use engine::{spawn, Component};
 use server::Server;
@@ -19,7 +19,7 @@ mod ui;
 
 #[derive(Component)]
 pub struct GameActor {
-    inner: Actor<Result<HeroResult, String>>,
+    inner: Actor<server::BoardStateGoBrr>,
     server: Server,
 }
 
@@ -40,7 +40,7 @@ fn main() {
         spawn!(&mut ctx, game_actor);
 
         game.run();
-        quit_handle.send(Message::Quit);
+        quit_handle.send_important(Message::Quit);
     });
 
     tokio::runtime::Runtime::new().unwrap().block_on(async {
