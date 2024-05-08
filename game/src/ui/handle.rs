@@ -1,10 +1,10 @@
 use super::{EventId, NodeId};
 
-pub struct Handle(u64);
+pub struct Handle(pub u64);
 
 impl Handle {
-    pub fn new(id: u64) -> Self {
-        Self(id)
+    pub fn new() -> Self {
+        Self(rand::random())
     }
 }
 

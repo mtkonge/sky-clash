@@ -47,11 +47,10 @@ enum Node {
     HeroTypeText,
     HeroImage,
     AvailablePoints,
-    HeroSelectPopup,
+    HeroKindPopup,
     ErrorPopup,
     ErrorText,
     Loading,
-    ChooseHeroType,
 }
 
 #[repr(u64)]
@@ -79,9 +78,9 @@ impl From<Event> for ui::EventId {
 pub struct HeroCreatorSystem(pub u64);
 impl System for HeroCreatorSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
-        let strength_bar = ui::components::ProgressBar::new("Strength", 24, 100);
-        let agility_bar = ui::components::ProgressBar::new("Agility", 24, 300);
-        let defence_bar = ui::components::ProgressBar::new("Defence", 24, 200);
+        let strength_bar = ui::components::ProgressBar::new("Strength", 24);
+        let agility_bar = ui::components::ProgressBar::new("Agility", 24);
+        let defence_bar = ui::components::ProgressBar::new("Defence", 24);
 
         let mut dom = self.build_dom(&strength_bar, &agility_bar, &defence_bar);
 
@@ -255,7 +254,7 @@ impl HeroCreatorSystem {
                             .on_click(Event::TankieButton),
                     ]),
                 ])
-                .id(Node::HeroSelectPopup)
+                .id(Node::HeroKindPopup)
                 .visible(false)
                 .border_thickness(2)
                 .padding(5),
@@ -321,7 +320,7 @@ impl HeroCreatorSystem {
             }
         };
         match hero {
-            HeroResult::Hero(hero) => update_hero(ctx, hero, dom),
+            HeroResult::Hero(hero) => initialize_hero(ctx, hero, dom),
             HeroResult::UnknownRfid(rfid) => {
                 let menu = ctx.select_one::<HeroCreator>();
                 let old_hero = &menu.hero;
@@ -335,7 +334,7 @@ impl HeroCreatorSystem {
                     }
                 }
                 menu.hero = Some(HeroResult::UnknownRfid(rfid));
-                dom.select_mut(Node::ChooseHeroType)
+                dom.select_mut(Node::HeroKindPopup)
                     .unwrap()
                     .set_visible(true);
             }
@@ -343,11 +342,15 @@ impl HeroCreatorSystem {
     }
 }
 
-fn update_hero(
+fn initialize_hero(
     ctx: &mut engine::Context,
     hero: shared::Hero,
     mut dom: std::sync::MutexGuard<ui::Dom>,
 ) {
+    dom.select_mut(Node::HeroKindPopup)
+        .unwrap()
+        .set_visible(false);
+
     let menu = ctx.select_one::<HeroCreator>();
     let old_hero_info = &menu.hero;
     if let Some(old_hero) = old_hero_info {

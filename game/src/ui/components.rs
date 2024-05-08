@@ -1,6 +1,8 @@
 use crate::shared_ptr::SharedPtr;
 
-use super::{builder, constructors::Text, BoxedNode, Dom, InternalNodeId, Kind, Node};
+use super::{
+    builder, constructors::Text, handle::Handle, BoxedNode, Dom, InternalNodeId, Kind, Node,
+};
 
 #[allow(non_snake_case)]
 pub fn Button<S: Into<String>>(text: S) -> builder::Box<builder::Node> {
@@ -18,23 +20,23 @@ pub struct ProgressBar {
     total: Int,
     lower_limit: SharedPtr<Int>,
     upper_limit: SharedPtr<Int>,
-    id_mask: u64,
+    handle: Handle,
 }
 
 impl ProgressBar {
-    pub fn new<S: Into<String>>(title: S, steps_total: Int, id_mask: u64) -> Self {
+    pub fn new<S: Into<String>>(title: S, steps_total: Int) -> Self {
         Self {
             title: title.into(),
             filled: SharedPtr::new(0),
             total: steps_total,
             lower_limit: SharedPtr::new(0),
             upper_limit: SharedPtr::new(steps_total),
-            id_mask,
+            handle: Handle::new(),
         }
     }
 
-    fn id(&self, id: u64) -> u64 {
-        self.id_mask + id
+    fn id(&self, id: u64) -> Handle {
+        Handle(self.handle.0 + id)
     }
 
     pub fn steps_filled(&self) -> Int {
