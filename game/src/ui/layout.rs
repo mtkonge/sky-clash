@@ -1,11 +1,12 @@
 use engine::Context;
 
-use super::{Dom, EventId, Kind, Node, InternalNodeId};
+use super::{Dom, EventId, InternalNodeId, Kind, Node};
 
 #[derive(Debug)]
 pub(super) struct LayoutTreeLeaf<'a> {
     size: (i32, i32),
     pos: (i32, i32),
+    node_id: InternalNodeId,
     inner: &'a Node,
 }
 
@@ -90,7 +91,7 @@ impl LayoutTreeLeaf<'_> {
         {
             return None;
         }
-        Some((event_id, InternalNodeId(0)))
+        Some((event_id, self.node_id))
     }
     pub fn draw(&self, ctx: &mut Context) {
         if !self.inner.visible {
@@ -143,6 +144,7 @@ impl LayoutTreeLeaf<'_> {
 pub(super) trait CanCreateLayoutTree {
     fn build_layout_tree<'dom>(
         &'dom self,
+        node_id: InternalNodeId,
         dom: &'dom Dom,
         ctx: &mut Context,
         parent_pos: (i32, i32),
@@ -236,6 +238,7 @@ impl TransformersRobotsInDisguise for NoTransform {
 impl CanCreateLayoutTree for Node {
     fn build_layout_tree<'dom>(
         &'dom self,
+        node_id: InternalNodeId,
         dom: &'dom Dom,
         ctx: &mut Context,
         parent_pos: (i32, i32),
@@ -246,10 +249,12 @@ impl CanCreateLayoutTree for Node {
                 size: (0, 0),
                 pos: (0, 0),
                 inner: self,
+                node_id,
             });
         }
         fn build_leaf<'a>(
             node: &'a Node,
+            node_id: InternalNodeId,
             pos_offset: &mut dyn TransformersRobotsInDisguise,
             parent_pos: (i32, i32),
             default_size: (i32, i32),
@@ -265,6 +270,7 @@ impl CanCreateLayoutTree for Node {
                 size,
                 pos,
                 inner: node,
+                node_id,
             }
         }
 
@@ -274,11 +280,11 @@ impl CanCreateLayoutTree for Node {
                 let font_id = ctx.load_font(font, font_size).unwrap();
                 let size = ctx.text_size(font_id, text).unwrap();
                 let size = (size.0 as i32, size.1 as i32);
-                let leaf = build_leaf(self, pos_transformer, parent_pos, size);
+                let leaf = build_leaf(self, node_id, pos_transformer, parent_pos, size);
                 LayoutTree::Single(leaf)
             }
             Kind::Rect | Kind::Image(_) => {
-                let leaf = build_leaf(self, pos_transformer, parent_pos, (0, 0));
+                let leaf = build_leaf(self, node_id, pos_transformer, parent_pos, (0, 0));
                 LayoutTree::Single(leaf)
             }
             kind @ (Kind::Hori(children) | Kind::Vert(children) | Kind::Stack(children)) => {
@@ -305,8 +311,10 @@ impl CanCreateLayoutTree for Node {
 
                 let size = children
                     .iter()
-                    .filter_map(|id| dom.select_node(*id))
-                    .map(|node| node.build_layout_tree(dom, ctx, (0, 0), &mut NoTransform))
+                    .filter_map(|id| dom.select_node(*id).map(|node| (*id, node)))
+                    .map(|(id, node)| {
+                        node.build_layout_tree(id, dom, ctx, (0, 0), &mut NoTransform)
+                    })
                     .fold((0, 0), calc_content_size);
 
                 let size = (self.width.unwrap_or(size.0), self.height.unwrap_or(size.1));
@@ -322,14 +330,17 @@ impl CanCreateLayoutTree for Node {
                 };
                 let children: Vec<_> = children
                     .iter()
-                    .filter_map(|id| dom.select_node(*id))
-                    .map(|node| node.build_layout_tree(dom, ctx, pos, transformer.as_mut()))
+                    .filter_map(|id| dom.select_node(*id).map(|node| (*id, node)))
+                    .map(|(id, node)| {
+                        node.build_layout_tree(id, dom, ctx, pos, transformer.as_mut())
+                    })
                     .collect();
 
                 let leaf = LayoutTreeLeaf {
                     size: (size.0 + padding * 2, size.1 + padding * 2),
                     pos,
                     inner: self,
+                    node_id,
                 };
 
                 LayoutTree::Multiple(leaf, children)

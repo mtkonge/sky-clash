@@ -207,7 +207,7 @@ impl Dom {
             .find(|(id, _)| *id == self.root_id)
             .map(|(_, node)| node)
             .unwrap()
-            .build_layout_tree(self, ctx, (0, 0), &mut NoTransform)
+            .build_layout_tree(self.root_id, self, ctx, (0, 0), &mut NoTransform)
     }
 
     pub fn update(&mut self, ctx: &mut engine::Context) {
