@@ -115,13 +115,11 @@ impl Node {
         &mut self,
         nodes: &mut Vec<(NodeId, super::Node)>,
         id_counter: &mut u64,
-        mut derived_props: DerivedProps,
+        derived_props: DerivedProps,
     ) -> super::NodeId {
-        if self.color.is_none() {
-            self.color = derived_props.color;
-        } else if derived_props.color.is_none() {
-            derived_props.color = self.color;
-        }
+        let derived_props = DerivedProps {
+            color: derived_props.color.or(self.color),
+        };
 
         let id = super::NodeId(*id_counter);
         *id_counter += 1;
