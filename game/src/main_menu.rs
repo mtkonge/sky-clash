@@ -21,26 +21,26 @@ impl System for MainMenuSystem {
 
         let mut dom = ui::Dom::new(
             Stack([Vert([
-                Text("SkyTrash").with_font_size(48),
+                Text("SkyTrash").font_size(48),
                 Button("Start Game")
-                    .with_color((255, 255, 255))
-                    .with_padding(15)
-                    .with_border_thickness(2)
+                    .color((255, 255, 255))
+                    .padding(15)
+                    .border_thickness(2)
                     .on_click(1),
                 Button("Hero Creator")
-                    .with_color((255, 255, 255))
-                    .with_padding(15)
-                    .with_border_thickness(2)
+                    .color((255, 255, 255))
+                    .padding(15)
+                    .border_thickness(2)
                     .on_click(2),
                 Button("Exit")
-                    .with_color((255, 255, 255))
-                    .with_padding(15)
-                    .with_border_thickness(2)
+                    .color((255, 255, 255))
+                    .padding(15)
+                    .border_thickness(2)
                     .on_click(3),
             ])])
-            .with_background_color((50, 50, 50))
-            .with_width(1280)
-            .with_height(720),
+            .background_color((50, 50, 50))
+            .width(1280)
+            .height(720),
         );
 
         dom.add_event_handler(1, move |_dom, ctx, _node_id| {

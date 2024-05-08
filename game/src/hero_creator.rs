@@ -190,73 +190,73 @@ impl HeroCreatorSystem {
                         Vert([
                             Image("./textures/player.png")
                                 .with_id(NodeId::HeroImage)
-                                .with_width(128)
-                                .with_height(128),
+                                .width(128)
+                                .height(128),
                             Text("Boykisser")
                                 .with_id(NodeId::HeroTypeText)
-                                .with_padding(30),
-                            Rect().with_height(720 / 16),
+                                .padding(30),
+                            Rect().height(720 / 16),
                         ])
-                        .with_padding(50)
-                        .with_border_thickness(2),
-                        Rect().with_height(720 / 4),
+                        .padding(50)
+                        .border_thickness(2),
+                        Rect().height(720 / 4),
                     ]),
-                    Rect().with_width(1280 / 4),
+                    Rect().width(1280 / 4),
                     Vert([
                         Text("Available points: 0").with_id(NodeId::AvailablePoints),
                         strength_bar.build(),
                         agility_bar.build(),
                         defence_bar.build(),
                         Hori([ui::components::Button("Confirm").on_click(20)]),
-                        Rect().with_height(720 / 2 - 100),
+                        Rect().height(720 / 2 - 100),
                     ]),
                 ]),
                 Vert([
-                    Text("Unknown hero").with_padding(5),
-                    Text("Please select which hero this is").with_padding(5),
+                    Text("Unknown hero").padding(5),
+                    Text("Please select which hero this is").padding(5),
                     Hori([
                         Button("Centrist")
-                            .with_background_color((100, 100, 100))
-                            .with_padding(5)
+                            .background_color((100, 100, 100))
+                            .padding(5)
                             .on_click(10),
                         Button("Speed")
-                            .with_background_color((100, 100, 100))
-                            .with_padding(5)
+                            .background_color((100, 100, 100))
+                            .padding(5)
                             .on_click(11),
                         Button("Strong")
-                            .with_background_color((100, 100, 100))
-                            .with_padding(5)
+                            .background_color((100, 100, 100))
+                            .padding(5)
                             .on_click(12),
                         Button("Tankie")
-                            .with_background_color((100, 100, 100))
-                            .with_padding(5)
+                            .background_color((100, 100, 100))
+                            .padding(5)
                             .on_click(13),
                     ]),
                 ])
                 .with_id(NodeId::HeroSelectPopup)
                 .visible(false)
-                .with_border_thickness(2)
-                .with_padding(5),
+                .border_thickness(2)
+                .padding(5),
                 Vert([
-                    Text("Error").with_id(NodeId::ErrorText).with_padding(5),
+                    Text("Error").with_id(NodeId::ErrorText).padding(5),
                     Button("Ok")
-                        .with_background_color((100, 100, 100))
-                        .with_padding(5)
+                        .background_color((100, 100, 100))
+                        .padding(5)
                         .on_click(1),
                 ])
                 .with_id(NodeId::ErrorPopup)
                 .visible(false)
-                .with_border_thickness(2)
-                .with_padding(5),
+                .border_thickness(2)
+                .padding(5),
                 Text("Loading...")
-                    .with_width(1280)
-                    .with_height(720)
-                    .with_background_color((50, 50, 50))
+                    .width(1280)
+                    .height(720)
+                    .background_color((50, 50, 50))
                     .with_id(50u64),
             ])
-            .with_width(1280)
-            .with_height(720)
-            .with_background_color((50, 50, 50)),
+            .width(1280)
+            .height(720)
+            .background_color((50, 50, 50)),
         )
     }
 

@@ -47,33 +47,30 @@ impl System for StartGameSystem {
         let mut dom = ui::Dom::new(
             Stack([Hori([
                 Vert([
-                    Rect().with_height(300),
+                    Rect().height(300),
                     Image("./textures/placeholder.png")
                         .with_id(10u64)
-                        .with_width(200)
-                        .with_height(200)
-                        .with_background_color((255, 0, 0)),
+                        .width(200)
+                        .height(200)
+                        .background_color((255, 0, 0)),
                 ]),
-                Rect().with_width(200),
+                Rect().width(200),
                 Vert([
-                    Rect().with_height(400),
+                    Rect().height(400),
                     Button("Start Game")
-                        .with_color((255, 255, 255))
-                        .with_padding(15)
+                        .color((255, 255, 255))
+                        .padding(15)
                         .on_click(0),
                 ]),
-                Rect().with_width(200),
+                Rect().width(200),
                 Vert([
-                    Rect().with_height(300),
-                    Rect()
-                        .with_width(200)
-                        .with_height(200)
-                        .with_background_color((0, 255, 0)),
+                    Rect().height(300),
+                    Rect().width(200).height(200).background_color((0, 255, 0)),
                 ]),
             ])])
-            .with_background_color((50, 50, 50))
-            .with_width(1280)
-            .with_height(720),
+            .background_color((50, 50, 50))
+            .width(1280)
+            .height(720),
         );
 
         dom.add_event_handler(0, move |_dom, ctx, _node_id| {

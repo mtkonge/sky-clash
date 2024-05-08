@@ -183,15 +183,14 @@ macro_rules! make_with_function {
 }
 
 impl Box<Node> {
-    make_with_function!(on_click, on_click, u64);
-    make_with_function!(with_width, width, i32);
-    make_with_function!(with_height, height, i32);
-    make_with_function!(with_background_color, background_color, (u8, u8, u8));
-    make_with_function!(with_color, color, (u8, u8, u8));
-    make_with_function!(with_border_color, border_color, (u8, u8, u8));
-    make_with_function!(with_border_thickness, border_thickness, i32);
-    make_with_function!(with_padding, padding, i32);
-    make_with_function!(with_font_size, font_size, u16);
+    make_with_function!(width, width, i32);
+    make_with_function!(height, height, i32);
+    make_with_function!(background_color, background_color, (u8, u8, u8));
+    make_with_function!(color, color, (u8, u8, u8));
+    make_with_function!(border_color, border_color, (u8, u8, u8));
+    make_with_function!(border_thickness, border_thickness, i32);
+    make_with_function!(padding, padding, i32);
+    make_with_function!(font_size, font_size, u16);
 
     pub fn visible(mut self, visible: bool) -> Self {
         self.visible = visible;

@@ -5,9 +5,9 @@ use super::{builder, constructors::Text, BoxedNode, Dom, Kind, Node, NodeId};
 #[allow(non_snake_case)]
 pub fn Button<S: Into<String>>(text: S) -> builder::Box<builder::Node> {
     Text(text)
-        .with_padding(15)
-        .with_border_thickness(2)
-        .with_border_color((255, 255, 255))
+        .padding(15)
+        .border_thickness(2)
+        .border_color((255, 255, 255))
 }
 
 type Int = i64;
@@ -87,20 +87,20 @@ impl ProgressBar {
                     (127, 127, 127)
                 };
 
-                Text("|").with_color(color).with_id(self.id(i as u64 + 1))
+                Text("|").color(color).with_id(self.id(i as u64 + 1))
             })
             .collect();
         children.insert(
             middle,
-            Vert([Text(self.text()).with_id(self.id(0))]).with_width(130),
+            Vert([Text(self.text()).with_id(self.id(0))]).width(130),
         );
 
         Hori([
-            Text("-").on_click(self.id(0)).with_padding(8),
+            Text("-").on_click(self.id(0)).padding(8),
             Hori(children),
-            Text("+").on_click(self.id(1)).with_padding(8),
+            Text("+").on_click(self.id(1)).padding(8),
         ])
-        .with_padding(8)
+        .padding(8)
     }
 
     pub fn add_event_handlers(&self, dom: &mut Dom) {
