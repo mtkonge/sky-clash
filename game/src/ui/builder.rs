@@ -1,4 +1,4 @@
-use super::{Dom, NodeId, UserSpaceId};
+use super::{Dom, EventId, InternalNodeId, NodeId};
 use std::{
     boxed::Box as InnerBox,
     ops::{Deref, DerefMut},
@@ -76,10 +76,10 @@ impl DerivedProps {
 
 pub struct Node {
     kind: Kind,
-    id: Option<u64>,
+    id: Option<NodeId>,
     width: Option<i32>,
     height: Option<i32>,
-    on_click: Option<u64>,
+    on_click: Option<EventId>,
     background_color: Option<(u8, u8, u8)>,
     color: Option<(u8, u8, u8)>,
     border_thickness: Option<i32>,
@@ -107,21 +107,21 @@ impl Node {
         })
     }
 
-    pub fn build_from_dom(&mut self, dom: &mut Dom) -> super::NodeId {
+    pub fn build_from_dom(&mut self, dom: &mut Dom) -> super::InternalNodeId {
         self.build(&mut dom.nodes, &mut dom.id_counter, DerivedProps::new())
     }
 
     pub fn build(
         &mut self,
-        nodes: &mut Vec<(NodeId, super::Node)>,
+        nodes: &mut Vec<(InternalNodeId, super::Node)>,
         id_counter: &mut u64,
         derived_props: DerivedProps,
-    ) -> super::NodeId {
+    ) -> super::InternalNodeId {
         let derived_props = DerivedProps {
             color: derived_props.color.or(self.color),
         };
 
-        let id = super::NodeId(*id_counter);
+        let id = super::InternalNodeId(*id_counter);
         *id_counter += 1;
         let kind = match &mut self.kind {
             Kind::Rect => super::Kind::Rect,
@@ -156,7 +156,7 @@ impl Node {
             id,
             super::Node {
                 kind,
-                id: self.id.map(UserSpaceId),
+                id: self.id,
                 width: self.width,
                 height: self.height,
                 on_click: self.on_click,
@@ -197,8 +197,13 @@ impl Box<Node> {
         self
     }
 
-    pub fn with_id<T: Into<u64>>(mut self, id: T) -> Self {
+    pub fn id<T: Into<NodeId>>(mut self, id: T) -> Self {
         self.id = Some(id.into());
+        self
+    }
+
+    pub fn on_click<T: Into<EventId>>(mut self, id: T) -> Self {
+        self.on_click = Some(id.into());
         self
     }
 }

@@ -14,9 +14,9 @@ pub struct StartGame {
     dom: SharedPtr<ui::Dom>,
 }
 
-fn handle_hero_result(
+fn handle_hero_result<I: Into<ui::NodeId>>(
     hero: Option<HeroResult>,
-    dom_id: u64,
+    dom_id: I,
     dom: &mut MutexGuard<ui::Dom>,
 ) -> Result<Hero, String> {
     match hero {
@@ -36,6 +36,29 @@ fn handle_hero_result(
     }
 }
 
+#[repr(u64)]
+enum Node {
+    LeftImage,
+    RightImage,
+}
+
+#[repr(u64)]
+enum Event {
+    StartGame,
+}
+
+impl From<Node> for ui::NodeId {
+    fn from(value: Node) -> Self {
+        Self::from_u64(value as u64)
+    }
+}
+
+impl From<Event> for ui::EventId {
+    fn from(value: Event) -> Self {
+        Self::from_u64(value as u64)
+    }
+}
+
 pub struct StartGameSystem(pub u64);
 impl System for StartGameSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
@@ -49,7 +72,7 @@ impl System for StartGameSystem {
                 Vert([
                     Rect().height(300),
                     Image("./textures/placeholder.png")
-                        .with_id(10u64)
+                        .id(Node::LeftImage)
                         .width(200)
                         .height(200)
                         .background_color((255, 0, 0)),
@@ -60,12 +83,16 @@ impl System for StartGameSystem {
                     Button("Start Game")
                         .color((255, 255, 255))
                         .padding(15)
-                        .on_click(0),
+                        .on_click(Event::StartGame),
                 ]),
                 Rect().width(200),
                 Vert([
                     Rect().height(300),
-                    Rect().width(200).height(200).background_color((0, 255, 0)),
+                    Image("./textures/placeholder.png")
+                        .id(Node::RightImage)
+                        .width(200)
+                        .height(200)
+                        .background_color((255, 0, 0)),
                 ]),
             ])])
             .background_color((50, 50, 50))
@@ -73,7 +100,7 @@ impl System for StartGameSystem {
             .height(720),
         );
 
-        dom.add_event_handler(0, move |_dom, ctx, _node_id| {
+        dom.add_event_handler(Event::StartGame, move |_dom, ctx, _node_id| {
             ctx.remove_system(system_id);
             ctx.add_system(GameSystem);
         });
@@ -101,13 +128,13 @@ impl System for StartGameSystem {
 
         match heroes {
             Some(heroes) => {
-                match handle_hero_result(heroes.hero_1, 10u64, &mut dom) {
+                match handle_hero_result(heroes.hero_1, Node::LeftImage, &mut dom) {
                     Ok(_) => (),
                     Err(err) => {
                         println!("{}", err);
                     }
                 };
-                match handle_hero_result(heroes.hero_2, 10u64, &mut dom) {
+                match handle_hero_result(heroes.hero_2, Node::RightImage, &mut dom) {
                     Ok(_) => (),
                     Err(err) => {
                         println!("{}", err);

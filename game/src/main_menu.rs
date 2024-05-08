@@ -12,6 +12,19 @@ pub struct MainMenu {
     dom: SharedPtr<ui::Dom>,
 }
 
+#[repr(u64)]
+pub enum Event {
+    StartGame,
+    HeroCreator,
+    Exit,
+}
+
+impl From<Event> for ui::EventId {
+    fn from(value: Event) -> Self {
+        ui::EventId::from_u64(value as u64)
+    }
+}
+
 pub struct MainMenuSystem(pub u64);
 impl System for MainMenuSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
@@ -26,38 +39,34 @@ impl System for MainMenuSystem {
                     .color((255, 255, 255))
                     .padding(15)
                     .border_thickness(2)
-                    .on_click(1),
+                    .on_click(Event::StartGame),
                 Button("Hero Creator")
                     .color((255, 255, 255))
                     .padding(15)
                     .border_thickness(2)
-                    .on_click(2),
+                    .on_click(Event::HeroCreator),
                 Button("Exit")
                     .color((255, 255, 255))
                     .padding(15)
                     .border_thickness(2)
-                    .on_click(3),
+                    .on_click(Event::Exit),
             ])])
             .background_color((50, 50, 50))
             .width(1280)
             .height(720),
         );
 
-        dom.add_event_handler(1, move |_dom, ctx, _node_id| {
+        dom.add_event_handler(Event::StartGame, move |_dom, ctx, _node_id| {
             ctx.remove_system(system_id);
             ctx.add_system(StartGameSystem);
         });
 
-        dom.add_event_handler(4, |dom, _ctx, _node_id| {
-            dom.select_mut(100).unwrap().set_visible(false);
-        });
-
-        dom.add_event_handler(2, move |_dom, ctx, _node_id| {
+        dom.add_event_handler(Event::HeroCreator, move |_dom, ctx, _node_id| {
             ctx.remove_system(system_id);
             ctx.add_system(HeroCreatorSystem);
         });
 
-        dom.add_event_handler(3, |_dom, _ctx, _node_id| {
+        dom.add_event_handler(Event::Exit, |_dom, _ctx, _node_id| {
             panic!("exit");
         });
 

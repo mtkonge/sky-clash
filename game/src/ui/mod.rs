@@ -1,6 +1,7 @@
 mod builder;
 
 pub mod components;
+pub mod handle;
 mod layout;
 
 pub use builder::constructors;
@@ -13,29 +14,38 @@ use std::{path::PathBuf, rc::Rc};
 use self::layout::{CanCreateLayoutTree, LayoutTree, NoTransform};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct NodeId(u64);
+pub struct InternalNodeId(u64);
 
-impl From<u64> for NodeId {
-    fn from(value: u64) -> Self {
-        Self(value)
+impl InternalNodeId {
+    pub fn from_u64(v: u64) -> Self {
+        InternalNodeId(v)
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct UserSpaceId(u64);
+pub struct NodeId(u64);
 
-impl From<u64> for UserSpaceId {
-    fn from(value: u64) -> Self {
-        Self(value)
+impl NodeId {
+    pub fn from_u64(v: u64) -> Self {
+        NodeId(v)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct EventId(u64);
+
+impl EventId {
+    pub fn from_u64(v: u64) -> Self {
+        EventId(v)
     }
 }
 
 #[derive(Debug)]
 pub enum Kind {
     Rect,
-    Vert(Vec<NodeId>),
-    Hori(Vec<NodeId>),
-    Stack(Vec<NodeId>),
+    Vert(Vec<InternalNodeId>),
+    Hori(Vec<InternalNodeId>),
+    Stack(Vec<InternalNodeId>),
     Text { text: String, font: PathBuf },
     Image(PathBuf),
 }
@@ -43,10 +53,10 @@ pub enum Kind {
 #[derive(Debug)]
 pub struct Node {
     pub kind: Kind,
-    id: Option<UserSpaceId>,
+    id: Option<NodeId>,
     width: Option<i32>,
     height: Option<i32>,
-    on_click: Option<u64>,
+    on_click: Option<EventId>,
     background_color: Option<(u8, u8, u8)>,
     color: Option<(u8, u8, u8)>,
     border_thickness: Option<i32>,
@@ -88,14 +98,14 @@ impl Node {
     }
 }
 
-type EventHandler = Rc<dyn Fn(&mut Dom, &mut engine::Context, NodeId)>;
+type EventHandler = Rc<dyn Fn(&mut Dom, &mut engine::Context, InternalNodeId)>;
 
 pub struct Dom {
-    nodes: Vec<(NodeId, Node)>,
+    nodes: Vec<(InternalNodeId, Node)>,
     id_counter: u64,
-    root_id: NodeId,
-    event_queue: Vec<(u64, NodeId)>,
-    event_handlers: Vec<(u64, EventHandler)>,
+    root_id: InternalNodeId,
+    event_queue: Vec<(EventId, InternalNodeId)>,
+    event_handlers: Vec<(EventId, EventHandler)>,
 }
 
 impl Dom {
@@ -112,16 +122,16 @@ impl Dom {
         }
     }
 
-    pub fn add_event_handler<F>(&mut self, event_id: u64, f: F)
+    pub fn add_event_handler<Id: Into<EventId>, F>(&mut self, event_id: Id, f: F)
     where
-        F: Fn(&mut Dom, &mut engine::Context, NodeId) + 'static,
+        F: Fn(&mut Dom, &mut engine::Context, InternalNodeId) + 'static,
     {
-        self.event_handlers.push((event_id, Rc::new(f)))
+        self.event_handlers.push((event_id.into(), Rc::new(f)))
     }
 
     fn select_node<I>(&self, node_id: I) -> Option<&Node>
     where
-        I: Into<NodeId>,
+        I: Into<InternalNodeId>,
     {
         let node_id = node_id.into();
         self.nodes
@@ -132,7 +142,7 @@ impl Dom {
 
     fn select_node_mut<I>(&mut self, node_id: I) -> Option<&mut Node>
     where
-        I: Into<NodeId>,
+        I: Into<InternalNodeId>,
     {
         let node_id = node_id.into();
         self.nodes
@@ -143,7 +153,7 @@ impl Dom {
 
     pub fn select<I>(&mut self, uid: I) -> Option<&Node>
     where
-        I: Into<UserSpaceId>,
+        I: Into<NodeId>,
     {
         let uid = uid.into();
         let count = self
@@ -162,7 +172,7 @@ impl Dom {
 
     pub fn select_mut<I>(&mut self, uid: I) -> Option<&mut Node>
     where
-        I: Into<UserSpaceId>,
+        I: Into<NodeId>,
     {
         let uid = uid.into();
         let count = self

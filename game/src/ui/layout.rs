@@ -1,6 +1,6 @@
 use engine::Context;
 
-use super::{Dom, Kind, Node, NodeId};
+use super::{Dom, EventId, Kind, Node, InternalNodeId};
 
 #[derive(Debug)]
 pub(super) struct LayoutTreeLeaf<'a> {
@@ -28,7 +28,7 @@ impl LayoutTree<'_> {
         }
     }
 
-    pub fn resolve_click(&self, mouse_pos: (i32, i32)) -> Option<(u64, NodeId)> {
+    pub fn resolve_click(&self, mouse_pos: (i32, i32)) -> Option<(EventId, InternalNodeId)> {
         match self {
             LayoutTree::Single(leaf) => leaf.resolve_click(mouse_pos),
             LayoutTree::Multiple(leaf, children) => {
@@ -78,7 +78,7 @@ impl LayoutTreeLeaf<'_> {
         }
     }
 
-    pub fn resolve_click(&self, mouse_position: (i32, i32)) -> Option<(u64, NodeId)> {
+    pub fn resolve_click(&self, mouse_position: (i32, i32)) -> Option<(EventId, InternalNodeId)> {
         if !self.inner.visible {
             return None;
         }
@@ -90,7 +90,7 @@ impl LayoutTreeLeaf<'_> {
         {
             return None;
         }
-        Some((event_id, NodeId(0)))
+        Some((event_id, InternalNodeId(0)))
     }
     pub fn draw(&self, ctx: &mut Context) {
         if !self.inner.visible {

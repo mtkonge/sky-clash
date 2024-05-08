@@ -43,20 +43,39 @@ pub struct HeroCreator {
 }
 
 #[repr(u64)]
-enum NodeId {
-    HeroTypeText = 1,
-    HeroImage = 2,
-    AvailablePoints = 3,
-    HeroSelectPopup = 4,
-    ErrorPopup = 5,
-    ErrorText = 6,
+enum Node {
+    HeroTypeText,
+    HeroImage,
+    AvailablePoints,
+    HeroSelectPopup,
+    ErrorPopup,
+    ErrorText,
+    Loading,
+    ChooseHeroType,
 }
 
-impl From<NodeId> for u64 {
-    fn from(value: NodeId) -> Self {
-        value as u64
+#[repr(u64)]
+enum Event {
+    ClosePopup,
+    UpdateHero,
+    CentristButton,
+    StrongButton,
+    TankieButton,
+    SpeedButton,
+}
+
+impl From<Node> for ui::NodeId {
+    fn from(value: Node) -> Self {
+        ui::NodeId::from_u64(value as u64)
     }
 }
+
+impl From<Event> for ui::EventId {
+    fn from(value: Event) -> Self {
+        ui::EventId::from_u64(value as u64)
+    }
+}
+
 pub struct HeroCreatorSystem(pub u64);
 impl System for HeroCreatorSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
@@ -70,11 +89,11 @@ impl System for HeroCreatorSystem {
         agility_bar.add_event_handlers(&mut dom);
         defence_bar.add_event_handlers(&mut dom);
 
-        dom.add_event_handler(1, |dom, _ctx, _node_id| {
-            dom.select_mut(5).unwrap().set_visible(false);
+        dom.add_event_handler(Event::ClosePopup, |dom, _ctx, _node_id| {
+            dom.select_mut(Node::ErrorPopup).unwrap().set_visible(false);
         });
 
-        dom.add_event_handler(20, move |_dom, ctx, _node_id| {
+        dom.add_event_handler(Event::UpdateHero, move |_dom, ctx, _node_id| {
             let menu = ctx.clone_one::<HeroCreator>();
             let Some(hero) = menu.hero else {
                 return;
@@ -98,7 +117,12 @@ impl System for HeroCreatorSystem {
         });
 
         use shared::HeroKind::*;
-        for (id, hero_type) in [(10, Centrist), (11, Speed), (12, Strong), (13, Tankie)] {
+        for (id, hero_type) in [
+            (Event::CentristButton, Centrist),
+            (Event::SpeedButton, Speed),
+            (Event::StrongButton, Strong),
+            (Event::TankieButton, Tankie),
+        ] {
             dom.add_event_handler(id, move |_dom, ctx, _node_id| {
                 let hero_type = hero_type.clone();
                 let menu = ctx.clone_one::<HeroCreator>();
@@ -147,7 +171,7 @@ impl System for HeroCreatorSystem {
                 .sum::<i64>();
 
             change_text_node_content(
-                dom.select_mut(3),
+                dom.select_mut(Node::AvailablePoints),
                 format!(
                     "Available points: {}",
                     hero.total_skill_points() - total_allocated
@@ -189,12 +213,10 @@ impl HeroCreatorSystem {
                     Vert([
                         Vert([
                             Image("./textures/player.png")
-                                .with_id(NodeId::HeroImage)
+                                .id(Node::HeroImage)
                                 .width(128)
                                 .height(128),
-                            Text("Boykisser")
-                                .with_id(NodeId::HeroTypeText)
-                                .padding(30),
+                            Text("Boykisser").id(Node::HeroTypeText).padding(30),
                             Rect().height(720 / 16),
                         ])
                         .padding(50)
@@ -203,11 +225,11 @@ impl HeroCreatorSystem {
                     ]),
                     Rect().width(1280 / 4),
                     Vert([
-                        Text("Available points: 0").with_id(NodeId::AvailablePoints),
+                        Text("Available points: 0").id(Node::AvailablePoints),
                         strength_bar.build(),
                         agility_bar.build(),
                         defence_bar.build(),
-                        Hori([ui::components::Button("Confirm").on_click(20)]),
+                        Hori([ui::components::Button("Confirm").on_click(Event::UpdateHero)]),
                         Rect().height(720 / 2 - 100),
                     ]),
                 ]),
@@ -218,33 +240,33 @@ impl HeroCreatorSystem {
                         Button("Centrist")
                             .background_color((100, 100, 100))
                             .padding(5)
-                            .on_click(10),
+                            .on_click(Event::CentristButton),
                         Button("Speed")
                             .background_color((100, 100, 100))
                             .padding(5)
-                            .on_click(11),
+                            .on_click(Event::SpeedButton),
                         Button("Strong")
                             .background_color((100, 100, 100))
                             .padding(5)
-                            .on_click(12),
+                            .on_click(Event::StrongButton),
                         Button("Tankie")
                             .background_color((100, 100, 100))
                             .padding(5)
-                            .on_click(13),
+                            .on_click(Event::TankieButton),
                     ]),
                 ])
-                .with_id(NodeId::HeroSelectPopup)
+                .id(Node::HeroSelectPopup)
                 .visible(false)
                 .border_thickness(2)
                 .padding(5),
                 Vert([
-                    Text("Error").with_id(NodeId::ErrorText).padding(5),
+                    Text("Error").id(Node::ErrorText).padding(5),
                     Button("Ok")
                         .background_color((100, 100, 100))
                         .padding(5)
-                        .on_click(1),
+                        .on_click(Event::ClosePopup),
                 ])
-                .with_id(NodeId::ErrorPopup)
+                .id(Node::ErrorPopup)
                 .visible(false)
                 .border_thickness(2)
                 .padding(5),
@@ -252,7 +274,7 @@ impl HeroCreatorSystem {
                     .width(1280)
                     .height(720)
                     .background_color((50, 50, 50))
-                    .with_id(50u64),
+                    .id(Node::Loading),
             ])
             .width(1280)
             .height(720)
@@ -270,7 +292,7 @@ impl HeroCreatorSystem {
         let Some(hero) = comms.inner.try_receive() else {
             return;
         };
-        dom.select_mut(50).unwrap().set_visible(false);
+        dom.select_mut(Node::Loading).unwrap().set_visible(false);
 
         let hero = match hero {
             BoardStateGoBrr {
@@ -293,10 +315,8 @@ impl HeroCreatorSystem {
         let hero = match hero {
             Ok(hero) => hero,
             Err(err) => {
-                change_text_node_content(dom.select_mut(NodeId::ErrorText as u64), err);
-                dom.select_mut(NodeId::ErrorPopup as u64)
-                    .unwrap()
-                    .set_visible(true);
+                change_text_node_content(dom.select_mut(Node::ErrorText), err);
+                dom.select_mut(Node::ErrorPopup).unwrap().set_visible(true);
                 return;
             }
         };
@@ -315,8 +335,9 @@ impl HeroCreatorSystem {
                     }
                 }
                 menu.hero = Some(HeroResult::UnknownRfid(rfid));
-
-                dom.select_mut(4).unwrap().set_visible(true);
+                dom.select_mut(Node::ChooseHeroType)
+                    .unwrap()
+                    .set_visible(true);
             }
         }
     }
@@ -339,7 +360,7 @@ fn update_hero(
     }
 
     change_text_node_content(
-        dom.select_mut(3),
+        dom.select_mut(Node::AvailablePoints),
         format!("Available points: {}", hero.unallocated_skill_points()),
     );
     menu.strength_bar
@@ -355,10 +376,7 @@ fn update_hero(
         .set_steps_filled(hero.defence_points)
         .set_lower_limit(hero.defence_points);
     let hero_info = HeroInfo::from(&hero.hero_type);
-    change_text_node_content(dom.select_mut(NodeId::HeroTypeText as u64), hero_info.name);
-    change_image_node_content(
-        dom.select_mut(NodeId::HeroImage as u64),
-        hero_info.texture_path,
-    );
+    change_text_node_content(dom.select_mut(Node::HeroTypeText), hero_info.name);
+    change_image_node_content(dom.select_mut(Node::HeroImage), hero_info.texture_path);
     menu.hero = Some(HeroResult::Hero(hero));
 }

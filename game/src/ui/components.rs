@@ -1,6 +1,6 @@
 use crate::shared_ptr::SharedPtr;
 
-use super::{builder, constructors::Text, BoxedNode, Dom, Kind, Node, NodeId};
+use super::{builder, constructors::Text, BoxedNode, Dom, InternalNodeId, Kind, Node};
 
 #[allow(non_snake_case)]
 pub fn Button<S: Into<String>>(text: S) -> builder::Box<builder::Node> {
@@ -87,13 +87,10 @@ impl ProgressBar {
                     (127, 127, 127)
                 };
 
-                Text("|").color(color).with_id(self.id(i as u64 + 1))
+                Text("|").color(color).id(self.id(i as u64 + 1))
             })
             .collect();
-        children.insert(
-            middle,
-            Vert([Text(self.text()).with_id(self.id(0))]).width(130),
-        );
+        children.insert(middle, Vert([Text(self.text()).id(self.id(0))]).width(130));
 
         Hori([
             Text("-").on_click(self.id(0)).padding(8),
@@ -110,7 +107,7 @@ impl ProgressBar {
         let upper_limit = self.upper_limit.clone();
         dom.add_event_handler(
             self.id(0),
-            move |_dom: &mut Dom, _ctx: &mut engine::Context, _id: NodeId| {
+            move |_dom: &mut Dom, _ctx: &mut engine::Context, _id: InternalNodeId| {
                 if *steps_filled.lock() == 0 {
                     return;
                 }
@@ -123,7 +120,7 @@ impl ProgressBar {
         let steps_filled = self.filled.clone();
         dom.add_event_handler(
             self.id(1),
-            move |_dom: &mut Dom, _ctx: &mut engine::Context, _id: NodeId| {
+            move |_dom: &mut Dom, _ctx: &mut engine::Context, _id: InternalNodeId| {
                 if *steps_filled.lock() == steps_total {
                     return;
                 }
