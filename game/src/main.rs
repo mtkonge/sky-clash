@@ -1,17 +1,17 @@
 #![allow(dead_code)]
 
-use crate::mothership::{HeroResult, Message, MothershipActor};
+use crate::server::{HeroResult, Message, ServerActor};
 use actor::Actor;
 use engine::{spawn, Component};
-use mothership::MothershipHandle;
+use server::Server;
 
 mod actor;
 mod game;
 mod hero_creator;
 mod hero_info;
 mod main_menu;
-mod mothership;
 mod player_movement;
+mod server;
 mod shared_ptr;
 mod sprite_renderer;
 mod start_game;
@@ -20,15 +20,15 @@ mod ui;
 #[derive(Component)]
 pub struct GameActor {
     inner: Actor<Result<HeroResult, String>>,
-    mothership_handle: MothershipHandle,
+    server: Server,
 }
 
 fn main() {
     let game_actor = Actor::new();
-    let mothership_actor = MothershipActor::new(game_actor.handle());
+    let server_actor = ServerActor::new(game_actor.handle());
     let game_actor = GameActor {
         inner: game_actor,
-        mothership_handle: mothership_actor.handle(),
+        server: server_actor.handle(),
     };
 
     let game_thread = std::thread::spawn(move || {
@@ -36,7 +36,7 @@ fn main() {
 
         let mut ctx = game.context();
         ctx.add_system(main_menu::MainMenuSystem);
-        let mut quit_handle = game_actor.mothership_handle.clone();
+        let mut quit_handle = game_actor.server.clone();
         spawn!(&mut ctx, game_actor);
 
         game.run();
@@ -44,7 +44,7 @@ fn main() {
     });
 
     tokio::runtime::Runtime::new().unwrap().block_on(async {
-        mothership_actor.run().await;
+        server_actor.run().await;
     });
 
     game_thread.join().unwrap();

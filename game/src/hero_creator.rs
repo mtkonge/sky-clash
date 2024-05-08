@@ -1,5 +1,5 @@
 use crate::hero_info::HeroInfo;
-use crate::mothership::HeroResult;
+use crate::server::HeroResult;
 use crate::shared_ptr::SharedPtr;
 use crate::ui;
 use crate::GameActor;
@@ -91,11 +91,9 @@ impl System for HeroCreatorSystem {
 
             let comms = ctx.select_one::<GameActor>();
 
-            comms
-                .mothership_handle
-                .send_important(crate::Message::UpdateHeroStats(
-                    shared::UpdateHeroStatsParams { rfid, stats },
-                ))
+            comms.server.send_important(crate::Message::UpdateHeroStats(
+                shared::UpdateHeroStatsParams { rfid, stats },
+            ))
         });
 
         use shared::HeroKind::*;
@@ -112,7 +110,7 @@ impl System for HeroCreatorSystem {
                 };
                 let comms = ctx.select_one::<GameActor>();
                 comms
-                    .mothership_handle
+                    .server
                     .send_important(crate::Message::CreateHero(shared::CreateHeroParams {
                         rfid,
                         hero_type: hero_type.clone() as _,
@@ -267,7 +265,7 @@ impl HeroCreatorSystem {
         mut dom: std::sync::MutexGuard<ui::Dom>,
     ) {
         let comms = ctx.select_one::<GameActor>();
-        comms.mothership_handle.send(crate::Message::BoardStatus);
+        comms.server.send(crate::Message::BoardStatus);
         let Some(hero) = comms.inner.try_receive() else {
             return;
         };

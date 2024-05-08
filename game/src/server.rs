@@ -18,15 +18,15 @@ pub enum Message {
 
 type ResponseHandle = Handle<Result<HeroResult, String>>;
 
-pub struct MothershipActor {
+pub struct ServerActor {
     inner: Actor<Message>,
     response_handle: ResponseHandle,
 }
 
 #[derive(Clone)]
-pub struct MothershipHandle(Handle<Message>);
+pub struct Server(Handle<Message>);
 
-impl std::ops::Deref for MothershipHandle {
+impl std::ops::Deref for Server {
     type Target = Handle<Message>;
 
     fn deref(&self) -> &Self::Target {
@@ -34,21 +34,21 @@ impl std::ops::Deref for MothershipHandle {
     }
 }
 
-impl std::ops::DerefMut for MothershipHandle {
+impl std::ops::DerefMut for Server {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-impl MothershipActor {
+impl ServerActor {
     pub fn new(response_handle: Handle<Result<HeroResult, String>>) -> Self {
         Self {
             inner: actor::Actor::new(),
             response_handle,
         }
     }
-    pub fn handle(&self) -> MothershipHandle {
-        MothershipHandle(self.inner.handle())
+    pub fn handle(&self) -> Server {
+        Server(self.inner.handle())
     }
     pub async fn run(mut self) {
         loop {
