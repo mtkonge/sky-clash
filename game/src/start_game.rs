@@ -1,7 +1,6 @@
 use std::sync::MutexGuard;
 
 use engine::{query, spawn, Component, System};
-use shared::Hero;
 
 use crate::{
     game::GameSystem,
@@ -23,37 +22,6 @@ pub struct StartGame {
     dom: SharedPtr<ui::Dom>,
     left_bars: SharedPtr<BarBundle>,
     right_bars: SharedPtr<BarBundle>,
-}
-
-fn handle_hero_result<I: Into<ui::NodeId>>(
-    hero: Option<HeroResult>,
-    dom_id: I,
-    dom: &mut MutexGuard<ui::Dom>,
-    mut bars: MutexGuard<BarBundle>,
-) -> Result<Hero, String> {
-    match hero {
-        Some(hero) => match hero {
-            HeroResult::Hero(hero) => {
-                change_image_node_content(
-                    dom.select_mut(dom_id),
-                    HeroInfo::from(&hero.hero_type).texture_path,
-                );
-                bars.strength.set_steps_filled(hero.strength_points);
-                bars.agility.set_steps_filled(hero.agility_points);
-                bars.defence.set_steps_filled(hero.defence_points);
-                Ok(hero)
-            }
-            HeroResult::UnknownRfid(_) => {
-                change_text_node_content(
-                    dom.select_mut(Node::ErrorText),
-                    "Atleast 1 hero is not initialized, please go to the hero creator.",
-                );
-                dom.select_mut(Node::ErrorPopup).unwrap().set_visible(true);
-                Err("uhhmm hero with rfid does not acshually exist :nerd:".to_string())
-            }
-        },
-        None => Err("No hero found".to_string()),
-    }
 }
 
 #[repr(u64)]
@@ -91,6 +59,9 @@ struct BarBundle {
     agility: ProgressBar,
     defence: ProgressBar,
 }
+
+#[derive(Component, Default, Clone)]
+struct MaybeHeroesOnBoard(Option<crate::game::HeroesOnBoard>);
 
 pub struct StartGameSystem(pub u64);
 impl System for StartGameSystem {
@@ -175,8 +146,11 @@ impl System for StartGameSystem {
         );
 
         dom.add_event_handler(Event::StartGame, move |_dom, ctx, _node_id| {
-            ctx.remove_system(system_id);
-            ctx.add_system(GameSystem);
+            if let Some(heroes_on_board) = ctx.clone_one::<MaybeHeroesOnBoard>().0 {
+                spawn!(ctx, heroes_on_board);
+                ctx.remove_system(system_id);
+                ctx.add_system(GameSystem);
+            }
         });
 
         dom.add_event_handler(Event::ErrorPopupClick, move |dom, ctx, _node_id| {
@@ -203,6 +177,8 @@ impl System for StartGameSystem {
             }
         );
 
+        spawn!(ctx, MaybeHeroesOnBoard::default());
+
         Ok(())
     }
 
@@ -219,41 +195,33 @@ impl System for StartGameSystem {
 
         match heroes {
             Some(heroes) => {
-                match handle_hero_result(
-                    heroes.hero_1,
+                dom.select_mut(Node::ErrorPopup).unwrap().set_visible(false);
+
+                display_hero_result(
+                    heroes.hero_1.as_ref(),
                     Node::LeftImage,
+                    Node::LeftBars,
+                    Node::LeftOffset,
                     &mut dom,
                     start_game.left_bars.lock(),
-                ) {
-                    Ok(_) => {
-                        dom.select_mut(Node::LeftBars).unwrap().set_visible(true);
-                        dom.select_mut(Node::LeftOffset).unwrap().set_visible(false);
-                    }
-                    Err(err) => {
-                        dom.select_mut(Node::LeftBars).unwrap().set_visible(false);
-                        dom.select_mut(Node::LeftOffset).unwrap().set_visible(true);
-
-                        println!("{}", err);
-                    }
-                };
-                match handle_hero_result(
-                    heroes.hero_2,
+                );
+                display_hero_result(
+                    heroes.hero_2.as_ref(),
                     Node::RightImage,
+                    Node::RightBars,
+                    Node::RightOffset,
                     &mut dom,
                     start_game.right_bars.lock(),
-                ) {
-                    Ok(_) => {
-                        dom.select_mut(Node::RightBars).unwrap().set_visible(true);
-                        dom.select_mut(Node::RightOffset)
-                            .unwrap()
-                            .set_visible(false);
-                    }
-                    Err(err) => {
-                        dom.select_mut(Node::RightBars).unwrap().set_visible(false);
-                        dom.select_mut(Node::RightOffset).unwrap().set_visible(true);
-                        println!("{}", err);
-                    }
-                };
+                );
+
+                if let (Some(HeroResult::Hero(hero_1)), Some(HeroResult::Hero(hero_2))) =
+                    (heroes.hero_1, heroes.hero_2)
+                {
+                    let heroes_on_board = ctx.select_one::<MaybeHeroesOnBoard>();
+                    heroes_on_board
+                        .0
+                        .replace(crate::game::HeroesOnBoard { hero_1, hero_2 });
+                }
             }
             None => return Ok(()),
         }
@@ -270,4 +238,43 @@ impl System for StartGameSystem {
 
         Ok(())
     }
+}
+
+fn display_hero_result(
+    hero: Option<&HeroResult>,
+    image_id: Node,
+    bar_id: Node,
+    offset_id: Node,
+    dom: &mut MutexGuard<ui::Dom>,
+    mut bars: MutexGuard<BarBundle>,
+) {
+    match hero {
+        Some(HeroResult::Hero(hero)) => {
+            change_image_node_content(
+                dom.select_mut(image_id),
+                HeroInfo::from(&hero.hero_type).texture_path,
+            );
+            bars.strength.set_steps_filled(hero.strength_points);
+            bars.agility.set_steps_filled(hero.agility_points);
+            bars.defence.set_steps_filled(hero.defence_points);
+
+            dom.select_mut(bar_id).unwrap().set_visible(true);
+            dom.select_mut(offset_id).unwrap().set_visible(false);
+        }
+        erronous => {
+            let error = match erronous {
+                Some(HeroResult::UnknownRfid(_)) => {
+                    "Atleast 1 hero is not initialized, please go to the hero creator."
+                }
+                None => "No hero found",
+                _ => unreachable!(),
+            };
+
+            change_text_node_content(dom.select_mut(Node::ErrorText), error);
+            dom.select_mut(Node::ErrorPopup).unwrap().set_visible(true);
+
+            dom.select_mut(bar_id).unwrap().set_visible(false);
+            dom.select_mut(offset_id).unwrap().set_visible(true);
+        }
+    };
 }

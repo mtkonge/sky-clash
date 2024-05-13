@@ -1,14 +1,20 @@
 use engine::{
     rigid_body::{GravitySystem, RigidBody, VelocitySystem},
-    spawn, Collider, CollisionSystem, System,
+    spawn, Collider, CollisionSystem, Component, System,
 };
 
 use crate::{
-    player_movement::{PlayerMovement, PlayerMovementSystem},
+    player_movement::{KeySet, PlayerMovement, PlayerMovementSystem},
     sprite_renderer::{Sprite, SpriteRenderer},
 };
 
 pub struct GameSystem(pub u64);
+
+#[derive(Component, Clone)]
+pub struct HeroesOnBoard {
+    pub hero_1: shared::Hero,
+    pub hero_2: shared::Hero,
+}
 
 impl System for GameSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
@@ -17,7 +23,16 @@ impl System for GameSystem {
         ctx.add_system(SpriteRenderer);
         ctx.add_system(PlayerMovementSystem);
         ctx.add_system(GravitySystem);
-        let player = ctx.load_texture("textures/player_outline.png").unwrap();
+        let heroes = ctx.clone_one::<HeroesOnBoard>();
+        let hero_1_sprite = {
+            let path = crate::hero_info::HeroInfo::from(&heroes.hero_1.hero_type).texture_path;
+            ctx.load_texture(path).unwrap()
+        };
+        let hero_2_sprite = {
+            let path = crate::hero_info::HeroInfo::from(&heroes.hero_2.hero_type).texture_path;
+            ctx.load_texture(path).unwrap()
+        };
+
         let background = ctx.load_texture("textures/black_background.png").unwrap();
         let nope = ctx.load_texture("textures/nuh-uh.png").unwrap();
 
@@ -25,7 +40,9 @@ impl System for GameSystem {
 
         spawn!(
             ctx,
-            Sprite { sprite: player },
+            Sprite {
+                sprite: hero_1_sprite
+            },
             RigidBody {
                 pos: (400.0, 200.0),
                 rect: (128.0, 128.0),
@@ -36,7 +53,29 @@ impl System for GameSystem {
                 resolve: true,
                 ..Default::default()
             },
-            PlayerMovement,
+            PlayerMovement {
+                key_set: KeySet::Wasd
+            },
+        );
+
+        spawn!(
+            ctx,
+            Sprite {
+                sprite: hero_2_sprite
+            },
+            RigidBody {
+                pos: (600.0, 200.0),
+                rect: (128.0, 128.0),
+                gravity: true,
+                ..Default::default()
+            },
+            Collider {
+                resolve: true,
+                ..Default::default()
+            },
+            PlayerMovement {
+                key_set: KeySet::ArrowKeys
+            },
         );
 
         spawn!(
