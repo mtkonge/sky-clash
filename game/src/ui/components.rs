@@ -56,6 +56,7 @@ impl ProgressBar {
     }
 
     pub fn set_lower_limit(&mut self, limit: Int) -> &mut Self {
+        *self.lower_limit.lock() = limit;
         if self.steps_filled() < limit {
             self.set_steps_filled(limit);
         }

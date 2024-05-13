@@ -18,9 +18,9 @@ impl Board {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct HeroStats {
-    pub strength: u8,
-    pub agility: u8,
-    pub defence: u8,
+    pub strength: i64,
+    pub agility: i64,
+    pub defence: i64,
 }
 
 #[repr(i64)]

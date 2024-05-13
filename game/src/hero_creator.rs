@@ -80,9 +80,9 @@ impl System for HeroCreatorSystem {
             };
 
             let stats = shared::HeroStats {
-                strength: menu.strength_bar.lock().steps_filled() as u8,
-                agility: menu.agility_bar.lock().steps_filled() as u8,
-                defence: menu.defence_bar.lock().steps_filled() as u8,
+                strength: menu.strength_bar.lock().steps_filled(),
+                agility: menu.agility_bar.lock().steps_filled(),
+                defence: menu.defence_bar.lock().steps_filled(),
             };
 
             let comms = ctx.select_one::<GameActor>();
@@ -343,6 +343,7 @@ fn initialize_hero(
         dom.select_mut(Node::AvailablePoints),
         format!("Available points: {}", hero.unallocated_skill_points()),
     );
+    let hero_info = HeroInfo::from(&hero.hero_type);
     menu.strength_bar
         .lock()
         .set_steps_filled(hero.strength_points)
@@ -355,7 +356,6 @@ fn initialize_hero(
         .lock()
         .set_steps_filled(hero.defence_points)
         .set_lower_limit(hero.defence_points);
-    let hero_info = HeroInfo::from(&hero.hero_type);
     change_text_node_content(dom.select_mut(Node::HeroTypeText), hero_info.name);
     change_image_node_content(dom.select_mut(Node::HeroImage), hero_info.texture_path);
     menu.hero = Some(HeroResult::Hero(hero));
