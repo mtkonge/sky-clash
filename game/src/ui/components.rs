@@ -21,10 +21,11 @@ pub struct ProgressBar {
     lower_limit: SharedPtr<Int>,
     upper_limit: SharedPtr<Int>,
     id_offset: IdOffset,
+    mutable: bool,
 }
 
 impl ProgressBar {
-    pub fn new<S: Into<String>>(title: S, steps_total: Int) -> Self {
+    pub fn new<S: Into<String>>(title: S, steps_total: Int, mutable: bool) -> Self {
         Self {
             title: title.into(),
             filled: SharedPtr::new(0),
@@ -32,6 +33,7 @@ impl ProgressBar {
             lower_limit: SharedPtr::new(0),
             upper_limit: SharedPtr::new(steps_total),
             id_offset: IdOffset::new(),
+            mutable,
         }
     }
 
@@ -93,13 +95,16 @@ impl ProgressBar {
             })
             .collect();
         children.insert(middle, Vert([Text(self.text()).id(self.id(0))]).width(130));
-
-        Hori([
-            Text("-").on_click(self.id(0)).padding(8),
-            Hori(children),
-            Text("+").on_click(self.id(1)).padding(8),
-        ])
-        .padding(8)
+        if self.mutable {
+            Hori([
+                Text("-").on_click(self.id(0)).padding(8),
+                Hori(children),
+                Text("+").on_click(self.id(1)).padding(8),
+            ])
+            .padding(8)
+        } else {
+            Vert([Rect().height(8), Hori(children), Rect().height(8)])
+        }
     }
 
     pub fn add_event_handlers(&self, dom: &mut Dom) {

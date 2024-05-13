@@ -11,6 +11,7 @@ use crate::{
     shared_ptr::SharedPtr,
     ui::{
         self,
+        components::ProgressBar,
         utils::{change_image_node_content, change_text_node_content},
     },
     GameActor,
@@ -20,12 +21,15 @@ use crate::{
 pub struct StartGame {
     system_id: u64,
     dom: SharedPtr<ui::Dom>,
+    left_bars: SharedPtr<BarBundle>,
+    right_bars: SharedPtr<BarBundle>,
 }
 
 fn handle_hero_result<I: Into<ui::NodeId>>(
     hero: Option<HeroResult>,
     dom_id: I,
     dom: &mut MutexGuard<ui::Dom>,
+    mut bars: MutexGuard<BarBundle>,
 ) -> Result<Hero, String> {
     match hero {
         Some(hero) => match hero {
@@ -34,6 +38,9 @@ fn handle_hero_result<I: Into<ui::NodeId>>(
                     dom.select_mut(dom_id),
                     HeroInfo::from(&hero.hero_type).texture_path,
                 );
+                bars.strength.set_steps_filled(hero.strength_points);
+                bars.agility.set_steps_filled(hero.agility_points);
+                bars.defence.set_steps_filled(hero.defence_points);
                 Ok(hero)
             }
             HeroResult::UnknownRfid(_) => {
@@ -55,6 +62,10 @@ enum Node {
     RightImage,
     ErrorText,
     ErrorPopup,
+    LeftBars,
+    RightBars,
+    LeftOffset,
+    RightOffset,
 }
 
 #[repr(u64)]
@@ -75,6 +86,12 @@ impl From<Event> for ui::EventId {
     }
 }
 
+struct BarBundle {
+    strength: ProgressBar,
+    agility: ProgressBar,
+    defence: ProgressBar,
+}
+
 pub struct StartGameSystem(pub u64);
 impl System for StartGameSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
@@ -83,11 +100,29 @@ impl System for StartGameSystem {
 
         let system_id = self.0;
 
+        let left_strength_bar = ui::components::ProgressBar::new("Strength", 24, false);
+        let left_agility_bar = ui::components::ProgressBar::new("Agility", 24, false);
+        let left_defence_bar = ui::components::ProgressBar::new("Defence", 24, false);
+
+        let right_strength_bar = ui::components::ProgressBar::new("Strength", 24, false);
+        let right_agility_bar = ui::components::ProgressBar::new("Agility", 24, false);
+        let right_defence_bar = ui::components::ProgressBar::new("Defence", 24, false);
+
         let mut dom = ui::Dom::new(
             Stack([
                 Hori([
                     Vert([
-                        Rect().height(300),
+                        Rect().height(100),
+                        Rect().height(150).width(200).id(Node::LeftOffset),
+                        Vert([
+                            left_strength_bar.build(),
+                            left_agility_bar.build(),
+                            left_defence_bar.build(),
+                        ])
+                        .height(150)
+                        .width(200)
+                        .visible(false)
+                        .id(Node::LeftBars),
                         Image("./textures/placeholder.png")
                             .id(Node::LeftImage)
                             .width(200)
@@ -104,7 +139,17 @@ impl System for StartGameSystem {
                     ]),
                     Rect().width(200),
                     Vert([
-                        Rect().height(300),
+                        Rect().height(100),
+                        Rect().height(150).width(200).id(Node::RightOffset),
+                        Vert([
+                            right_strength_bar.build(),
+                            right_agility_bar.build(),
+                            right_defence_bar.build(),
+                        ])
+                        .height(150)
+                        .width(200)
+                        .visible(false)
+                        .id(Node::RightBars),
                         Image("./textures/placeholder.png")
                             .id(Node::RightImage)
                             .width(200)
@@ -144,7 +189,17 @@ impl System for StartGameSystem {
             ctx,
             StartGame {
                 system_id: self.0,
-                dom: SharedPtr::new(dom)
+                dom: SharedPtr::new(dom),
+                left_bars: SharedPtr::new(BarBundle {
+                    strength: left_strength_bar,
+                    agility: left_agility_bar,
+                    defence: left_defence_bar
+                }),
+                right_bars: SharedPtr::new(BarBundle {
+                    strength: right_strength_bar,
+                    agility: right_agility_bar,
+                    defence: right_defence_bar
+                })
             }
         );
 
@@ -164,15 +219,38 @@ impl System for StartGameSystem {
 
         match heroes {
             Some(heroes) => {
-                match handle_hero_result(heroes.hero_1, Node::LeftImage, &mut dom) {
-                    Ok(_) => (),
+                match handle_hero_result(
+                    heroes.hero_1,
+                    Node::LeftImage,
+                    &mut dom,
+                    start_game.left_bars.lock(),
+                ) {
+                    Ok(_) => {
+                        dom.select_mut(Node::LeftBars).unwrap().set_visible(true);
+                        dom.select_mut(Node::LeftOffset).unwrap().set_visible(false);
+                    }
                     Err(err) => {
+                        dom.select_mut(Node::LeftBars).unwrap().set_visible(false);
+                        dom.select_mut(Node::LeftOffset).unwrap().set_visible(true);
+
                         println!("{}", err);
                     }
                 };
-                match handle_hero_result(heroes.hero_2, Node::RightImage, &mut dom) {
-                    Ok(_) => (),
+                match handle_hero_result(
+                    heroes.hero_2,
+                    Node::RightImage,
+                    &mut dom,
+                    start_game.right_bars.lock(),
+                ) {
+                    Ok(_) => {
+                        dom.select_mut(Node::RightBars).unwrap().set_visible(true);
+                        dom.select_mut(Node::RightOffset)
+                            .unwrap()
+                            .set_visible(false);
+                    }
                     Err(err) => {
+                        dom.select_mut(Node::RightBars).unwrap().set_visible(false);
+                        dom.select_mut(Node::RightOffset).unwrap().set_visible(true);
                         println!("{}", err);
                     }
                 };
