@@ -476,6 +476,10 @@ impl System for CollisionSystem {
                 if id == other_id {
                     continue;
                 }
+                let other_collider = ctx.select::<Collider>(other_id).clone();
+                if other_collider.resolve {
+                    continue;
+                }
                 let other_body = ctx.select::<RigidBody>(other_id).clone();
 
                 let pos = V2::from(body.pos);
