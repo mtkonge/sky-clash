@@ -1,7 +1,7 @@
 use crate::shared_ptr::SharedPtr;
 
 use super::{
-    builder, constructors::Text, handle::Handle, BoxedNode, Dom, InternalNodeId, Kind, Node,
+    builder, constructors::Text, id_offset::IdOffset, BoxedNode, Dom, InternalNodeId, Kind, Node,
 };
 
 #[allow(non_snake_case)]
@@ -20,7 +20,7 @@ pub struct ProgressBar {
     total: Int,
     lower_limit: SharedPtr<Int>,
     upper_limit: SharedPtr<Int>,
-    handle: Handle,
+    id_offset: IdOffset,
 }
 
 impl ProgressBar {
@@ -31,12 +31,12 @@ impl ProgressBar {
             total: steps_total,
             lower_limit: SharedPtr::new(0),
             upper_limit: SharedPtr::new(steps_total),
-            handle: Handle::new(),
+            id_offset: IdOffset::new(),
         }
     }
 
-    fn id(&self, id: u64) -> Handle {
-        Handle(self.handle.0 + id)
+    fn id(&self, id: u64) -> IdOffset {
+        IdOffset(self.id_offset.0 + id)
     }
 
     pub fn steps_filled(&self) -> Int {
