@@ -55,9 +55,10 @@ impl From<Event> for ui::EventId {
 pub struct HeroCreatorSystem(pub u64);
 impl System for HeroCreatorSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
-        let strength_bar = ui::components::ProgressBar::new("Strength", 24, true);
-        let agility_bar = ui::components::ProgressBar::new("Agility", 24, true);
-        let defence_bar = ui::components::ProgressBar::new("Defence", 24, true);
+        use ui::components::*;
+        let strength_bar = ProgressBar::new("Strength", 24);
+        let agility_bar = ProgressBar::new("Agility", 24);
+        let defence_bar = ProgressBar::new("Defence", 24);
 
         let mut dom = self.build_dom(&strength_bar, &agility_bar, &defence_bar);
 

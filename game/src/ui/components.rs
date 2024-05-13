@@ -25,7 +25,8 @@ pub struct ProgressBar {
 }
 
 impl ProgressBar {
-    pub fn new<S: Into<String>>(title: S, steps_total: Int, mutable: bool) -> Self {
+    /// use `new_immutable` instead, if mutability is undesired
+    pub fn new<S: Into<String>>(title: S, steps_total: Int) -> Self {
         Self {
             title: title.into(),
             filled: SharedPtr::new(0),
@@ -33,7 +34,19 @@ impl ProgressBar {
             lower_limit: SharedPtr::new(0),
             upper_limit: SharedPtr::new(steps_total),
             id_offset: IdOffset::new(),
-            mutable,
+            mutable: true,
+        }
+    }
+
+    pub fn new_immutable<S: Into<String>>(title: S, steps_total: Int) -> Self {
+        Self {
+            title: title.into(),
+            filled: SharedPtr::new(0),
+            total: steps_total,
+            lower_limit: SharedPtr::new(0),
+            upper_limit: SharedPtr::new(steps_total),
+            id_offset: IdOffset::new(),
+            mutable: false,
         }
     }
 

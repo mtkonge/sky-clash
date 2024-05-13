@@ -100,13 +100,13 @@ impl System for StartGameSystem {
 
         let system_id = self.0;
 
-        let left_strength_bar = ui::components::ProgressBar::new("Strength", 24, false);
-        let left_agility_bar = ui::components::ProgressBar::new("Agility", 24, false);
-        let left_defence_bar = ui::components::ProgressBar::new("Defence", 24, false);
+        let left_strength_bar = ProgressBar::new_immutable("Strength", 24);
+        let left_agility_bar = ProgressBar::new_immutable("Agility", 24);
+        let left_defence_bar = ProgressBar::new_immutable("Defence", 24);
 
-        let right_strength_bar = ui::components::ProgressBar::new("Strength", 24, false);
-        let right_agility_bar = ui::components::ProgressBar::new("Agility", 24, false);
-        let right_defence_bar = ui::components::ProgressBar::new("Defence", 24, false);
+        let right_strength_bar = ProgressBar::new_immutable("Strength", 24);
+        let right_agility_bar = ProgressBar::new_immutable("Agility", 24);
+        let right_defence_bar = ProgressBar::new_immutable("Defence", 24);
 
         let mut dom = ui::Dom::new(
             Stack([
