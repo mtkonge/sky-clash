@@ -1,8 +1,6 @@
-use engine::Context;
+use super::{ui_context::UiContext, Dom, EventId, InternalNodeId, Kind, Node};
 
-use super::{Dom, EventId, InternalNodeId, Kind, Node};
-
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(super) struct LayoutTreeLeaf<'a> {
     size: (i32, i32),
     pos: (i32, i32),
@@ -10,14 +8,14 @@ pub(super) struct LayoutTreeLeaf<'a> {
     inner: &'a Node,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(super) enum LayoutTree<'a> {
     Single(LayoutTreeLeaf<'a>),
     Multiple(LayoutTreeLeaf<'a>, Vec<LayoutTree<'a>>),
 }
 
 impl LayoutTree<'_> {
-    pub fn draw(&self, ctx: &mut Context) {
+    pub fn draw(&self, ctx: &mut impl UiContext) {
         match self {
             LayoutTree::Single(leaf) => leaf.draw(ctx),
             LayoutTree::Multiple(leaf, children) => {
@@ -50,7 +48,7 @@ impl LayoutTree<'_> {
 }
 
 impl LayoutTreeLeaf<'_> {
-    fn draw_border(&self, ctx: &mut Context) {
+    fn draw_border(&self, ctx: &mut impl UiContext) {
         let pos = self.pos;
         let size = (self.size.0 as u32, self.size.1 as u32);
         if let Some(thickness) = self.inner.border_thickness {
@@ -93,7 +91,7 @@ impl LayoutTreeLeaf<'_> {
         }
         Some((event_id, self.node_id))
     }
-    pub fn draw(&self, ctx: &mut Context) {
+    pub fn draw(&self, ctx: &mut impl UiContext) {
         if !self.inner.visible {
             return;
         }
@@ -146,7 +144,7 @@ pub(super) trait CanCreateLayoutTree {
         &'dom self,
         node_id: InternalNodeId,
         dom: &'dom Dom,
-        ctx: &mut Context,
+        ctx: &mut impl UiContext,
         parent_pos: (i32, i32),
         pos_transformer: &mut dyn TransformersRobotsInDisguise,
     ) -> LayoutTree<'dom>;
@@ -181,7 +179,7 @@ impl TransformersRobotsInDisguise for HoriTransform {
         let x = self.acc;
         let y = (self.content_size.1 - child_size.1) / 2;
         self.acc += child_size.0;
-        (x + self.padding, y + self.padding)
+        (x + self.padding, y)
     }
 }
 
@@ -204,7 +202,7 @@ impl TransformersRobotsInDisguise for VertTransform {
         let x = (self.content_size.0 - child_size.0) / 2;
         let y = self.acc;
         self.acc += child_size.1;
-        (x + self.padding, y + self.padding)
+        (x, y + self.padding)
     }
 }
 
@@ -224,7 +222,7 @@ impl TransformersRobotsInDisguise for StackTransform {
     fn pos(&mut self, child_size: (i32, i32)) -> (i32, i32) {
         let x = (self.content_size.0 - child_size.0) / 2;
         let y = (self.content_size.1 - child_size.1) / 2;
-        (x + self.padding, y + self.padding)
+        (x, y)
     }
 }
 
@@ -240,7 +238,7 @@ impl CanCreateLayoutTree for Node {
         &'dom self,
         node_id: InternalNodeId,
         dom: &'dom Dom,
-        ctx: &mut Context,
+        ctx: &mut impl UiContext,
         parent_pos: (i32, i32),
         pos_transformer: &mut dyn TransformersRobotsInDisguise,
     ) -> LayoutTree<'dom> {
@@ -317,7 +315,10 @@ impl CanCreateLayoutTree for Node {
                     })
                     .fold((0, 0), calc_content_size);
 
-                let size = (self.width.unwrap_or(size.0), self.height.unwrap_or(size.1));
+                let size = (
+                    self.width.unwrap_or(size.0) + padding * 2,
+                    self.height.unwrap_or(size.1) + padding * 2,
+                );
 
                 let pos = pos_transformer.pos(size);
                 let pos = (pos.0 + parent_pos.0, pos.1 + parent_pos.1);
@@ -337,7 +338,7 @@ impl CanCreateLayoutTree for Node {
                     .collect();
 
                 let leaf = LayoutTreeLeaf {
-                    size: (size.0 + padding * 2, size.1 + padding * 2),
+                    size: (size.0, size.1),
                     pos,
                     inner: self,
                     node_id,
@@ -347,4 +348,91 @@ impl CanCreateLayoutTree for Node {
             }
         }
     }
+}
+
+#[test]
+fn troller_no_trolling_min() {
+    use crate::ui::ui_context::MockContext as MogContext;
+    use pretty_assertions::assert_eq;
+
+    let received = {
+        use crate::ui::constructors::*;
+        crate::ui::Dom::new(
+            Hori([Vert([Rect().padding(8).border_thickness(1)])
+                .padding(8)
+                .border_thickness(1)])
+            .padding(8)
+            .border_thickness(1),
+        )
+    };
+    let received = received.build_layout_tree(&mut MogContext);
+
+    let expected = {
+        use crate::ui::Kind::*;
+        use LayoutTree::*;
+
+        Multiple(
+            LayoutTreeLeaf {
+                size: (16 + 2 + 16 + 2 + 16 + 2, 16 + 2 + 16 + 2 + 16 + 2),
+                pos: (0, 0),
+                node_id: InternalNodeId(0),
+                inner: Box::leak(Box::new(Node {
+                    kind: Hori(vec![InternalNodeId(1)]),
+                    id: None,
+                    width: None,
+                    height: None,
+                    on_click: None,
+                    background_color: None,
+                    color: None,
+                    border_thickness: Some(1),
+                    padding: Some(8),
+                    border_color: None,
+                    font_size: None,
+                    visible: true,
+                })),
+            },
+            vec![Multiple(
+                LayoutTreeLeaf {
+                    size: (16 + 2 + 16 + 2, 16 + 2 + 16 + 2),
+                    pos: (8 + 1, 8 + 1),
+                    node_id: InternalNodeId(1),
+                    inner: Box::leak(Box::new(Node {
+                        kind: Vert(vec![InternalNodeId(2)]),
+                        id: None,
+                        width: None,
+                        height: None,
+                        on_click: None,
+                        background_color: None,
+                        color: None,
+                        border_thickness: Some(1),
+                        padding: Some(8),
+                        border_color: None,
+                        font_size: None,
+                        visible: true,
+                    })),
+                },
+                vec![Single(LayoutTreeLeaf {
+                    size: (16 + 2, 16 + 2),
+                    pos: (8 + 1 + 8 + 1, 8 + 1 + 8 + 1),
+                    node_id: InternalNodeId(2),
+                    inner: Box::leak(Box::new(Node {
+                        kind: Rect,
+                        id: None,
+                        width: None,
+                        height: None,
+                        on_click: None,
+                        background_color: None,
+                        color: None,
+                        border_thickness: Some(1),
+                        padding: Some(8),
+                        border_color: None,
+                        font_size: None,
+                        visible: true,
+                    })),
+                })],
+            )],
+        )
+    };
+
+    assert_eq!(received, expected);
 }

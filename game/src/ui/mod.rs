@@ -3,16 +3,19 @@ mod builder;
 pub mod components;
 pub mod id_offset;
 mod layout;
+mod ui_context;
 pub mod utils;
 
 pub use builder::constructors;
-use engine::Context;
 
 pub type BoxedNode = builder::Box<builder::Node>;
 
 use std::{path::PathBuf, rc::Rc};
 
-use self::layout::{CanCreateLayoutTree, LayoutTree, NoTransform};
+use self::{
+    layout::{CanCreateLayoutTree, LayoutTree, NoTransform},
+    ui_context::UiContext,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct InternalNodeId(u64);
@@ -41,7 +44,7 @@ impl EventId {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Kind {
     Rect,
     Vert(Vec<InternalNodeId>),
@@ -51,7 +54,7 @@ pub enum Kind {
     Image(PathBuf),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Node {
     pub kind: Kind,
     id: Option<NodeId>,
@@ -202,7 +205,7 @@ impl Dom {
         }
     }
 
-    fn build_layout_tree(&self, ctx: &mut Context) -> LayoutTree<'_> {
+    fn build_layout_tree(&self, ctx: &mut impl UiContext) -> LayoutTree<'_> {
         self.nodes
             .iter()
             .find(|(id, _)| *id == self.root_id)
