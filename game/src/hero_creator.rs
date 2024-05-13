@@ -1,11 +1,11 @@
 use crate::hero_info::HeroInfo;
-use crate::server::BoardStateGoBrr;
+use crate::server::Board;
 use crate::server::HeroResult;
+use crate::server::Server;
 use crate::shared_ptr::SharedPtr;
 use crate::ui;
 use crate::ui::utils::change_image_node_content;
 use crate::ui::utils::change_text_node_content;
-use crate::GameActor;
 use engine::spawn;
 use engine::{Component, System};
 
@@ -86,11 +86,8 @@ impl System for HeroCreatorSystem {
                 defence: menu.defence_bar.lock().steps_filled(),
             };
 
-            let comms = ctx.select_one::<GameActor>();
-
-            comms.server.send_important(crate::Message::UpdateHeroStats(
-                shared::UpdateHeroStatsParams { rfid, stats },
-            ))
+            let server = ctx.select_one::<Server>();
+            server.update_hero_stats(shared::UpdateHeroStatsParams { rfid, stats });
         });
 
         use shared::HeroKind::*;
@@ -110,14 +107,13 @@ impl System for HeroCreatorSystem {
                     HeroResult::Hero(_) => panic!("tried to create existing hero"),
                     HeroResult::UnknownRfid(rfid) => rfid,
                 };
-                let comms = ctx.select_one::<GameActor>();
-                comms
-                    .server
-                    .send_important(crate::Message::CreateHero(shared::CreateHeroParams {
-                        rfid,
-                        hero_type: hero_type.clone() as _,
-                        base_stats: shared::HeroStats::from(hero_type.clone()),
-                    }));
+
+                let server = ctx.select_one::<Server>();
+                server.create_hero(shared::CreateHeroParams {
+                    rfid,
+                    hero_type: hero_type.clone(),
+                    base_stats: shared::HeroStats::from(hero_type.clone()),
+                });
             });
         }
 
@@ -264,31 +260,30 @@ impl HeroCreatorSystem {
         ctx: &mut engine::Context,
         mut dom: std::sync::MutexGuard<ui::Dom>,
     ) {
-        let comms = ctx.select_one::<GameActor>();
-        comms.server.send(crate::Message::BoardStatus);
-        let Some(hero) = comms.inner.try_receive() else {
+        let server = ctx.select_one::<Server>();
+        let Some(hero) = server.board_status().try_receive() else {
             return;
         };
-        dom.select_mut(Node::Loading).unwrap().set_visible(false);
 
         let hero = match hero {
-            BoardStateGoBrr {
+            Board {
                 hero_1: Some(hero),
                 hero_2: None,
             }
-            | BoardStateGoBrr {
+            | Board {
                 hero_1: None,
                 hero_2: Some(hero),
             } => Ok(hero),
-            BoardStateGoBrr {
+            Board {
                 hero_1: None,
                 hero_2: None,
             } => Err("please put 1 hero on board"),
-            BoardStateGoBrr {
+            Board {
                 hero_1: Some(_),
                 hero_2: Some(_),
             } => Err("please put only 1 hero on board"),
         };
+
         let hero = match hero {
             Ok(hero) => hero,
             Err(err) => {

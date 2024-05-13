@@ -1,11 +1,12 @@
 #![allow(dead_code)]
 
-use crate::server::{Message, ServerActor};
-use actor::Actor;
-use engine::{spawn, Component};
+use std::sync::{Arc, Mutex};
+
+use backend_connection::BackendConnection;
+use engine::spawn;
 use server::Server;
 
-mod actor;
+mod backend_connection;
 mod game;
 mod hero_creator;
 mod hero_info;
@@ -17,34 +18,23 @@ mod sprite_renderer;
 mod start_game;
 mod ui;
 
-#[derive(Component)]
-pub struct GameActor {
-    inner: Actor<server::BoardStateGoBrr>,
-    server: Server,
-}
-
 fn main() {
-    let game_actor = Actor::new();
-    let server_actor = ServerActor::new(game_actor.handle());
-    let game_actor = GameActor {
-        inner: game_actor,
-        server: server_actor.handle(),
-    };
+    let mut backend_connection = BackendConnection::new();
+    let mut server = Server::new(backend_connection.clone());
 
     let game_thread = std::thread::spawn(move || {
         let mut game = engine::Game::new().unwrap();
 
         let mut ctx = game.context();
         ctx.add_system(main_menu::MainMenuSystem);
-        let mut quit_handle = game_actor.server.clone();
-        spawn!(&mut ctx, game_actor);
+        spawn!(&mut ctx, server.clone());
 
         game.run();
-        quit_handle.send_important(Message::Quit);
+        server.quit();
     });
 
     tokio::runtime::Runtime::new().unwrap().block_on(async {
-        server_actor.run().await;
+        backend_connection.run().await;
     });
 
     game_thread.join().unwrap();

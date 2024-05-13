@@ -6,14 +6,13 @@ use crate::{
     game::GameSystem,
     hero_info::HeroInfo,
     main_menu::MainMenuSystem,
-    server::HeroResult,
+    server::{HeroResult, Server},
     shared_ptr::SharedPtr,
     ui::{
         self,
         components::ProgressBar,
         utils::{change_image_node_content, change_text_node_content},
     },
-    GameActor,
 };
 
 #[derive(Component, Clone)]
@@ -188,10 +187,7 @@ impl System for StartGameSystem {
 
         let mut dom = start_game.dom.lock();
 
-        let comms = ctx.select_one::<GameActor>();
-        comms.server.send(crate::Message::BoardStatus);
-
-        let heroes = comms.inner.try_receive();
+        let heroes = ctx.select_one::<Server>().board_status().try_receive();
 
         match heroes {
             Some(heroes) => {
