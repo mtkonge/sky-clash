@@ -1,10 +1,10 @@
 use engine::{
-    rigid_body::{GravitySystem, RigidBody, VelocitySystem},
+    rigid_body::{DragSystem, GravitySystem, RigidBody, VelocitySystem},
     spawn, Collider, CollisionSystem, Component, System,
 };
 
 use crate::{
-    hurtbox::{Hurtbox, HurtboxSystem},
+    hurtbox::{HurtDirection, Hurtbox, HurtboxSystem},
     player_movement::{KeySet, PlayerMovement, PlayerMovementSystem},
     sprite_renderer::{Sprite, SpriteRenderer},
 };
@@ -24,6 +24,7 @@ impl System for GameSystem {
         ctx.add_system(SpriteRenderer);
         ctx.add_system(PlayerMovementSystem);
         ctx.add_system(GravitySystem);
+        ctx.add_system(DragSystem);
         ctx.add_system(HurtboxSystem);
         let heroes = ctx.clone_one::<HeroesOnBoard>();
         let hero_1_sprite = {
@@ -56,6 +57,7 @@ impl System for GameSystem {
                 pos: (400.0, 200.0),
                 rect: (128.0, 128.0),
                 gravity: true,
+                drag: true,
                 ..Default::default()
             },
             Collider {
@@ -76,6 +78,7 @@ impl System for GameSystem {
                 pos: (600.0, 200.0),
                 rect: (128.0, 128.0),
                 gravity: true,
+                drag: true,
                 ..Default::default()
             },
             Collider {
@@ -111,11 +114,15 @@ impl System for GameSystem {
         spawn!(
             ctx,
             RigidBody {
-                pos: (175.0, 200.0),
+                pos: (800.0, 200.0),
                 rect: (32.0, 32.0),
                 ..Default::default()
             },
-            Hurtbox::default(),
+            Hurtbox {
+                direction: HurtDirection::Left,
+                power: 200.0,
+                ..Default::default()
+            },
             Sprite { sprite: nope },
         );
 

@@ -2,9 +2,20 @@ use engine::rigid_body::RigidBody;
 use engine::{query, Collider, Component};
 use engine::{Context, Error, System};
 
-#[derive(Component, Default, Clone, Debug)]
+#[derive(Default, Clone)]
+pub enum HurtDirection {
+    #[default]
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+#[derive(Component, Default, Clone)]
 pub struct Hurtbox {
     pub owner: Option<engine::Id>,
+    pub power: f64,
+    pub direction: HurtDirection,
 }
 
 fn rects_collide(
@@ -23,16 +34,22 @@ pub struct HurtboxSystem(pub u64);
 impl System for HurtboxSystem {
     fn on_update(&self, ctx: &mut Context, _delta: f64) -> Result<(), Error> {
         for id in query!(ctx, Hurtbox, RigidBody).clone() {
-            let hurtbox_owner = ctx.select::<Hurtbox>(id).owner;
-            let hurtbox = ctx.select::<RigidBody>(id).clone();
+            let hurtbox = ctx.select::<Hurtbox>(id).clone();
+            let rigid_body = ctx.select::<RigidBody>(id).clone();
             for rigid_body_id in query!(ctx, RigidBody, Collider) {
-                if hurtbox_owner.is_some_and(|owner| owner == rigid_body_id) {
+                if hurtbox.owner.is_some_and(|owner| owner == rigid_body_id) {
                     continue;
                 };
                 let victim = ctx.select::<RigidBody>(rigid_body_id);
-                if !rects_collide(hurtbox.pos, hurtbox.rect, victim.pos, victim.rect) {
+                if !rects_collide(rigid_body.pos, rigid_body.rect, victim.pos, victim.rect) {
                     continue;
                 };
+                match hurtbox.direction {
+                    HurtDirection::Up => victim.vel.1 -= 100.0,
+                    HurtDirection::Down => victim.vel.1 += 100.0,
+                    HurtDirection::Left => victim.vel.0 -= 100.0,
+                    HurtDirection::Right => victim.vel.0 += 100.0,
+                }
             }
         }
         Ok(())

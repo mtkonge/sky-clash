@@ -34,7 +34,7 @@ pub struct PlayerMovement {
 
 pub struct PlayerMovementSystem(pub u64);
 impl System for PlayerMovementSystem {
-    fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
+    fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
         for id in query!(ctx, PlayerMovement, RigidBody, Collider) {
             let key_set = ctx.select::<PlayerMovement>(id).clone().key_set;
             let d_down = ctx.key_pressed(key_set.right());
@@ -42,13 +42,13 @@ impl System for PlayerMovementSystem {
             let w_down = ctx.key_pressed(key_set.up());
             let collider = ctx.select::<Collider>(id).clone();
             let body = ctx.select::<RigidBody>(id);
-            body.vel.0 = if d_down && !a_down {
-                400.0
-            } else if !d_down && a_down {
-                -400.0
-            } else {
-                0.0
-            };
+
+            if d_down && !a_down && body.vel.0 < 400.0 {
+                body.vel.0 += 400.0 * delta * 8.0
+            } else if a_down && !d_down && body.vel.0 > (-400.0) {
+                body.vel.0 -= 400.0 * delta * 8.0
+            }
+
             if collider
                 .colliding
                 .is_some_and(|dir| dir.facing(engine::collision::Direction::Bottom))
