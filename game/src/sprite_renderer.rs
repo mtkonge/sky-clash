@@ -12,7 +12,13 @@ impl System for SpriteRenderer {
             let body = ctx.select::<RigidBody>(id).clone();
             let sprite = ctx.select::<Sprite>(id).sprite;
 
-            ctx.draw_texture(sprite, body.pos.0 as i32, body.pos.1 as i32)?;
+            ctx.draw_texture_sized(
+                sprite,
+                body.pos.0 as i32,
+                body.pos.1 as i32,
+                body.rect.0 as u32,
+                body.rect.1 as u32,
+            )?;
         }
         Ok(())
     }

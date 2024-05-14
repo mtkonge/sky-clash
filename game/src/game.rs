@@ -33,10 +33,17 @@ impl System for GameSystem {
             ctx.load_texture(path).unwrap()
         };
 
-        let background = ctx.load_texture("textures/black_background.png").unwrap();
+        let background = ctx.load_texture("textures/literally_dprk.png").unwrap();
         let nope = ctx.load_texture("textures/nuh-uh.png").unwrap();
 
-        spawn!(ctx, Sprite { sprite: background }, RigidBody::default(),);
+        spawn!(
+            ctx,
+            Sprite { sprite: background },
+            RigidBody {
+                rect: (1280.0, 720.0),
+                ..Default::default()
+            },
+        );
 
         spawn!(
             ctx,
