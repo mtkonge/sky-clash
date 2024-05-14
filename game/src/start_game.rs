@@ -6,7 +6,7 @@ use crate::{
     game::GameSystem,
     hero_info::HeroInfo,
     main_menu::MainMenuSystem,
-    server::{HeroResult, Server},
+    server::{Board, HeroResult, Pipe, Server},
     shared_ptr::SharedPtr,
     ui::{
         self,
@@ -21,6 +21,7 @@ pub struct StartGame {
     dom: SharedPtr<ui::Dom>,
     left_bars: SharedPtr<BarBundle>,
     right_bars: SharedPtr<BarBundle>,
+    board_res_pipe: Pipe<Board>,
 }
 
 #[repr(u64)]
@@ -172,7 +173,8 @@ impl System for StartGameSystem {
                     strength: right_strength_bar,
                     agility: right_agility_bar,
                     defence: right_defence_bar
-                })
+                }),
+                board_res_pipe: Pipe::new(),
             }
         );
 
@@ -182,12 +184,14 @@ impl System for StartGameSystem {
     }
 
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
-        let start_game = ctx.clone_one::<StartGame>();
+        let mut start_game = ctx.clone_one::<StartGame>();
         start_game.dom.lock().update(ctx);
 
         let mut dom = start_game.dom.lock();
 
-        let heroes = ctx.select_one::<Server>().board_status().try_receive();
+        ctx.select_one::<Server>()
+            .board_status(start_game.board_res_pipe.clone());
+        let heroes = start_game.board_res_pipe.try_receive();
 
         match heroes {
             Some(heroes) => {

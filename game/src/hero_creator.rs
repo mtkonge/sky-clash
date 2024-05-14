@@ -1,11 +1,13 @@
 use crate::hero_info::HeroInfo;
 use crate::server::Board;
 use crate::server::HeroResult;
+use crate::server::Pipe;
 use crate::server::Server;
 use crate::shared_ptr::SharedPtr;
 use crate::ui;
 use crate::ui::utils::change_image_node_content;
 use crate::ui::utils::change_text_node_content;
+use engine::query_one;
 use engine::spawn;
 use engine::{Component, System};
 
@@ -17,6 +19,7 @@ pub struct HeroCreator {
     defence_bar: SharedPtr<ui::components::ProgressBar>,
     agility_bar: SharedPtr<ui::components::ProgressBar>,
     hero: Option<HeroResult>,
+    board_res_pipe: Pipe<Board>,
 }
 
 #[repr(u64)]
@@ -126,6 +129,7 @@ impl System for HeroCreatorSystem {
                 defence_bar: SharedPtr::new(defence_bar),
                 unallocated_skill_points: SharedPtr::new(0),
                 hero: None,
+                board_res_pipe: Pipe::new(),
             }
         );
 
@@ -260,10 +264,15 @@ impl HeroCreatorSystem {
         ctx: &mut engine::Context,
         mut dom: std::sync::MutexGuard<ui::Dom>,
     ) {
+        let menu = ctx.select_one::<HeroCreator>();
+        let mut res_pipe = menu.board_res_pipe.clone();
         let server = ctx.select_one::<Server>();
-        let Some(hero) = server.board_status().try_receive() else {
+        server.board_status(res_pipe.clone());
+        let Some(hero) = res_pipe.try_receive() else {
             return;
         };
+
+        dom.select_mut(Node::Loading).unwrap().set_visible(false);
 
         let hero = match hero {
             Board {
@@ -292,6 +301,7 @@ impl HeroCreatorSystem {
                 return;
             }
         };
+
         match hero {
             HeroResult::Hero(hero) => initialize_hero(ctx, hero, dom),
             HeroResult::UnknownRfid(rfid) => {
