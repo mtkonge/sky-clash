@@ -7,7 +7,7 @@ pub struct Hurtbox {
     pub owner: Option<engine::Id>,
 }
 
-fn wects_cowwide(
+fn rects_collide(
     pos_a: (f64, f64),
     size_a: (f64, f64),
     pos_b: (f64, f64),
@@ -30,7 +30,7 @@ impl System for HurtboxSystem {
                     continue;
                 };
                 let victim = ctx.select::<RigidBody>(rigid_body_id);
-                if !wects_cowwide(hurtbox.pos, hurtbox.rect, victim.pos, victim.rect) {
+                if !rects_collide(hurtbox.pos, hurtbox.rect, victim.pos, victim.rect) {
                     continue;
                 };
             }
