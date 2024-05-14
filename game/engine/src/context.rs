@@ -34,6 +34,7 @@ where
     pub(super) entities: &'context mut Vec<Option<Entity>>,
     pub(super) system_id_counter: &'context mut Id,
     pub(super) systems: &'context mut Vec<(u64, Rc<dyn System>)>,
+    pub(super) systems_to_remove: &'context mut Vec<Id>,
     pub(super) textures: &'context mut Vec<(Id, SdlTexture<'game>)>,
     pub(super) text_textures: &'context mut HashMap<TextTextureKey, Text>,
     pub(super) fonts: &'context mut Vec<(Id, u16, PathBuf, Font<'game>)>,
@@ -410,12 +411,7 @@ impl<'context, 'game> Context<'context, 'game> {
     }
 
     pub fn remove_system(&mut self, system_id: Id) {
-        let Some(index) = self.systems.iter().position(|(id, _)| *id == system_id) else {
-            println!("tried to remove system with id {system_id} but unable to");
-            return;
-        };
-        let (_id, system) = self.systems.remove(index);
-        system.on_remove(self).unwrap();
+        self.systems_to_remove.push(system_id);
     }
 
     pub fn key_pressed(&self, keycode: Keycode) -> bool {

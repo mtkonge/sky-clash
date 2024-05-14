@@ -1,4 +1,5 @@
 use crate::hero_info::HeroInfo;
+use crate::main_menu::MainMenuSystem;
 use crate::server::Board;
 use crate::server::HeroResult;
 use crate::server::Pipe;
@@ -19,7 +20,7 @@ pub struct HeroCreator {
     defence_bar: SharedPtr<ui::components::ProgressBar>,
     agility_bar: SharedPtr<ui::components::ProgressBar>,
     hero: Option<HeroResult>,
-    board_res_pipe: Pipe<Board>,
+    board_res_pipe: Option<Pipe<Board>>,
 }
 
 #[repr(u64)]
@@ -69,8 +70,10 @@ impl System for HeroCreatorSystem {
         agility_bar.add_event_handlers(&mut dom);
         defence_bar.add_event_handlers(&mut dom);
 
-        dom.add_event_handler(Event::ClosePopup, |dom, _ctx, _node_id| {
-            dom.select_mut(Node::ErrorPopup).unwrap().set_visible(false);
+        let id = self.0;
+        dom.add_event_handler(Event::ClosePopup, move |_dom, ctx, _node_id| {
+            ctx.remove_system(id);
+            ctx.add_system(MainMenuSystem);
         });
 
         dom.add_event_handler(Event::UpdateHero, move |_dom, ctx, _node_id| {
@@ -129,7 +132,7 @@ impl System for HeroCreatorSystem {
                 defence_bar: SharedPtr::new(defence_bar),
                 unallocated_skill_points: SharedPtr::new(0),
                 hero: None,
-                board_res_pipe: Pipe::new(),
+                board_res_pipe: None,
             }
         );
 
@@ -170,7 +173,9 @@ impl System for HeroCreatorSystem {
         Ok(())
     }
 
-    fn on_remove(&self, _ctx: &mut engine::Context) -> Result<(), engine::Error> {
+    fn on_remove(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
+        let id = query_one!(ctx, HeroCreator);
+        ctx.despawn(id);
         Ok(())
     }
 }
@@ -265,12 +270,24 @@ impl HeroCreatorSystem {
         mut dom: std::sync::MutexGuard<ui::Dom>,
     ) {
         let menu = ctx.select_one::<HeroCreator>();
-        let mut res_pipe = menu.board_res_pipe.clone();
-        let server = ctx.select_one::<Server>();
-        server.board_status(res_pipe.clone());
+        let mut res_pipe = match menu.board_res_pipe.clone() {
+            Some(pipe) => pipe,
+            None => {
+                let pipe = Pipe::new();
+                menu.board_res_pipe = Some(pipe.clone());
+
+                let server = ctx.select_one::<Server>();
+                server.board_status(pipe.clone());
+                pipe
+            }
+        };
+
         let Some(hero) = res_pipe.try_receive() else {
             return;
         };
+
+        let menu = ctx.select_one::<HeroCreator>();
+        menu.board_res_pipe = None;
 
         dom.select_mut(Node::Loading).unwrap().set_visible(false);
 

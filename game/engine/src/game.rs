@@ -37,6 +37,7 @@ pub struct Game<'game> {
     entities: Vec<Option<Entity>>,
     system_id_counter: Id,
     systems: Vec<(Id, Rc<dyn System>)>,
+    systems_to_remove: Vec<Id>,
     textures: Vec<(Id, Texture<'game>)>,
     text_textures: HashMap<TextTextureKey, Text>,
     fonts: Vec<(Id, u16, PathBuf, Font<'game>)>,
@@ -77,6 +78,7 @@ impl<'game> Game<'game> {
             entities: vec![],
             system_id_counter: 0,
             systems: vec![],
+            systems_to_remove: vec![],
             textures: vec![],
             text_textures: HashMap::new(),
             fonts: vec![],
@@ -133,6 +135,18 @@ impl<'game> Game<'game> {
                 };
                 println!("error occurred updating system: {err}");
             }
+            let ids_to_remove: Vec<_> = self.systems_to_remove.drain(..).collect();
+            for removed_id in ids_to_remove {
+                let Some(position) = self.systems.iter().position(|(id, _)| *id == removed_id)
+                else {
+                    println!("tried to remove system with id {removed_id} but unable to");
+                    continue;
+                };
+                let (_, system) = self.systems.remove(position);
+                if let Err(err) = system.on_remove(&mut self.context()) {
+                    println!("error occurred removing system: {err}");
+                };
+            }
             self.canvas.present();
             let update_duration = Instant::now() - now;
             let update_duration = update_duration.as_nanos();
@@ -154,6 +168,7 @@ impl<'game> Game<'game> {
             entities: &mut self.entities,
             system_id_counter: &mut self.system_id_counter,
             systems: &mut self.systems,
+            systems_to_remove: &mut self.systems_to_remove,
             textures: &mut self.textures,
             text_textures: &mut self.text_textures,
             fonts: &mut self.fonts,

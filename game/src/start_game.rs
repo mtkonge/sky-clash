@@ -255,8 +255,11 @@ fn display_hero_result(
                 HeroInfo::from(&hero.hero_type).texture_path,
             );
             bars.strength.set_steps_filled(hero.strength_points);
+            bars.strength.update(dom);
             bars.agility.set_steps_filled(hero.agility_points);
+            bars.agility.update(dom);
             bars.defence.set_steps_filled(hero.defence_points);
+            bars.defence.update(dom);
 
             dom.select_mut(bar_id).unwrap().set_visible(true);
             dom.select_mut(offset_id).unwrap().set_visible(false);
