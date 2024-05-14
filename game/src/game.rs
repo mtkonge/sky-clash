@@ -4,6 +4,7 @@ use engine::{
 };
 
 use crate::{
+    hurtbox::{Hurtbox, HurtboxSystem},
     player_movement::{KeySet, PlayerMovement, PlayerMovementSystem},
     sprite_renderer::{Sprite, SpriteRenderer},
 };
@@ -23,6 +24,7 @@ impl System for GameSystem {
         ctx.add_system(SpriteRenderer);
         ctx.add_system(PlayerMovementSystem);
         ctx.add_system(GravitySystem);
+        ctx.add_system(HurtboxSystem);
         let heroes = ctx.clone_one::<HeroesOnBoard>();
         let hero_1_sprite = {
             let path = crate::hero_info::HeroInfo::from(&heroes.hero_1.hero_type).texture_path;
@@ -103,6 +105,17 @@ impl System for GameSystem {
                 ..Default::default()
             },
             Collider::default(),
+            Sprite { sprite: nope },
+        );
+
+        spawn!(
+            ctx,
+            RigidBody {
+                pos: (175.0, 200.0),
+                rect: (32.0, 32.0),
+                ..Default::default()
+            },
+            Hurtbox::default(),
             Sprite { sprite: nope },
         );
 

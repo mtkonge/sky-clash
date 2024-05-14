@@ -10,6 +10,7 @@ mod backend_connection;
 mod game;
 mod hero_creator;
 mod hero_info;
+mod hurtbox;
 mod main_menu;
 mod player_movement;
 mod server;
