@@ -1,4 +1,4 @@
-use std::sync::MutexGuard;
+use std::{rc::Rc, sync::MutexGuard};
 
 use engine::{query, spawn, Component, System};
 
@@ -6,7 +6,7 @@ use crate::{
     game::GameSystem,
     hero_info::HeroInfo,
     main_menu::MainMenuSystem,
-    server::{Board, HeroResult, Pipe, Server},
+    server::{Board, HeroResult, Res, Server},
     shared_ptr::SharedPtr,
     ui::{
         self,
@@ -21,7 +21,7 @@ pub struct StartGame {
     dom: SharedPtr<ui::Dom>,
     left_bars: SharedPtr<BarBundle>,
     right_bars: SharedPtr<BarBundle>,
-    board_res_pipe: Pipe<Board>,
+    board_responder: Option<SharedPtr<Box<dyn Res<Board>>>>,
 }
 
 #[repr(u64)]
@@ -174,7 +174,7 @@ impl System for StartGameSystem {
                     agility: right_agility_bar,
                     defence: right_defence_bar
                 }),
-                board_res_pipe: Pipe::new(),
+                board_responder: None,
             }
         );
 
@@ -184,14 +184,20 @@ impl System for StartGameSystem {
     }
 
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
-        let mut start_game = ctx.clone_one::<StartGame>();
+        let start_game = ctx.clone_one::<StartGame>();
         start_game.dom.lock().update(ctx);
 
         let mut dom = start_game.dom.lock();
-
-        ctx.select_one::<Server>()
-            .board_status(start_game.board_res_pipe.clone());
-        let heroes = start_game.board_res_pipe.try_receive();
+        let responder = match start_game.board_responder {
+            Some(responder) => responder,
+            None => {
+                let responder = SharedPtr::new(ctx.select_one::<Server>().board_status());
+                let start_game = ctx.select_one::<StartGame>();
+                start_game.board_responder = Some(responder.clone());
+                responder
+            }
+        };
+        let heroes = responder.lock().try_receive();
 
         match heroes {
             Some(heroes) => {

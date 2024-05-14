@@ -1,12 +1,47 @@
+use crate::server::{Board, HeroResult, Res, ServerStrategy};
 use reqwest::header::HeaderMap;
-
-use crate::server::{Board, HeroResult, Pipe, Res, ServerStrategy};
+use std::{
+    collections::VecDeque,
+    sync::{Arc, Mutex},
+};
 
 enum Message {
     Quit,
     BoardStatus(Pipe<Board>),
     CreateHero(shared::CreateHeroParams),
     UpdateHeroStats(shared::UpdateHeroStatsParams),
+}
+
+pub struct Pipe<T> {
+    queue: Arc<Mutex<VecDeque<T>>>,
+}
+
+impl<T> Pipe<T> {
+    pub fn new() -> Self {
+        Self {
+            queue: Arc::new(Mutex::new(VecDeque::new())),
+        }
+    }
+
+    pub fn send(&mut self, value: T) {
+        self.queue.lock().unwrap().push_back(value);
+    }
+
+    pub fn send_urgent(&mut self, value: T) {
+        self.queue.lock().unwrap().push_front(value);
+    }
+
+    pub fn try_receive(&mut self) -> Option<T> {
+        self.queue.lock().unwrap().pop_front()
+    }
+}
+
+impl<T> Clone for Pipe<T> {
+    fn clone(&self) -> Self {
+        Self {
+            queue: self.queue.clone(),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -119,6 +154,17 @@ impl BackendConnection {
     }
 }
 
+#[derive(Clone)]
+struct BoardStatusRes {
+    res_pipe: Pipe<Board>,
+}
+
+impl Res<Board> for BoardStatusRes {
+    fn try_receive(&mut self) -> Option<Board> {
+        self.res_pipe.try_receive()
+    }
+}
+
 impl ServerStrategy for BackendConnection {
     fn quit(&mut self) {
         self.pipe.send_urgent(Message::Quit);
@@ -132,8 +178,10 @@ impl ServerStrategy for BackendConnection {
         self.pipe.send_urgent(Message::CreateHero(params));
     }
 
-    fn board_status(&mut self, res_pipe: Pipe<Board>) {
-        self.pipe.send(Message::BoardStatus(res_pipe));
+    fn board_status(&mut self) -> Box<dyn Res<Board>> {
+        let res_pipe = Pipe::new();
+        self.pipe.send(Message::BoardStatus(res_pipe.clone()));
+        Box::new(BoardStatusRes { res_pipe })
     }
 }
 

@@ -1,8 +1,10 @@
+use std::rc::Rc;
+
 use crate::hero_info::HeroInfo;
 use crate::main_menu::MainMenuSystem;
 use crate::server::Board;
 use crate::server::HeroResult;
-use crate::server::Pipe;
+use crate::server::Res;
 use crate::server::Server;
 use crate::shared_ptr::SharedPtr;
 use crate::ui;
@@ -20,7 +22,7 @@ pub struct HeroCreator {
     defence_bar: SharedPtr<ui::components::ProgressBar>,
     agility_bar: SharedPtr<ui::components::ProgressBar>,
     hero: Option<HeroResult>,
-    board_res_pipe: Option<Pipe<Board>>,
+    board_responder: Option<SharedPtr<Box<dyn Res<Board>>>>,
 }
 
 #[repr(u64)]
@@ -132,7 +134,7 @@ impl System for HeroCreatorSystem {
                 defence_bar: SharedPtr::new(defence_bar),
                 unallocated_skill_points: SharedPtr::new(0),
                 hero: None,
-                board_res_pipe: None,
+                board_responder: None,
             }
         );
 
@@ -270,24 +272,23 @@ impl HeroCreatorSystem {
         mut dom: std::sync::MutexGuard<ui::Dom>,
     ) {
         let menu = ctx.select_one::<HeroCreator>();
-        let mut res_pipe = match menu.board_res_pipe.clone() {
-            Some(pipe) => pipe,
+        let responder = match menu.board_responder.clone() {
+            Some(responder) => responder,
             None => {
-                let pipe = Pipe::new();
-                menu.board_res_pipe = Some(pipe.clone());
-
                 let server = ctx.select_one::<Server>();
-                server.board_status(pipe.clone());
-                pipe
+                let responder = SharedPtr::new(server.board_status());
+                let menu = ctx.select_one::<HeroCreator>();
+                menu.board_responder = Some(responder.clone());
+                responder
             }
         };
 
-        let Some(hero) = res_pipe.try_receive() else {
+        let Some(hero) = responder.lock().try_receive() else {
             return;
         };
 
         let menu = ctx.select_one::<HeroCreator>();
-        menu.board_res_pipe = None;
+        menu.board_responder = None;
 
         dom.select_mut(Node::Loading).unwrap().set_visible(false);
 

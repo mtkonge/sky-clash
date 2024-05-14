@@ -1,8 +1,8 @@
 use std::{rc::Rc, sync::Mutex};
 
-pub struct SharedPtr<T>(Rc<Mutex<T>>);
+pub struct SharedPtr<T: ?Sized>(Rc<Mutex<T>>);
 
-impl<T> Clone for SharedPtr<T> {
+impl<T: ?Sized> Clone for SharedPtr<T> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }

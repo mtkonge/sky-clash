@@ -1,7 +1,4 @@
-use std::{
-    collections::VecDeque,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use engine::Component;
 
@@ -17,48 +14,15 @@ pub struct Board {
     pub hero_2: Option<HeroResult>,
 }
 
+pub trait Res<T> {
+    fn try_receive(&mut self) -> Option<T>;
+}
+
 pub trait ServerStrategy {
     fn quit(&mut self);
     fn update_hero_stats(&mut self, params: shared::UpdateHeroStatsParams);
     fn create_hero(&mut self, params: shared::CreateHeroParams);
-    fn board_status(&mut self, res_pipe: Pipe<Board>);
-}
-
-// TODO this should pwobably only be in backend_connection
-pub struct Pipe<T> {
-    queue: Arc<Mutex<VecDeque<T>>>,
-}
-
-impl<T> Pipe<T> {
-    pub fn new() -> Self {
-        Self {
-            queue: Arc::new(Mutex::new(VecDeque::new())),
-        }
-    }
-
-    pub fn send(&mut self, value: T) {
-        self.queue.lock().unwrap().push_back(value);
-    }
-
-    pub fn send_urgent(&mut self, value: T) {
-        self.queue.lock().unwrap().push_front(value);
-    }
-
-    pub fn try_receive(&mut self) -> Option<T> {
-        self.queue.lock().unwrap().pop_front()
-    }
-}
-
-impl<T> Clone for Pipe<T> {
-    fn clone(&self) -> Self {
-        Self {
-            queue: self.queue.clone(),
-        }
-    }
-}
-
-pub trait Res<T> {
-    fn try_receive(&mut self) -> Option<T>;
+    fn board_status(&mut self) -> Box<dyn Res<Board>>;
 }
 
 #[derive(Component, Clone)]
@@ -85,7 +49,7 @@ impl Server {
         self.strategy.lock().unwrap().create_hero(params)
     }
 
-    pub fn board_status(&mut self, res_pipe: Pipe<Board>) {
-        self.strategy.lock().unwrap().board_status(res_pipe)
+    pub fn board_status(&mut self) -> Box<dyn Res<Board>> {
+        self.strategy.lock().unwrap().board_status()
     }
 }
