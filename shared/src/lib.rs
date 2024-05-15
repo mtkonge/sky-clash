@@ -32,6 +32,18 @@ pub enum HeroKind {
     Tankie = 3,
 }
 
+impl std::fmt::Display for HeroKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let text = match self {
+            HeroKind::Centrist => "Centrist",
+            HeroKind::Strong => "Strong",
+            HeroKind::Speed => "Speed",
+            HeroKind::Tankie => "Tankie",
+        };
+        write!(f, "{}", text)
+    }
+}
+
 impl From<HeroKind> for HeroStats {
     fn from(value: HeroKind) -> Self {
         Self::from(&value)

@@ -4,7 +4,8 @@ use engine::{
 };
 
 use crate::{
-    hurtbox::{HurtDirection, Hurtbox, HurtboxSystem},
+    hurtbox::{self, HurtDirection, Hurtbox, HurtboxSystem},
+    knockoff::KnockoffSystem,
     player_movement::{KeySet, PlayerMovement, PlayerMovementSystem},
     sprite_renderer::{Sprite, SpriteRenderer},
 };
@@ -26,6 +27,7 @@ impl System for GameSystem {
         ctx.add_system(GravitySystem);
         ctx.add_system(DragSystem);
         ctx.add_system(HurtboxSystem);
+        ctx.add_system(KnockoffSystem);
         let heroes = ctx.clone_one::<HeroesOnBoard>();
         let hero_1_sprite = {
             let path = crate::hero_info::HeroInfo::from(&heroes.hero_1.hero_type).texture_path;
@@ -67,6 +69,12 @@ impl System for GameSystem {
             PlayerMovement {
                 key_set: KeySet::Wasd
             },
+            hurtbox::MatchHero {
+                kind: hurtbox::HeroKind::Hero1,
+                hero: heroes.hero_1.clone(),
+                knockback_modifier: 0.5,
+                lives: 3,
+            },
         );
 
         spawn!(
@@ -87,6 +95,12 @@ impl System for GameSystem {
             },
             PlayerMovement {
                 key_set: KeySet::ArrowKeys
+            },
+            hurtbox::MatchHero {
+                kind: hurtbox::HeroKind::Hero2,
+                hero: heroes.hero_2.clone(),
+                knockback_modifier: 1.0,
+                lives: 3,
             },
         );
 

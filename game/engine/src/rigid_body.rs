@@ -51,7 +51,6 @@ impl System for DragSystem {
             if body.vel.0 == 0.0 {
                 continue;
             }
-            println!("{}", body.vel.0);
             let eq = body.vel.0.abs().powf(1.25) * delta * 0.1 + 5.0;
             if body.vel.0 > 10.0 {
                 body.vel.0 -= eq;

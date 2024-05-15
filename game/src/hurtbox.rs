@@ -30,25 +30,41 @@ fn rects_collide(
         && pos_a.1 + size_a.1 > pos_b.1
 }
 
+#[derive(Clone, Component)]
+pub struct MatchHero {
+    pub kind: HeroKind,
+    pub hero: shared::Hero,
+    pub knockback_modifier: f64,
+    pub lives: i8,
+}
+
+#[derive(Clone)]
+pub enum HeroKind {
+    Hero1,
+    Hero2,
+}
+
 pub struct HurtboxSystem(pub u64);
 impl System for HurtboxSystem {
     fn on_update(&self, ctx: &mut Context, _delta: f64) -> Result<(), Error> {
         for id in query!(ctx, Hurtbox, RigidBody).clone() {
             let hurtbox = ctx.select::<Hurtbox>(id).clone();
             let rigid_body = ctx.select::<RigidBody>(id).clone();
-            for rigid_body_id in query!(ctx, RigidBody, Collider) {
-                if hurtbox.owner.is_some_and(|owner| owner == rigid_body_id) {
+            for victim_id in query!(ctx, RigidBody, Collider, MatchHero) {
+                if hurtbox.owner.is_some_and(|owner| owner == victim_id) {
                     continue;
                 };
-                let victim = ctx.select::<RigidBody>(rigid_body_id);
+                let knockback_modifier = ctx.select::<MatchHero>(victim_id).knockback_modifier;
+                let victim = ctx.select::<RigidBody>(victim_id);
                 if !rects_collide(rigid_body.pos, rigid_body.rect, victim.pos, victim.rect) {
                     continue;
                 };
+                let velocity = hurtbox.power * knockback_modifier;
                 match hurtbox.direction {
-                    HurtDirection::Up => victim.vel.1 -= 100.0,
-                    HurtDirection::Down => victim.vel.1 += 100.0,
-                    HurtDirection::Left => victim.vel.0 -= 100.0,
-                    HurtDirection::Right => victim.vel.0 += 100.0,
+                    HurtDirection::Up => victim.vel.1 -= velocity,
+                    HurtDirection::Down => victim.vel.1 += velocity,
+                    HurtDirection::Left => victim.vel.0 -= velocity,
+                    HurtDirection::Right => victim.vel.0 += velocity,
                 }
             }
         }
