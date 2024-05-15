@@ -70,7 +70,7 @@ impl System for GameSystem {
                 key_set: KeySet::Wasd
             },
             hurtbox::MatchHero {
-                kind: hurtbox::HeroKind::Hero1,
+                kind: hurtbox::PlayerKind::Left,
                 hero: heroes.hero_1.clone(),
                 knockback_modifier: 0.5,
                 lives: 3,
@@ -97,7 +97,7 @@ impl System for GameSystem {
                 key_set: KeySet::ArrowKeys
             },
             hurtbox::MatchHero {
-                kind: hurtbox::HeroKind::Hero2,
+                kind: hurtbox::PlayerKind::Right,
                 hero: heroes.hero_2.clone(),
                 knockback_modifier: 1.0,
                 lives: 3,

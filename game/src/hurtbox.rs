@@ -32,16 +32,16 @@ fn rects_collide(
 
 #[derive(Clone, Component)]
 pub struct MatchHero {
-    pub kind: HeroKind,
+    pub kind: PlayerKind,
     pub hero: shared::Hero,
     pub knockback_modifier: f64,
     pub lives: i8,
 }
 
 #[derive(Clone)]
-pub enum HeroKind {
-    Hero1,
-    Hero2,
+pub enum PlayerKind {
+    Left,
+    Right,
 }
 
 pub struct HurtboxSystem(pub u64);

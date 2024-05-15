@@ -1,7 +1,7 @@
 use engine::{query, rigid_body::RigidBody, spawn, Component, Context, Error, System};
 
 use crate::{
-    hurtbox::{HeroKind, MatchHero},
+    hurtbox::{MatchHero, PlayerKind},
     player_movement::PlayerMovement,
 };
 
@@ -91,14 +91,14 @@ fn draw_match_stats(ctx: &mut Context, match_hero: MatchHero) {
     };
 
     let (pos, text_offset) = match match_hero.kind {
-        HeroKind::Hero1 => (
+        PlayerKind::Left => (
             (0, 0),
             (
                 stats_size.0 as i32 - stats_size.0 as i32 / 5,
                 stats_size.0 as i32 / 8 + stats_size.0 as i32 / 2,
             ),
         ),
-        HeroKind::Hero2 => (
+        PlayerKind::Right => (
             (1280 - stats_size.0 as i32, 0),
             (
                 -text.size.0 + stats_size.0 as i32 / 5,
