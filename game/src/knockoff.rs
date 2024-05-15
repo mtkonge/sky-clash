@@ -11,6 +11,12 @@ fn player_died_text(loser: &shared::HeroKind, winner: &shared::HeroKind, counter
         0 => format!("looks like {loser} has skill issues"),
         1 => format!("{loser} was not Him"),
         2 => format!("bro lost to a {winner}"),
+        3 => format!("dying to a {winner} in 2024 is crazy"),
+        4 => format!("{loser} is so loserpilled"),
+        5 => format!("bro lost to a {winner} before Gta VI"),
+        6 => format!("{loser} is losermaxxing"),
+        7 => format!("in loser town everybody knows {loser}"),
+        8 => format!("dying to a {winner} won't pay the bills"),
         _ => unreachable!(),
     }
 }
