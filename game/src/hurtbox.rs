@@ -54,18 +54,25 @@ impl System for HurtboxSystem {
                 if hurtbox.owner.is_some_and(|owner| owner == victim_id) {
                     continue;
                 };
-                let knockback_modifier = ctx.select::<MatchHero>(victim_id).knockback_modifier;
+                let match_hero = ctx.select::<MatchHero>(victim_id);
+
+                let knockback_modifier = match_hero.knockback_modifier + 1.0;
                 let victim = ctx.select::<RigidBody>(victim_id);
                 if !rects_collide(rigid_body.pos, rigid_body.rect, victim.pos, victim.rect) {
                     continue;
                 };
-                let velocity = hurtbox.power * knockback_modifier;
+
+                let velocity = hurtbox.power * knockback_modifier.powi(2) * 0.1;
+
                 match hurtbox.direction {
                     HurtDirection::Up => victim.vel.1 -= velocity,
                     HurtDirection::Down => victim.vel.1 += velocity,
                     HurtDirection::Left => victim.vel.0 -= velocity,
                     HurtDirection::Right => victim.vel.0 += velocity,
                 }
+                let match_hero = ctx.select::<MatchHero>(victim_id);
+
+                match_hero.knockback_modifier += hurtbox.power / 1000.0;
             }
         }
         Ok(())

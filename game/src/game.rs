@@ -72,7 +72,7 @@ impl System for GameSystem {
             hurtbox::MatchHero {
                 kind: hurtbox::PlayerKind::Left,
                 hero: heroes.hero_1.clone(),
-                knockback_modifier: 0.5,
+                knockback_modifier: 5.5,
                 lives: 3,
             },
         );
@@ -99,7 +99,7 @@ impl System for GameSystem {
             hurtbox::MatchHero {
                 kind: hurtbox::PlayerKind::Right,
                 hero: heroes.hero_2.clone(),
-                knockback_modifier: 1.0,
+                knockback_modifier: 0.0,
                 lives: 3,
             },
         );
@@ -134,7 +134,7 @@ impl System for GameSystem {
             },
             Hurtbox {
                 direction: HurtDirection::Left,
-                power: 200.0,
+                power: 20.0,
                 ..Default::default()
             },
             Sprite { sprite: nope },

@@ -15,6 +15,39 @@ fn player_died_text(loser: &shared::HeroKind, winner: &shared::HeroKind, counter
     }
 }
 
+fn linear_interpolation(current: u8, next: u8, percentage: f64) -> u8 {
+    (current as f64 * (1.0 - percentage) + next as f64 * percentage) as u8
+}
+
+fn merge_colors(
+    current: (u8, u8, u8),
+    next: (u8, u8, u8),
+    transition_percentage: f64,
+) -> (u8, u8, u8) {
+    (
+        linear_interpolation(current.0, next.0, transition_percentage),
+        linear_interpolation(current.1, next.1, transition_percentage),
+        linear_interpolation(current.2, next.2, transition_percentage),
+    )
+}
+
+fn player_damage_color(damage: f64) -> (u8, u8, u8) {
+    let transition_alpha = damage % 2.5;
+    let colors = [
+        (255, 255, 255),
+        (255, 255, 0),
+        (255, 127, 0),
+        (255, 0, 0),
+        (0, 0, 0),
+    ];
+    let max_idx = colors.len() - 1;
+    let idx = ((damage - transition_alpha) / 2.5) as usize;
+    let current = std::cmp::min(max_idx, idx);
+    let next = std::cmp::min(max_idx, idx + 1);
+    let transition_percentage = (damage % 2.5) / 2.5;
+    merge_colors(colors[current], colors[next], transition_percentage)
+}
+
 #[derive(Component, Clone)]
 pub struct TrashTalkOffset(f64);
 
@@ -83,7 +116,7 @@ fn draw_match_stats(ctx: &mut Context, match_hero: MatchHero) {
     let text = ctx.render_text(font, lives, (255, 255, 255)).unwrap();
     let stats_size = (50, 50);
     let border_thickness = 2;
-    let border_color = (255, 255, 255);
+    let border_color = player_damage_color(match_hero.knockback_modifier);
 
     let hero_sprite = {
         let path = crate::hero_info::HeroInfo::from(match_hero.hero.hero_type).texture_path;
