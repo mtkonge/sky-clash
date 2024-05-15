@@ -42,16 +42,18 @@ fn draw_match_stats_background(
     border_color: (u8, u8, u8),
     border_thickness: i32,
     pos: (i32, i32),
-    offset: (i32, i32),
+    text_offset: (i32, i32),
     text_size: (i32, i32),
     stats_size: (u32, u32),
 ) {
+    let text_padding = 5;
+
     ctx.draw_rect(
         border_color,
-        pos.0 + offset.0 - border_thickness,
-        pos.1 + stats_size.0 as i32 / 2 - border_thickness + offset.1 - border_thickness,
-        text_size.0 as u32 + border_thickness as u32 * 2,
-        text_size.1 as u32 + border_thickness as u32 * 2,
+        pos.0 - border_thickness + text_offset.0 - text_padding,
+        pos.1 - border_thickness + text_offset.1 - text_padding,
+        text_size.0 as u32 + border_thickness as u32 * 2 + text_padding as u32 * 2,
+        text_size.1 as u32 + border_thickness as u32 * 2 + text_padding as u32 * 2,
     )
     .unwrap();
     ctx.draw_rect(border_color, pos.0, pos.1, stats_size.0, stats_size.1)
@@ -67,10 +69,10 @@ fn draw_match_stats_background(
     .unwrap();
     ctx.draw_rect(
         (0, 0, 0),
-        pos.0 + offset.0,
-        pos.1 + stats_size.0 as i32 / 2 - border_thickness + offset.1,
-        text_size.0 as u32,
-        text_size.1 as u32,
+        pos.0 + text_offset.0 - text_padding,
+        pos.1 + text_offset.1 - text_padding,
+        text_size.0 as u32 + text_padding as u32 * 2,
+        text_size.1 as u32 + text_padding as u32 * 2,
     )
     .unwrap();
 }
@@ -88,19 +90,19 @@ fn draw_match_stats(ctx: &mut Context, match_hero: MatchHero) {
         ctx.load_texture(path).unwrap()
     };
 
-    let (pos, offset) = match match_hero.kind {
+    let (pos, text_offset) = match match_hero.kind {
         HeroKind::Hero1 => (
             (0, 0),
             (
                 stats_size.0 as i32 - stats_size.0 as i32 / 5,
-                stats_size.0 as i32 / 8,
+                stats_size.0 as i32 / 8 + stats_size.0 as i32 / 2,
             ),
         ),
         HeroKind::Hero2 => (
             (1280 - stats_size.0 as i32, 0),
             (
                 -text.size.0 + stats_size.0 as i32 / 5,
-                stats_size.0 as i32 / 8,
+                stats_size.0 as i32 / 8 + stats_size.0 as i32 / 2,
             ),
         ),
     };
@@ -110,7 +112,7 @@ fn draw_match_stats(ctx: &mut Context, match_hero: MatchHero) {
         border_color,
         border_thickness,
         pos,
-        offset,
+        text_offset,
         text.size,
         stats_size,
     );
@@ -125,8 +127,8 @@ fn draw_match_stats(ctx: &mut Context, match_hero: MatchHero) {
     .unwrap();
     ctx.draw_texture(
         text.texture,
-        pos.0 + offset.0,
-        pos.1 + stats_size.0 as i32 / 2 - border_thickness + offset.1,
+        pos.0 + text_offset.0,
+        pos.1 - border_thickness + text_offset.1,
     )
     .unwrap();
 }
