@@ -186,6 +186,7 @@ impl System for KnockoffSystem {
                 let loser_id = id;
                 let stats = ctx.select::<MatchHero>(loser_id);
                 if stats.lives > 0 {
+                    stats.knockback_modifier = 0.0;
                     stats.lives -= 1;
                 };
                 if stats.lives <= 0 {
