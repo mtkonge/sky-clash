@@ -15,6 +15,26 @@ fn player_died_text(loser: &shared::HeroKind, winner: &shared::HeroKind, counter
 #[derive(Component, Clone)]
 pub struct TrashTalkOffset(f64);
 
+fn win_condition(ctx: &mut Context, loser_id: engine::Id) {
+    let winner = 'winner: {
+        for winner_id in query!(ctx, PlayerMovement, RigidBody, MatchHero) {
+            if winner_id == loser_id {
+                continue;
+            }
+            break 'winner ctx.select::<MatchHero>(winner_id).hero.hero_type.clone();
+        }
+        unreachable!("other player somehow despawned");
+    };
+    let trash_talk_offset = ctx.select_one::<TrashTalkOffset>().0;
+    let loser = &ctx.select::<MatchHero>(loser_id).hero.hero_type;
+    let trash_talk = player_died_text(loser, &winner, trash_talk_offset);
+    let font = ctx.load_font("textures/ttf/OpenSans.ttf", 48).unwrap();
+    let text = ctx.render_text(font, &trash_talk, (255, 255, 255)).unwrap();
+    let (text_width, _) = ctx.text_size(font, &trash_talk).unwrap();
+    ctx.draw_texture(text.texture, (1280 - text_width as i32) / 2, 100)
+        .unwrap();
+}
+
 pub struct KnockoffSystem(pub u64);
 impl System for KnockoffSystem {
     fn on_add(&self, ctx: &mut Context) -> Result<(), Error> {
@@ -35,27 +55,7 @@ impl System for KnockoffSystem {
                     stats.lives -= 1;
                 };
                 if stats.lives <= 0 {
-                    let winner = 'winner: {
-                        for winner_id in query!(ctx, PlayerMovement, RigidBody, MatchHero) {
-                            if winner_id == loser_id {
-                                continue;
-                            }
-                            break 'winner ctx
-                                .select::<MatchHero>(winner_id)
-                                .hero
-                                .hero_type
-                                .clone();
-                        }
-                        unreachable!("other player somehow despawned");
-                    };
-                    let trash_talk_offset = ctx.select_one::<TrashTalkOffset>().0;
-                    let loser = &ctx.select::<MatchHero>(loser_id).hero.hero_type;
-                    let trash_talk = player_died_text(loser, &winner, trash_talk_offset);
-                    let font = ctx.load_font("textures/ttf/OpenSans.ttf", 48).unwrap();
-                    let text = ctx.render_text(font, &trash_talk, (255, 255, 255)).unwrap();
-                    let (text_width, _) = ctx.text_size(font, &trash_talk).unwrap();
-                    ctx.draw_texture(text.texture, (1280 - text_width as i32) / 2, 100)
-                        .unwrap();
+                    win_condition(ctx, loser_id);
                     continue;
                 }
                 let rigid_body = ctx.select::<RigidBody>(loser_id);
