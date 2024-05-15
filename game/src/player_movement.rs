@@ -1,31 +1,6 @@
-use engine::{query, rigid_body::RigidBody, Collider, Component, Keycode, System};
+use engine::{query, rigid_body::RigidBody, Collider, Component, System};
 
-#[derive(Clone)]
-pub enum KeySet {
-    Wasd,
-    ArrowKeys,
-}
-
-impl KeySet {
-    pub fn right(&self) -> Keycode {
-        match self {
-            KeySet::Wasd => Keycode::D,
-            KeySet::ArrowKeys => Keycode::Right,
-        }
-    }
-    pub fn left(&self) -> Keycode {
-        match self {
-            KeySet::Wasd => Keycode::A,
-            KeySet::ArrowKeys => Keycode::Left,
-        }
-    }
-    pub fn up(&self) -> Keycode {
-        match self {
-            KeySet::Wasd => Keycode::W,
-            KeySet::ArrowKeys => Keycode::Up,
-        }
-    }
-}
+use crate::key_set::KeySet;
 
 #[derive(Component, Clone)]
 pub struct PlayerMovement {

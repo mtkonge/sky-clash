@@ -5,8 +5,10 @@ use engine::{
 
 use crate::{
     hurtbox::{self, HurtDirection, Hurtbox, HurtboxSystem},
+    key_set::KeySet,
     knockoff::KnockoffSystem,
-    player_movement::{KeySet, PlayerMovement, PlayerMovementSystem},
+    player_attack::{PlayerAttack, PlayerAttackSystem},
+    player_movement::{PlayerMovement, PlayerMovementSystem},
     sprite_renderer::{Sprite, SpriteRenderer},
 };
 
@@ -28,6 +30,7 @@ impl System for GameSystem {
         ctx.add_system(DragSystem);
         ctx.add_system(HurtboxSystem);
         ctx.add_system(KnockoffSystem);
+        ctx.add_system(PlayerAttackSystem);
         let heroes = ctx.clone_one::<HeroesOnBoard>();
         let hero_1_sprite = {
             let path = crate::hero_info::HeroInfo::from(&heroes.hero_1.hero_type).texture_path;
@@ -75,6 +78,9 @@ impl System for GameSystem {
                 knockback_modifier: 5.5,
                 lives: 3,
             },
+            PlayerAttack {
+                key_set: KeySet::Wasd
+            }
         );
 
         spawn!(
@@ -102,6 +108,9 @@ impl System for GameSystem {
                 knockback_modifier: 0.0,
                 lives: 3,
             },
+            PlayerAttack {
+                key_set: KeySet::ArrowKeys
+            }
         );
 
         spawn!(
