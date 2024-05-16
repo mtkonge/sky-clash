@@ -58,7 +58,8 @@ pub enum Kind {
 #[derive(Debug, PartialEq)]
 pub struct Node {
     pub kind: Kind,
-    id: Option<NodeId>,
+    parent_id: Option<InternalNodeId>,
+    user_id: Option<NodeId>,
     width: Option<i32>,
     height: Option<i32>,
     on_click: Option<EventId>,
@@ -124,7 +125,12 @@ impl Dom {
     pub fn new(mut build: builder::Box<builder::Node>) -> Self {
         let mut nodes = Vec::new();
         let mut id_counter = 0;
-        let root_id = build.build(&mut nodes, &mut id_counter, builder::DerivedProps::new());
+        let root_id = build.build(
+            &mut nodes,
+            &mut id_counter,
+            None,
+            builder::DerivedProps::new(),
+        );
         Self {
             nodes,
             root_id,
@@ -163,42 +169,42 @@ impl Dom {
             .map(|(_, node)| node)
     }
 
-    pub fn select<I>(&mut self, uid: I) -> Option<&Node>
+    pub fn select<I>(&self, user_id: I) -> Option<&Node>
     where
         I: Into<NodeId>,
     {
-        let uid = uid.into();
+        let user_id = user_id.into();
         let count = self
             .nodes
             .iter()
-            .filter(|(_, node)| node.id.is_some_and(|id| id == uid))
+            .filter(|(_, node)| node.user_id.is_some_and(|id| id == user_id))
             .count();
         if count > 1 {
-            println!("ui warning: colliding ids: {}", uid.0);
+            println!("ui warning: colliding ids: {}", user_id.0);
         };
         self.nodes
             .iter()
-            .find(|(_, node)| node.id.is_some_and(|id| id == uid))
+            .find(|(_, node)| node.user_id.is_some_and(|id| id == user_id))
             .map(|(_, node)| node)
     }
 
-    pub fn select_mut<I>(&mut self, uid: I) -> Option<&mut Node>
+    pub fn select_mut<I>(&mut self, user_id: I) -> Option<&mut Node>
     where
         I: Into<NodeId>,
     {
-        let uid = uid.into();
+        let user_id = user_id.into();
         let count = self
             .nodes
             .iter()
-            .filter(|(_, node)| node.id.is_some_and(|id| id == uid))
+            .filter(|(_, node)| node.user_id.is_some_and(|id| id == user_id))
             .count();
         if count > 1 {
-            println!("ui warning: colliding ids: {}", uid.0);
+            println!("ui warning: colliding ids: {}", user_id.0);
         };
 
         self.nodes
             .iter_mut()
-            .find(|(_, node)| node.id.is_some_and(|id| id == uid))
+            .find(|(_, node)| node.user_id.is_some_and(|id| id == user_id))
             .map(|(_, node)| node)
     }
 
@@ -222,6 +228,38 @@ impl Dom {
             .build_layout_tree(self.root_id, self, ctx, (0, 0), &mut NoTransform)
     }
 
+    fn internal_ancestry_find_map<T, F: Fn(&Node) -> Option<T>>(
+        &self,
+        id: InternalNodeId,
+        predicate: F,
+    ) -> Option<T> {
+        let node = self.select_node(id)?;
+        match predicate(node) {
+            None => self.internal_ancestry_find_map(node.parent_id?, predicate),
+            rest => rest,
+        }
+    }
+
+    pub fn ancestry_find_map<I, F, T>(&self, user_id: I, predicate: F) -> Option<T>
+    where
+        I: Into<NodeId>,
+        F: Fn(&Node) -> Option<T>,
+    {
+        let node = self.select(user_id)?;
+        match predicate(node) {
+            None => self.internal_ancestry_find_map(node.parent_id?, predicate),
+            rest => rest,
+        }
+    }
+
+    fn click_node(&mut self, id: InternalNodeId) {
+        if let Some((id, node)) = self.nodes.iter().find(|node| id == node.0) {
+            if let Some(event_id) = node.on_click {
+                self.event_queue.push((event_id, *id));
+            }
+        };
+    }
+
     pub fn update(&mut self, ctx: &mut engine::Context) {
         let tree = self.build_layout_tree(ctx);
         tree.draw(ctx);
@@ -229,13 +267,6 @@ impl Dom {
             if let Some(event) = tree.resolve_click(ctx.mouse_position()) {
                 self.event_queue.push(event);
             }
-        }
-        if ctx.key_just_pressed(engine::Keycode::Return) {
-            if let Some((id, node)) = self.nodes.iter().find(|(_, node)| node.focused) {
-                if let Some(event_id) = node.on_click {
-                    self.event_queue.push((event_id, *id));
-                }
-            };
         }
         self.handle_events(ctx);
     }

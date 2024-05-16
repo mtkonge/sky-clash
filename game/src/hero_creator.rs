@@ -15,6 +15,7 @@ use engine::{Component, System};
 #[derive(Component, Clone)]
 pub struct HeroCreator {
     dom: SharedPtr<ui::Dom>,
+    focus: SharedPtr<ui::focus::Focus>,
     unallocated_skill_points: SharedPtr<i64>,
     strength_bar: SharedPtr<ui::components::ProgressBar>,
     defence_bar: SharedPtr<ui::components::ProgressBar>,
@@ -32,6 +33,13 @@ enum Node {
     ErrorPopup,
     ErrorText,
     Loading,
+
+    ClosePopup,
+    UpdateHero,
+    CentristButton,
+    StrongButton,
+    TankieButton,
+    SpeedButton,
 }
 
 #[repr(u64)]
@@ -133,6 +141,14 @@ impl System for HeroCreatorSystem {
                 unallocated_skill_points: SharedPtr::new(0),
                 hero: None,
                 board_responder: None,
+                focus: SharedPtr::new(ui::focus::Focus::new([
+                    Node::ClosePopup,
+                    Node::UpdateHero,
+                    Node::CentristButton,
+                    Node::StrongButton,
+                    Node::TankieButton,
+                    Node::SpeedButton,
+                ]))
             }
         );
 
@@ -142,6 +158,8 @@ impl System for HeroCreatorSystem {
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
         let menu = ctx.clone_one::<HeroCreator>();
         let mut dom = menu.dom.lock();
+        let mut focus = menu.focus.lock();
+        focus.update(&mut dom, ctx);
         dom.update(ctx);
 
         if let Some(HeroResult::Hero(hero)) = menu.hero {
@@ -211,7 +229,9 @@ impl HeroCreatorSystem {
                         strength_bar.build(),
                         agility_bar.build(),
                         defence_bar.build(),
-                        Hori([ui::components::Button("Confirm").on_click(Event::UpdateHero)]),
+                        Hori([ui::components::Button("Confirm")
+                            .on_click(Event::UpdateHero)
+                            .id(Node::UpdateHero)]),
                         Rect().height(720 / 2 - 100),
                     ]),
                 ]),
@@ -222,19 +242,23 @@ impl HeroCreatorSystem {
                         Button("Centrist")
                             .background_color((100, 100, 100))
                             .padding(5)
-                            .on_click(Event::CentristButton),
+                            .on_click(Event::CentristButton)
+                            .id(Node::CentristButton),
                         Button("Speed")
                             .background_color((100, 100, 100))
                             .padding(5)
-                            .on_click(Event::SpeedButton),
+                            .on_click(Event::SpeedButton)
+                            .id(Node::SpeedButton),
                         Button("Strong")
                             .background_color((100, 100, 100))
                             .padding(5)
-                            .on_click(Event::StrongButton),
+                            .on_click(Event::StrongButton)
+                            .id(Node::StrongButton),
                         Button("Tankie")
                             .background_color((100, 100, 100))
                             .padding(5)
-                            .on_click(Event::TankieButton),
+                            .on_click(Event::TankieButton)
+                            .id(Node::TankieButton),
                     ]),
                 ])
                 .id(Node::HeroKindPopup)
@@ -246,7 +270,8 @@ impl HeroCreatorSystem {
                     Button("Ok")
                         .background_color((100, 100, 100))
                         .padding(5)
-                        .on_click(Event::ClosePopup),
+                        .on_click(Event::ClosePopup)
+                        .id(Node::ClosePopup),
                 ])
                 .id(Node::ErrorPopup)
                 .visible(false)

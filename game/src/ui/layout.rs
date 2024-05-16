@@ -434,7 +434,7 @@ fn troller_no_trolling_min() {
                 node_id: InternalNodeId(0),
                 inner: Box::leak(Box::new(Node {
                     kind: Hori(vec![InternalNodeId(1)]),
-                    id: None,
+                    user_id: None,
                     width: None,
                     height: None,
                     on_click: None,
@@ -457,7 +457,7 @@ fn troller_no_trolling_min() {
                     node_id: InternalNodeId(1),
                     inner: Box::leak(Box::new(Node {
                         kind: Vert(vec![InternalNodeId(2)]),
-                        id: None,
+                        user_id: None,
                         width: None,
                         height: None,
                         on_click: None,
@@ -479,7 +479,7 @@ fn troller_no_trolling_min() {
                     node_id: InternalNodeId(2),
                     inner: Box::leak(Box::new(Node {
                         kind: Rect,
-                        id: None,
+                        user_id: None,
                         width: None,
                         height: None,
                         on_click: None,

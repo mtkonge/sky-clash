@@ -49,12 +49,21 @@ impl Focus {
             self.initialize_inner(dom);
             return;
         };
-        if dom.select(self.nodes[current]).is_some_and(|n| !n.visible) {
+        self.set_focused_node(dom, false);
+        let current = step_current(current, self.nodes.len());
+        self.current = Some(current);
+        self.set_focused_node(dom, true);
+
+        let invisible_parent = dom.ancestry_find_map(self.nodes[current], |v| {
+            if !v.visible {
+                Some(())
+            } else {
+                None
+            }
+        });
+        if invisible_parent.is_some() {
             return self.step(dom, step_current);
         }
-        self.set_focused_node(dom, false);
-        self.current = Some(step_current(current, self.nodes.len()));
-        self.set_focused_node(dom, true);
     }
     pub fn update(&mut self, dom: &mut ui::Dom, ctx: &mut engine::Context) {
         if ctx.key_just_pressed(engine::Keycode::Tab) {
@@ -62,6 +71,11 @@ impl Focus {
                 self.previous(dom)
             } else {
                 self.next(dom)
+            }
+        }
+        if ctx.key_just_pressed(engine::Keycode::Return) {
+            if let Some((id, _)) = dom.nodes.iter().find(|(_, node)| node.focused) {
+                dom.click_node(*id);
             }
         }
     }
@@ -78,9 +92,5 @@ impl Focus {
     fn next(&mut self, dom: &mut ui::Dom) {
         let step_current = |current, length| (current + 1) % length;
         self.step(dom, step_current);
-    }
-    pub fn focused_node(&self) -> Option<ui::NodeId> {
-        let current = self.current?;
-        Some(self.nodes[current])
     }
 }

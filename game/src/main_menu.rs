@@ -3,7 +3,6 @@ use crate::shared_ptr::SharedPtr;
 use crate::start_game::StartGameSystem;
 use crate::ui;
 use crate::ui::components::Button;
-use crate::ui::focus::Focus;
 use engine::{query, spawn};
 use engine::{Component, System};
 
@@ -11,7 +10,7 @@ use engine::{Component, System};
 pub struct MainMenu {
     system_id: u64,
     dom: SharedPtr<ui::Dom>,
-    focus: SharedPtr<Focus>,
+    focus: SharedPtr<ui::focus::Focus>,
 }
 
 #[repr(u64)]
@@ -94,7 +93,11 @@ impl System for MainMenuSystem {
             MainMenu {
                 system_id: self.0,
                 dom: SharedPtr::new(dom),
-                focus: SharedPtr::new(Focus::new([Node::StartGame, Node::HeroCreator, Node::Exit])),
+                focus: SharedPtr::new(ui::focus::Focus::new([
+                    Node::StartGame,
+                    Node::HeroCreator,
+                    Node::Exit
+                ])),
             }
         );
 
@@ -105,9 +108,9 @@ impl System for MainMenuSystem {
         for id in query!(ctx, MainMenu) {
             let main_menu = ctx.select::<MainMenu>(id).clone();
             let mut dom = main_menu.dom.lock();
-            dom.update(ctx);
             let mut focus = main_menu.focus.lock();
             focus.update(&mut dom, ctx);
+            dom.update(ctx);
         }
         Ok(())
     }

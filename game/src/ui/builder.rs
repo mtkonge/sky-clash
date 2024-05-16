@@ -108,13 +108,19 @@ impl Node {
     }
 
     pub fn build_from_dom(&mut self, dom: &mut Dom) -> super::InternalNodeId {
-        self.build(&mut dom.nodes, &mut dom.id_counter, DerivedProps::new())
+        self.build(
+            &mut dom.nodes,
+            &mut dom.id_counter,
+            None,
+            DerivedProps::new(),
+        )
     }
 
     pub fn build(
         &mut self,
         nodes: &mut Vec<(InternalNodeId, super::Node)>,
         id_counter: &mut u64,
+        parent_id: Option<InternalNodeId>,
         derived_props: DerivedProps,
     ) -> super::InternalNodeId {
         let derived_props = DerivedProps {
@@ -125,26 +131,24 @@ impl Node {
         *id_counter += 1;
         let kind = match &mut self.kind {
             Kind::Rect => super::Kind::Rect,
-            Kind::Vert(ref mut children) => {
+            Kind::Vert(ref mut children)
+            | Kind::Hori(ref mut children)
+            | Kind::Stack(ref mut children) => {
                 let mut children_ids = Vec::new();
                 for mut child in children.drain(..) {
-                    children_ids.push(child.build(nodes, id_counter, derived_props.clone()));
+                    children_ids.push(child.build(
+                        nodes,
+                        id_counter,
+                        Some(id),
+                        derived_props.clone(),
+                    ));
                 }
-                super::Kind::Vert(children_ids)
-            }
-            Kind::Hori(ref mut children) => {
-                let mut children_ids = Vec::new();
-                for mut child in children.drain(..) {
-                    children_ids.push(child.build(nodes, id_counter, derived_props.clone()));
+                match self.kind {
+                    Kind::Vert(_) => super::Kind::Vert(children_ids),
+                    Kind::Hori(_) => super::Kind::Hori(children_ids),
+                    Kind::Stack(_) => super::Kind::Stack(children_ids),
+                    _ => unreachable!(),
                 }
-                super::Kind::Hori(children_ids)
-            }
-            Kind::Stack(ref mut children) => {
-                let mut children_ids = Vec::new();
-                for mut child in children.drain(..) {
-                    children_ids.push(child.build(nodes, id_counter, derived_props.clone()));
-                }
-                super::Kind::Stack(children_ids)
             }
             Kind::Text(v) => super::Kind::Text {
                 text: v.clone(),
@@ -156,7 +160,8 @@ impl Node {
             id,
             super::Node {
                 kind,
-                id: self.id,
+                parent_id,
+                user_id: self.id,
                 width: self.width,
                 height: self.height,
                 on_click: self.on_click,
