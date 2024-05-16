@@ -6,7 +6,8 @@ use crate::{
 };
 
 fn player_died_text(loser: &shared::HeroKind, winner: &shared::HeroKind, counter: f64) -> String {
-    let counter = counter as u8 % 3;
+    let amount_of_messages = 9;
+    let counter = counter as u8 % amount_of_messages;
     match counter {
         0 => format!("looks like {loser} has skill issues"),
         1 => format!("{loser} was not Him"),
