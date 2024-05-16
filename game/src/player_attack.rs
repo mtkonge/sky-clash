@@ -39,7 +39,6 @@ impl System for PlayerAttackSystem {
                 continue;
             }
             if down_pressed {
-                println!("down attack");
                 spawn!(
                     ctx,
                     Sprite::new(hurtbox_texture),
@@ -58,11 +57,59 @@ impl System for PlayerAttackSystem {
                     },
                 );
             } else if left_pressed && !right_pressed {
-                println!("left attack")
+                spawn!(
+                    ctx,
+                    Sprite::new(hurtbox_texture),
+                    RigidBody {
+                        pos: (body.pos.0 - body.rect.0, body.pos.1),
+                        rect: (128.0, 128.0),
+                        ..Default::default()
+                    },
+                    Hurtbox {
+                        direction: HurtDirection::Left,
+                        power: 20.0,
+                        owner: Some(id),
+                        duration: 1.0,
+                        stun_time: Some(1.0),
+                        ..Default::default()
+                    },
+                );
             } else if right_pressed && !left_pressed {
-                println!("right attack")
+                spawn!(
+                    ctx,
+                    Sprite::new(hurtbox_texture),
+                    RigidBody {
+                        pos: (body.pos.0 + body.rect.0, body.pos.1),
+                        rect: (128.0, 128.0),
+                        ..Default::default()
+                    },
+                    Hurtbox {
+                        direction: HurtDirection::Right,
+                        power: 20.0,
+                        owner: Some(id),
+                        duration: 1.0,
+                        stun_time: Some(1.0),
+                        ..Default::default()
+                    },
+                );
             } else {
-                println!("neutral attack")
+                spawn!(
+                    ctx,
+                    Sprite::new(hurtbox_texture),
+                    RigidBody {
+                        pos: (body.pos.0, body.pos.1 - body.rect.1),
+                        rect: (128.0, 128.0),
+                        ..Default::default()
+                    },
+                    Hurtbox {
+                        direction: HurtDirection::Up,
+                        power: 20.0,
+                        owner: Some(id),
+                        duration: 1.0,
+                        stun_time: Some(1.0),
+                        ..Default::default()
+                    },
+                );
             }
             let player_attack = ctx.select::<PlayerAttack>(id);
             player_attack.cooldown = 1.0;
