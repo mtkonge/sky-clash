@@ -36,6 +36,7 @@ where
     pub(super) systems: &'context mut Vec<(u64, Rc<dyn System>)>,
     pub(super) systems_to_remove: &'context mut Vec<Id>,
     pub(super) textures: &'context mut Vec<(Id, SdlTexture<'game>)>,
+    pub(super) texture_path_to_id_map: &'context mut HashMap<PathBuf, Id>,
     pub(super) text_textures: &'context mut HashMap<TextTextureKey, Text>,
     pub(super) fonts: &'context mut Vec<(Id, u16, PathBuf, Font<'game>)>,
     pub(super) currently_pressed_keys: &'context HashMap<Keycode, bool>,
@@ -212,6 +213,7 @@ impl<'context, 'game> Context<'context, 'game> {
             let font = Font(unsafe { (*self.ttf_context).load_font(path, size)? });
             let id = *self.entity_id_counter;
             *self.entity_id_counter += 1;
+            println!("{}: {}", line!(), self.entity_id_counter);
             self.fonts.push((id, size, path.to_path_buf(), font));
             Ok(id)
         }
@@ -221,10 +223,16 @@ impl<'context, 'game> Context<'context, 'game> {
     where
         P: AsRef<std::path::Path>,
     {
-        let texture: SdlTexture<'game> = unsafe { (*self.texture_creator).load_texture(path)? };
+        if let Some(id) = self.texture_path_to_id_map.get(path.as_ref()) {
+            return Ok(Texture(*id));
+        }
+        let texture: SdlTexture<'game> =
+            unsafe { (*self.texture_creator).load_texture(path.as_ref())? };
         let id = *self.entity_id_counter;
         *self.entity_id_counter += 1;
+        println!("{}: {}", line!(), self.entity_id_counter);
         self.textures.push((id, texture));
+        self.texture_path_to_id_map.insert(path.as_ref().into(), id);
         Ok(Texture(id))
     }
 
@@ -251,6 +259,8 @@ impl<'context, 'game> Context<'context, 'game> {
         }?;
         let id = *self.entity_id_counter;
         *self.entity_id_counter += 1;
+        println!("{}: {}", line!(), self.entity_id_counter);
+
         let texture_size = (texture.query().width, texture.query().height);
         let text = Text {
             texture: Texture(id),
