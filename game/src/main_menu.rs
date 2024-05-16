@@ -68,7 +68,8 @@ impl System for MainMenuSystem {
                     .border_thickness(2)
                     .id(Node::Exit)
                     .on_click(Event::Exit),
-            ])])
+            ])
+            .gap(4)])
             .background_color((50, 50, 50))
             .width(1280)
             .height(720),

@@ -67,6 +67,7 @@ pub struct Node {
     color: Option<(u8, u8, u8)>,
     border_thickness: Option<i32>,
     padding: Option<i32>,
+    gap: Option<i32>,
     border_color: Option<(u8, u8, u8)>,
     font_size: Option<u16>,
     visible: bool,
@@ -91,6 +92,7 @@ impl Node {
     make_set_function!(set_border_color, border_color, (u8, u8, u8));
     make_set_function!(set_border_thickness, border_thickness, i32);
     make_set_function!(set_padding, padding, i32);
+    make_set_function!(set_gap, gap, i32);
     make_set_function!(set_font_size, font_size, u16);
 
     pub fn set_focused(&mut self, focused: bool) {

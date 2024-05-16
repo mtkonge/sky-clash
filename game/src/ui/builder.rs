@@ -87,6 +87,7 @@ pub struct Node {
     padding: Option<i32>,
     font_size: Option<u16>,
     visible: bool,
+    gap: Option<i32>,
 }
 
 impl Node {
@@ -103,6 +104,7 @@ impl Node {
             border_color: None,
             padding: None,
             font_size: None,
+            gap: None,
             visible: true,
         })
     }
@@ -167,13 +169,14 @@ impl Node {
                 on_click: self.on_click,
                 background_color: self.background_color,
                 color: self.color,
+                gap: self.gap,
                 border_color: self.border_color,
                 border_thickness: self.border_thickness,
                 padding: self.padding,
                 font_size: self.font_size,
                 visible: self.visible,
                 focused: false,
-                focus_color: (0, 0, 255),
+                focus_color: (53, 73, 136),
                 focus_thickness: 4,
             },
         ));
@@ -198,6 +201,7 @@ impl Box<Node> {
     make_with_function!(border_color, border_color, (u8, u8, u8));
     make_with_function!(border_thickness, border_thickness, i32);
     make_with_function!(padding, padding, i32);
+    make_with_function!(gap, gap, i32);
     make_with_function!(font_size, font_size, u16);
 
     pub fn visible(mut self, visible: bool) -> Self {

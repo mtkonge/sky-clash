@@ -49,22 +49,8 @@ impl LayoutTree<'_> {
 
 impl LayoutTreeLeaf<'_> {
     fn draw_border(&self, ctx: &mut impl UiContext) {
-        let pos = if self.inner.focused {
-            (
-                self.pos.0 + self.inner.focus_thickness,
-                self.pos.1 + self.inner.focus_thickness,
-            )
-        } else {
-            self.pos
-        };
-        let size = if self.inner.focused {
-            (
-                (self.size.0 - self.inner.focus_thickness * 2) as u32,
-                (self.size.1 - self.inner.focus_thickness * 2) as u32,
-            )
-        } else {
-            (self.size.0 as u32, self.size.1 as u32)
-        };
+        let pos = self.pos;
+        let size = (self.size.0 as u32, self.size.1 as u32);
         if let Some(thickness) = self.inner.border_thickness {
             let thickness = thickness as u32;
             let border_color = self.inner.border_color.unwrap_or((255, 255, 255));
@@ -90,8 +76,9 @@ impl LayoutTreeLeaf<'_> {
             .unwrap();
         }
         if self.inner.focused {
-            let pos = self.pos;
-            let thickness = self.inner.focus_thickness as u32;
+            let thickness = self.inner.focus_thickness;
+            let pos = (self.pos.0 - thickness, self.pos.1 - thickness);
+            let thickness = thickness as u32;
             let border_color = self.inner.focus_color;
             let size = (size.0 + thickness * 2, size.1 + thickness * 2);
             ctx.draw_rect(border_color, pos.0, pos.1, size.0, thickness)
@@ -154,13 +141,8 @@ impl LayoutTreeLeaf<'_> {
                 let text = ctx
                     .render_text(font_id, text, self.inner.color.unwrap_or((255, 255, 255)))
                     .unwrap();
-                let offset = self.inner.padding.unwrap_or(0)
-                    + self.inner.border_thickness.unwrap_or(0)
-                    + if self.inner.focused {
-                        self.inner.focus_thickness
-                    } else {
-                        0
-                    };
+                let offset =
+                    self.inner.padding.unwrap_or(0) + self.inner.border_thickness.unwrap_or(0);
                 ctx.draw_texture(text.texture, self.pos.0 + offset, self.pos.1 + offset)
                     .unwrap();
             }
@@ -209,13 +191,15 @@ pub(super) struct HoriTransform {
     acc: i32,
     content_size: (i32, i32),
     padding: i32,
+    gap: i32,
 }
 impl HoriTransform {
-    fn new(content_size: (i32, i32), padding: i32) -> Self {
+    fn new(content_size: (i32, i32), padding: i32, gap: i32) -> Self {
         Self {
             acc: 0,
             content_size,
             padding,
+            gap,
         }
     }
 }
@@ -223,7 +207,7 @@ impl TransformersRobotsInDisguise for HoriTransform {
     fn pos(&mut self, child_size: (i32, i32)) -> (i32, i32) {
         let x = self.acc;
         let y = (self.content_size.1 - child_size.1) / 2;
-        self.acc += child_size.0;
+        self.acc += child_size.0 + self.gap;
         (x + self.padding, y)
     }
 }
@@ -232,13 +216,15 @@ pub(super) struct VertTransform {
     acc: i32,
     content_size: (i32, i32),
     padding: i32,
+    gap: i32,
 }
 impl VertTransform {
-    fn new(content_size: (i32, i32), padding: i32) -> Self {
+    fn new(content_size: (i32, i32), padding: i32, gap: i32) -> Self {
         Self {
             acc: 0,
             content_size,
             padding,
+            gap,
         }
     }
 }
@@ -246,7 +232,7 @@ impl TransformersRobotsInDisguise for VertTransform {
     fn pos(&mut self, child_size: (i32, i32)) -> (i32, i32) {
         let x = (self.content_size.0 - child_size.0) / 2;
         let y = self.acc;
-        self.acc += child_size.1;
+        self.acc += child_size.1 + self.gap;
         (x, y + self.padding)
     }
 }
@@ -303,14 +289,9 @@ impl CanCreateLayoutTree for Node {
             default_size: (i32, i32),
         ) -> LayoutTreeLeaf<'a> {
             let padding = node.padding.unwrap_or(0) + node.border_thickness.unwrap_or(0);
-            let focus = if node.focused {
-                node.focus_thickness
-            } else {
-                0
-            };
             let size = (
-                node.width.unwrap_or(default_size.0) + padding * 2 + focus * 2,
-                node.height.unwrap_or(default_size.1) + padding * 2 + focus * 2,
+                node.width.unwrap_or(default_size.0) + padding * 2,
+                node.height.unwrap_or(default_size.1) + padding * 2,
             );
             let pos = pos_offset.pos(size);
             let pos = (pos.0 + parent_pos.0, pos.1 + parent_pos.1);
@@ -336,24 +317,19 @@ impl CanCreateLayoutTree for Node {
                 LayoutTree::Single(leaf)
             }
             kind @ (Kind::Hori(children) | Kind::Vert(children) | Kind::Stack(children)) => {
-                let padding = self.padding.unwrap_or(0)
-                    + self.border_thickness.unwrap_or(0)
-                    + if self.focused {
-                        self.focus_thickness
-                    } else {
-                        0
-                    };
+                let padding = self.padding.unwrap_or(0) + self.border_thickness.unwrap_or(0);
+                let gap = self.gap.unwrap_or(0);
 
                 let calc_content_size = match kind {
-                    Kind::Vert(_) => |acc: (i32, i32), curr: LayoutTree| {
+                    Kind::Vert(_) => |acc: (i32, i32), (curr, gap): (LayoutTree, i32)| {
                         let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
-                        (std::cmp::max(acc.0, leaf.size.0), acc.1 + leaf.size.1)
+                        (std::cmp::max(acc.0, leaf.size.0), acc.1 + leaf.size.1 + gap)
                     },
-                    Kind::Hori(_) => |acc: (i32, i32), curr: LayoutTree| {
+                    Kind::Hori(_) => |acc: (i32, i32), (curr, gap): (LayoutTree, i32)| {
                         let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
-                        (acc.0 + leaf.size.0, std::cmp::max(acc.1, leaf.size.1))
+                        (acc.0 + leaf.size.0 + gap, std::cmp::max(acc.1, leaf.size.1))
                     },
-                    Kind::Stack(_) => |acc: (i32, i32), curr: LayoutTree| {
+                    Kind::Stack(_) => |acc: (i32, i32), (curr, _gap): (LayoutTree, i32)| {
                         let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
                         (
                             std::cmp::max(acc.0, leaf.size.0),
@@ -369,6 +345,7 @@ impl CanCreateLayoutTree for Node {
                     .map(|(id, node)| {
                         node.build_layout_tree(id, dom, ctx, (0, 0), &mut NoTransform)
                     })
+                    .map(|tree| (tree, gap))
                     .fold((0, 0), calc_content_size);
 
                 let size = (
@@ -380,8 +357,8 @@ impl CanCreateLayoutTree for Node {
                 let pos = (pos.0 + parent_pos.0, pos.1 + parent_pos.1);
 
                 let mut transformer = match kind {
-                    Kind::Vert(_) => VertTransform::new(size, padding).boxed(),
-                    Kind::Hori(_) => HoriTransform::new(size, padding).boxed(),
+                    Kind::Vert(_) => VertTransform::new(size, padding, gap).boxed(),
+                    Kind::Hori(_) => HoriTransform::new(size, padding, gap).boxed(),
                     Kind::Stack(_) => StackTransform::new(size, padding).boxed(),
                     _ => unreachable!(),
                 };
@@ -427,6 +404,9 @@ fn troller_no_trolling_min() {
         use crate::ui::Kind::*;
         use LayoutTree::*;
 
+        let focus_color = (53, 73, 136);
+        let focus_thickness = 4;
+
         Multiple(
             LayoutTreeLeaf {
                 size: (16 + 2 + 16 + 2 + 16 + 2, 16 + 2 + 16 + 2 + 16 + 2),
@@ -434,6 +414,7 @@ fn troller_no_trolling_min() {
                 node_id: InternalNodeId(0),
                 inner: Box::leak(Box::new(Node {
                     kind: Hori(vec![InternalNodeId(1)]),
+                    parent_id: None,
                     user_id: None,
                     width: None,
                     height: None,
@@ -446,8 +427,8 @@ fn troller_no_trolling_min() {
                     font_size: None,
                     visible: true,
                     focused: false,
-                    focus_color: (0, 0, 0),
-                    focus_thickness: 0,
+                    focus_color,
+                    focus_thickness,
                 })),
             },
             vec![Multiple(
@@ -457,6 +438,7 @@ fn troller_no_trolling_min() {
                     node_id: InternalNodeId(1),
                     inner: Box::leak(Box::new(Node {
                         kind: Vert(vec![InternalNodeId(2)]),
+                        parent_id: Some(InternalNodeId(0)),
                         user_id: None,
                         width: None,
                         height: None,
@@ -469,8 +451,8 @@ fn troller_no_trolling_min() {
                         font_size: None,
                         visible: true,
                         focused: false,
-                        focus_color: (0, 0, 0),
-                        focus_thickness: 0,
+                        focus_color,
+                        focus_thickness,
                     })),
                 },
                 vec![Single(LayoutTreeLeaf {
@@ -479,6 +461,7 @@ fn troller_no_trolling_min() {
                     node_id: InternalNodeId(2),
                     inner: Box::leak(Box::new(Node {
                         kind: Rect,
+                        parent_id: Some(InternalNodeId(1)),
                         user_id: None,
                         width: None,
                         height: None,
@@ -491,8 +474,8 @@ fn troller_no_trolling_min() {
                         font_size: None,
                         visible: true,
                         focused: false,
-                        focus_color: (0, 0, 0),
-                        focus_thickness: 0,
+                        focus_color,
+                        focus_thickness,
                     })),
                 })],
             )],
