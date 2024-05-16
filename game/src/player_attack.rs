@@ -9,19 +9,32 @@ use crate::{
 #[derive(Component, Clone)]
 pub struct PlayerAttack {
     pub key_set: KeySet,
+    pub cooldown: f64,
+}
+
+impl PlayerAttack {
+    pub fn new(key_set: KeySet, cooldown: f64) -> Self {
+        Self { key_set, cooldown }
+    }
 }
 
 pub struct PlayerAttackSystem(pub u64);
 impl System for PlayerAttackSystem {
-    fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
+    fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
         for id in query!(ctx, RigidBody, Collider, PlayerAttack) {
-            let key_set = ctx.select::<PlayerAttack>(id).clone().key_set;
+            let player_attack = ctx.select::<PlayerAttack>(id).clone();
+            let key_set = player_attack.key_set;
             let right_pressed = ctx.key_pressed(key_set.right());
             let left_pressed = ctx.key_pressed(key_set.left());
             let down_pressed = ctx.key_pressed(key_set.down());
             let light_attack_pressed = ctx.key_just_pressed(key_set.light_attack());
             let body = ctx.select::<RigidBody>(id).clone();
             let hurtbox_texture = ctx.load_texture("textures/nuh-uh.png").unwrap();
+            if player_attack.cooldown >= 0.0 {
+                let player_attack = ctx.select::<PlayerAttack>(id);
+                player_attack.cooldown -= delta;
+                continue;
+            }
             if !light_attack_pressed {
                 continue;
             }
@@ -51,6 +64,8 @@ impl System for PlayerAttackSystem {
             } else {
                 println!("neutral attack")
             }
+            let player_attack = ctx.select::<PlayerAttack>(id);
+            player_attack.cooldown = 1.0;
         }
 
         Ok(())

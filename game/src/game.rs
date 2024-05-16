@@ -77,9 +77,7 @@ impl System for GameSystem {
                 knockback_modifier: 5.5,
                 lives: 3,
             },
-            PlayerAttack {
-                key_set: KeySet::Wasd
-            },
+            PlayerAttack::new(KeySet::Wasd, 0.0),
             Victim::default()
         );
 
@@ -106,9 +104,7 @@ impl System for GameSystem {
                 knockback_modifier: 0.0,
                 lives: 3,
             },
-            PlayerAttack {
-                key_set: KeySet::ArrowKeys
-            },
+            PlayerAttack::new(KeySet::ArrowKeys, 0.0),
             Victim::default(),
         );
 
