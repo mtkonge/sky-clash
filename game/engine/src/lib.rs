@@ -8,6 +8,7 @@ mod error;
 mod font;
 mod game;
 mod id;
+mod query_runner;
 pub mod rigid_body;
 mod system;
 mod text;
@@ -15,7 +16,7 @@ mod texture;
 
 pub use self::{
     collision::Collider, collision::CollisionSystem, component::Component, context::ComponentQuery,
-    context::Context, context::QueryRunner, error::Error, game::Game, id::Id, system::System,
+    context::Context, error::Error, game::Game, id::Id, query_runner::QueryRunner, system::System,
     text::Text, texture::Texture,
 };
 pub use component_macro::Component;

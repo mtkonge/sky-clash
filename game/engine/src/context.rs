@@ -51,49 +51,6 @@ impl<T> ComponentQuery<T> {
     }
 }
 
-pub trait QueryRunner {
-    fn run(&self, context: &Context) -> Vec<u64>;
-}
-
-impl<T0> QueryRunner for ComponentQuery<T0>
-where
-    T0: 'static + Component,
-{
-    fn run(&self, context: &Context) -> Vec<u64> {
-        context.entities_with_component::<T0>()
-    }
-}
-
-impl<T0, T1> QueryRunner for ComponentQuery<(T0, T1)>
-where
-    T0: 'static + Component,
-    T1: 'static + Component,
-{
-    fn run(&self, context: &Context) -> Vec<u64> {
-        let vs0 = context.entities_with_component::<T0>();
-        let vs1 = context.entities_with_component::<T1>();
-        vs0.into_iter()
-            .filter(|v0| vs1.iter().any(|v1| *v0 == *v1))
-            .collect()
-    }
-}
-
-impl<T0, T1, T2> QueryRunner for ComponentQuery<(T0, T1, T2)>
-where
-    T0: 'static + Component,
-    T1: 'static + Component,
-    T2: 'static + Component,
-{
-    fn run(&self, context: &Context) -> Vec<u64> {
-        let vs0 = context.entities_with_component::<T0>();
-        let vs1 = context.entities_with_component::<T1>();
-        let vs2 = context.entities_with_component::<T2>();
-        vs0.into_iter()
-            .filter(|v0| vs1.iter().any(|v1| *v0 == *v1) && vs2.iter().any(|v2| *v0 == *v2))
-            .collect()
-    }
-}
-
 #[macro_export]
 macro_rules! query {
     ($ctx:expr, $t:ty) => {
@@ -119,8 +76,8 @@ macro_rules! query_one {
             #[allow(unused_imports)]
             use $crate::QueryRunner;
             let mut iter = $crate::ComponentQuery::<$t>::new().run($ctx).into_iter();
-            let value = iter.next().expect("could not query one");
-            assert!(iter.next().is_none(), "could not query exactly one");
+            let value = iter.next().expect(format!("query failed: could not query one, at {}:{}", file!(), line!()).as_ref());
+            assert!(iter.next().is_none(), "query failed: could not exactly query one, at {}:{}", file!(), line!());
             value
         }
     };
@@ -129,8 +86,8 @@ macro_rules! query_one {
             #[allow(unused_imports)]
             use $crate::QueryRunner;
             let mut iter = $crate::ComponentQuery::<($($ts),+)>::new().run($ctx).into_iter();
-            let value = iter.next().expect("could not query one");
-            assert!(iter.next().is_none(), "could not query exactly one");
+            let value = iter.next().expect(format!("query failed: could not query one, at {}:{}", file!(), line!()).as_ref());
+            assert!(iter.next().is_none(), "query failed: could not exactly query one, at {}:{}", file!(), line!());
             value
         }
     };
