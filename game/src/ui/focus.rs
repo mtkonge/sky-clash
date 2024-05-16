@@ -11,7 +11,7 @@ impl Focus {
         Node: Into<ui::NodeId>,
     {
         let nodes: Vec<_> = nodes.into_iter().map(|v| v.into()).collect();
-        if nodes.len() == 0 {
+        if nodes.is_empty() {
             println!("ui warning: created KeyboardAccessible with length of 0");
         }
         Self {
@@ -42,7 +42,7 @@ impl Focus {
     where
         F: Fn(usize, usize) -> usize,
     {
-        if self.nodes.len() == 0 {
+        if self.nodes.is_empty() {
             return;
         }
         let Some(current) = self.current else {
@@ -62,7 +62,7 @@ impl Focus {
             }
         });
         if invisible_parent.is_some() {
-            return self.step(dom, step_current);
+            self.step(dom, step_current)
         }
     }
     pub fn update(&mut self, dom: &mut ui::Dom, ctx: &mut engine::Context) {
