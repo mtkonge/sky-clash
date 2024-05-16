@@ -167,6 +167,9 @@ impl Node {
                 padding: self.padding,
                 font_size: self.font_size,
                 visible: self.visible,
+                focused: false,
+                focus_color: (0, 0, 255),
+                focus_thickness: 4,
             },
         ));
         id

@@ -3,6 +3,7 @@ use crate::shared_ptr::SharedPtr;
 use crate::start_game::StartGameSystem;
 use crate::ui;
 use crate::ui::components::Button;
+use crate::ui::focus::Focus;
 use engine::{query, spawn};
 use engine::{Component, System};
 
@@ -10,6 +11,21 @@ use engine::{Component, System};
 pub struct MainMenu {
     system_id: u64,
     dom: SharedPtr<ui::Dom>,
+    focus: SharedPtr<Focus>,
+}
+
+#[repr(u64)]
+#[derive(Clone)]
+pub enum Node {
+    StartGame,
+    HeroCreator,
+    Exit,
+}
+
+impl From<Node> for ui::NodeId {
+    fn from(value: Node) -> Self {
+        Self::from_u64(value as u64)
+    }
 }
 
 #[repr(u64)]
@@ -21,7 +37,7 @@ pub enum Event {
 
 impl From<Event> for ui::EventId {
     fn from(value: Event) -> Self {
-        ui::EventId::from_u64(value as u64)
+        Self::from_u64(value as u64)
     }
 }
 
@@ -39,16 +55,19 @@ impl System for MainMenuSystem {
                     .color((255, 255, 255))
                     .padding(15)
                     .border_thickness(2)
+                    .id(Node::StartGame)
                     .on_click(Event::StartGame),
                 Button("Hero Creator")
                     .color((255, 255, 255))
                     .padding(15)
                     .border_thickness(2)
+                    .id(Node::HeroCreator)
                     .on_click(Event::HeroCreator),
                 Button("Exit")
                     .color((255, 255, 255))
                     .padding(15)
                     .border_thickness(2)
+                    .id(Node::Exit)
                     .on_click(Event::Exit),
             ])])
             .background_color((50, 50, 50))
@@ -74,7 +93,8 @@ impl System for MainMenuSystem {
             ctx,
             MainMenu {
                 system_id: self.0,
-                dom: SharedPtr::new(dom)
+                dom: SharedPtr::new(dom),
+                focus: SharedPtr::new(Focus::new([Node::StartGame, Node::HeroCreator, Node::Exit])),
             }
         );
 
@@ -84,7 +104,10 @@ impl System for MainMenuSystem {
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
         for id in query!(ctx, MainMenu) {
             let main_menu = ctx.select::<MainMenu>(id).clone();
-            main_menu.dom.lock().update(ctx);
+            let mut dom = main_menu.dom.lock();
+            dom.update(ctx);
+            let mut focus = main_menu.focus.lock();
+            focus.update(&mut dom, ctx);
         }
         Ok(())
     }

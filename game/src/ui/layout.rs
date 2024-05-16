@@ -49,11 +49,51 @@ impl LayoutTree<'_> {
 
 impl LayoutTreeLeaf<'_> {
     fn draw_border(&self, ctx: &mut impl UiContext) {
-        let pos = self.pos;
-        let size = (self.size.0 as u32, self.size.1 as u32);
+        let pos = if self.inner.focused {
+            (
+                self.pos.0 + self.inner.focus_thickness,
+                self.pos.1 + self.inner.focus_thickness,
+            )
+        } else {
+            self.pos
+        };
+        let size = if self.inner.focused {
+            (
+                (self.size.0 - self.inner.focus_thickness * 2) as u32,
+                (self.size.1 - self.inner.focus_thickness * 2) as u32,
+            )
+        } else {
+            (self.size.0 as u32, self.size.1 as u32)
+        };
         if let Some(thickness) = self.inner.border_thickness {
             let thickness = thickness as u32;
             let border_color = self.inner.border_color.unwrap_or((255, 255, 255));
+            ctx.draw_rect(border_color, pos.0, pos.1, size.0, thickness)
+                .unwrap();
+            ctx.draw_rect(border_color, pos.0, pos.1, thickness, size.1)
+                .unwrap();
+            ctx.draw_rect(
+                border_color,
+                pos.0 + size.0 as i32 - thickness as i32,
+                pos.1,
+                thickness,
+                size.1,
+            )
+            .unwrap();
+            ctx.draw_rect(
+                border_color,
+                pos.0,
+                pos.1 + size.1 as i32 - thickness as i32,
+                size.0,
+                thickness,
+            )
+            .unwrap();
+        }
+        if self.inner.focused {
+            let pos = self.pos;
+            let thickness = self.inner.focus_thickness as u32;
+            let border_color = self.inner.focus_color;
+            let size = (size.0 + thickness * 2, size.1 + thickness * 2);
             ctx.draw_rect(border_color, pos.0, pos.1, size.0, thickness)
                 .unwrap();
             ctx.draw_rect(border_color, pos.0, pos.1, thickness, size.1)
@@ -114,8 +154,13 @@ impl LayoutTreeLeaf<'_> {
                 let text = ctx
                     .render_text(font_id, text, self.inner.color.unwrap_or((255, 255, 255)))
                     .unwrap();
-                let offset =
-                    self.inner.padding.unwrap_or(0) + self.inner.border_thickness.unwrap_or(0);
+                let offset = self.inner.padding.unwrap_or(0)
+                    + self.inner.border_thickness.unwrap_or(0)
+                    + if self.inner.focused {
+                        self.inner.focus_thickness
+                    } else {
+                        0
+                    };
                 ctx.draw_texture(text.texture, self.pos.0 + offset, self.pos.1 + offset)
                     .unwrap();
             }
@@ -258,9 +303,14 @@ impl CanCreateLayoutTree for Node {
             default_size: (i32, i32),
         ) -> LayoutTreeLeaf<'a> {
             let padding = node.padding.unwrap_or(0) + node.border_thickness.unwrap_or(0);
+            let focus = if node.focused {
+                node.focus_thickness
+            } else {
+                0
+            };
             let size = (
-                node.width.unwrap_or(default_size.0) + padding * 2,
-                node.height.unwrap_or(default_size.1) + padding * 2,
+                node.width.unwrap_or(default_size.0) + padding * 2 + focus * 2,
+                node.height.unwrap_or(default_size.1) + padding * 2 + focus * 2,
             );
             let pos = pos_offset.pos(size);
             let pos = (pos.0 + parent_pos.0, pos.1 + parent_pos.1);
@@ -286,7 +336,13 @@ impl CanCreateLayoutTree for Node {
                 LayoutTree::Single(leaf)
             }
             kind @ (Kind::Hori(children) | Kind::Vert(children) | Kind::Stack(children)) => {
-                let padding = self.padding.unwrap_or(0) + self.border_thickness.unwrap_or(0);
+                let padding = self.padding.unwrap_or(0)
+                    + self.border_thickness.unwrap_or(0)
+                    + if self.focused {
+                        self.focus_thickness
+                    } else {
+                        0
+                    };
 
                 let calc_content_size = match kind {
                     Kind::Vert(_) => |acc: (i32, i32), curr: LayoutTree| {
@@ -389,6 +445,9 @@ fn troller_no_trolling_min() {
                     border_color: None,
                     font_size: None,
                     visible: true,
+                    focused: false,
+                    focus_color: (0, 0, 0),
+                    focus_thickness: 0,
                 })),
             },
             vec![Multiple(
@@ -409,6 +468,9 @@ fn troller_no_trolling_min() {
                         border_color: None,
                         font_size: None,
                         visible: true,
+                        focused: false,
+                        focus_color: (0, 0, 0),
+                        focus_thickness: 0,
                     })),
                 },
                 vec![Single(LayoutTreeLeaf {
@@ -428,6 +490,9 @@ fn troller_no_trolling_min() {
                         border_color: None,
                         font_size: None,
                         visible: true,
+                        focused: false,
+                        focus_color: (0, 0, 0),
+                        focus_thickness: 0,
                     })),
                 })],
             )],

@@ -1,6 +1,7 @@
 mod builder;
 
 pub mod components;
+pub mod focus;
 pub mod id_offset;
 mod layout;
 mod ui_context;
@@ -68,6 +69,9 @@ pub struct Node {
     border_color: Option<(u8, u8, u8)>,
     font_size: Option<u16>,
     visible: bool,
+    focused: bool,
+    focus_thickness: i32,
+    focus_color: (u8, u8, u8),
 }
 
 macro_rules! make_set_function {
@@ -87,6 +91,10 @@ impl Node {
     make_set_function!(set_border_thickness, border_thickness, i32);
     make_set_function!(set_padding, padding, i32);
     make_set_function!(set_font_size, font_size, u16);
+
+    pub fn set_focused(&mut self, focused: bool) {
+        self.focused = focused;
+    }
 
     pub fn set_visible(&mut self, visible: bool) {
         self.visible = visible;
@@ -218,9 +226,16 @@ impl Dom {
         let tree = self.build_layout_tree(ctx);
         tree.draw(ctx);
         if ctx.mouse_button_just_pressed(engine::MouseButton::Left) {
-            if let Some(event_id) = tree.resolve_click(ctx.mouse_position()) {
-                self.event_queue.push(event_id);
+            if let Some(event) = tree.resolve_click(ctx.mouse_position()) {
+                self.event_queue.push(event);
             }
+        }
+        if ctx.key_just_pressed(engine::Keycode::Return) {
+            if let Some((id, node)) = self.nodes.iter().find(|(_, node)| node.focused) {
+                if let Some(event_id) = node.on_click {
+                    self.event_queue.push((event_id, *id));
+                }
+            };
         }
         self.handle_events(ctx);
     }

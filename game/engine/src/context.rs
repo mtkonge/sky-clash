@@ -38,7 +38,7 @@ where
     pub(super) textures: &'context mut Vec<(Id, SdlTexture<'game>)>,
     pub(super) text_textures: &'context mut HashMap<TextTextureKey, Text>,
     pub(super) fonts: &'context mut Vec<(Id, u16, PathBuf, Font<'game>)>,
-    pub(super) currently_pressed_keys: &'context HashSet<Keycode>,
+    pub(super) currently_pressed_keys: &'context HashMap<Keycode, bool>,
     pub(super) currently_pressed_mouse_buttons: &'context HashMap<MouseButton, bool>,
     pub(super) mouse_position: (i32, i32),
 }
@@ -414,8 +414,12 @@ impl<'context, 'game> Context<'context, 'game> {
         self.systems_to_remove.push(system_id);
     }
 
+    pub fn key_just_pressed(&self, keycode: Keycode) -> bool {
+        *self.currently_pressed_keys.get(&keycode).unwrap_or(&false)
+    }
+
     pub fn key_pressed(&self, keycode: Keycode) -> bool {
-        self.currently_pressed_keys.contains(&keycode)
+        self.currently_pressed_keys.contains_key(&keycode)
     }
 
     pub fn mouse_button_just_pressed(&self, button: MouseButton) -> bool {

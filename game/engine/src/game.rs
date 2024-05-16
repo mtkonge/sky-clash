@@ -41,7 +41,7 @@ pub struct Game<'game> {
     textures: Vec<(Id, Texture<'game>)>,
     text_textures: HashMap<TextTextureKey, Text>,
     fonts: Vec<(Id, u16, PathBuf, Font<'game>)>,
-    currently_pressed_keys: HashSet<Keycode>,
+    currently_pressed_keys: HashMap<Keycode, bool>,
     currently_pressed_mouse_buttons: HashMap<MouseButton, bool>,
     mouse_position: (i32, i32),
 }
@@ -82,7 +82,7 @@ impl<'game> Game<'game> {
             textures: vec![],
             text_textures: HashMap::new(),
             fonts: vec![],
-            currently_pressed_keys: HashSet::new(),
+            currently_pressed_keys: HashMap::new(),
             currently_pressed_mouse_buttons: HashMap::new(),
             mouse_position,
         })
@@ -97,6 +97,9 @@ impl<'game> Game<'game> {
                 .for_each(|value| {
                     *value = false;
                 });
+            self.currently_pressed_keys.values_mut().for_each(|value| {
+                *value = false;
+            });
             for event in self.event_pump.poll_iter() {
                 match event {
                     Event::Quit { .. }
@@ -105,7 +108,7 @@ impl<'game> Game<'game> {
                         ..
                     } => break 'running,
                     Event::KeyDown { keycode, .. } => {
-                        self.currently_pressed_keys.insert(keycode.unwrap());
+                        self.currently_pressed_keys.insert(keycode.unwrap(), true);
                     }
                     Event::KeyUp { keycode, .. } => {
                         self.currently_pressed_keys.remove(&keycode.unwrap());
