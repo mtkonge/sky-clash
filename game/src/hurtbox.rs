@@ -93,7 +93,9 @@ impl System for HurtboxSystem {
                     continue;
                 };
 
-                let velocity = hurtbox.power * knockback_modifier.powi(2) * 0.1;
+                let velocity = hurtbox.power * knockback_modifier.powi(2) * 0.8
+                    + hurtbox.power * 10.0
+                    + knockback_modifier * 5.0;
 
                 match hurtbox.direction {
                     HurtDirection::Up => body.vel.1 -= velocity,
@@ -101,9 +103,9 @@ impl System for HurtboxSystem {
                     HurtDirection::Left => body.vel.0 -= velocity,
                     HurtDirection::Right => body.vel.0 += velocity,
                 }
-                let match_hero = ctx.select::<Player>(victim_id);
+                let player = ctx.select::<Player>(victim_id);
 
-                match_hero.knockback_modifier += hurtbox.power / 1000.0;
+                player.knockback_modifier += hurtbox.power / 50.0;
             }
         }
         Ok(())
