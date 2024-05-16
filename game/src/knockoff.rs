@@ -1,7 +1,7 @@
 use engine::{query, rigid_body::RigidBody, spawn, Component, Context, Error, System};
 
 use crate::{
-    hurtbox::{MatchHero, PlayerKind},
+    hurtbox::{Player, PlayerKind},
     player_movement::PlayerMovement,
 };
 
@@ -60,16 +60,16 @@ pub struct TrashTalkOffset(f64);
 
 fn win_condition(ctx: &mut Context, loser_id: engine::Id) {
     let winner = 'winner: {
-        for winner_id in query!(ctx, PlayerMovement, RigidBody, MatchHero) {
+        for winner_id in query!(ctx, PlayerMovement, RigidBody, Player) {
             if winner_id == loser_id {
                 continue;
             }
-            break 'winner ctx.select::<MatchHero>(winner_id).hero.hero_type.clone();
+            break 'winner ctx.select::<Player>(winner_id).hero.hero_type.clone();
         }
         unreachable!("other player somehow despawned");
     };
     let trash_talk_offset = ctx.select_one::<TrashTalkOffset>().0;
-    let loser = &ctx.select::<MatchHero>(loser_id).hero.hero_type;
+    let loser = &ctx.select::<Player>(loser_id).hero.hero_type;
     let trash_talk = player_died_text(loser, &winner, trash_talk_offset);
     let font = ctx.load_font("textures/ttf/OpenSans.ttf", 48).unwrap();
     let text = ctx.render_text(font, &trash_talk, (255, 255, 255)).unwrap();
@@ -117,7 +117,7 @@ fn draw_match_stats_background(
     .unwrap();
 }
 
-fn draw_match_stats(ctx: &mut Context, match_hero: MatchHero) {
+fn draw_match_stats(ctx: &mut Context, match_hero: Player) {
     let lives = match_hero.lives.to_string();
     let font = ctx.load_font("textures/ttf/OpenSans.ttf", 24).unwrap();
     let text = ctx.render_text(font, lives, (255, 255, 255)).unwrap();
@@ -181,9 +181,9 @@ impl System for KnockoffSystem {
     }
     fn on_update(&self, ctx: &mut Context, delta: f64) -> Result<(), Error> {
         let max_offset_from_screen = 200.0;
-        for id in query!(ctx, PlayerMovement, RigidBody, MatchHero).clone() {
+        for id in query!(ctx, PlayerMovement, RigidBody, Player).clone() {
             let rigid_body = ctx.select::<RigidBody>(id).clone();
-            let match_hero = ctx.select::<MatchHero>(id).clone();
+            let match_hero = ctx.select::<Player>(id).clone();
             draw_match_stats(ctx, match_hero);
             if rigid_body.pos.0 + rigid_body.rect.0 < -max_offset_from_screen
                 || rigid_body.pos.0 > 1280.0 + max_offset_from_screen
@@ -191,7 +191,7 @@ impl System for KnockoffSystem {
                 || rigid_body.pos.1 > 720.0 + max_offset_from_screen
             {
                 let loser_id = id;
-                let stats = ctx.select::<MatchHero>(loser_id);
+                let stats = ctx.select::<Player>(loser_id);
                 if stats.lives > 0 {
                     stats.knockback_modifier = 0.0;
                     stats.lives -= 1;

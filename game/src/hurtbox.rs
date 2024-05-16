@@ -40,7 +40,7 @@ fn rects_collide(
 }
 
 #[derive(Clone, Component)]
-pub struct MatchHero {
+pub struct Player {
     pub kind: PlayerKind,
     pub hero: shared::Hero,
     pub knockback_modifier: f64,
@@ -74,7 +74,7 @@ impl System for HurtboxSystem {
                 ctx.despawn(id);
                 continue;
             }
-            for victim_id in query!(ctx, RigidBody, Collider, MatchHero, Victim) {
+            for victim_id in query!(ctx, RigidBody, Collider, Player, Victim) {
                 if hurtbox.owner.is_some_and(|owner| owner == victim_id) {
                     continue;
                 };
@@ -85,7 +85,7 @@ impl System for HurtboxSystem {
                 victim.hurt_by.push(id);
                 victim.stunned = hurtbox.stun_time;
 
-                let match_hero = ctx.select::<MatchHero>(victim_id);
+                let match_hero = ctx.select::<Player>(victim_id);
 
                 let knockback_modifier = match_hero.knockback_modifier + 1.0;
                 let body = ctx.select::<RigidBody>(victim_id);
@@ -101,7 +101,7 @@ impl System for HurtboxSystem {
                     HurtDirection::Left => body.vel.0 -= velocity,
                     HurtDirection::Right => body.vel.0 += velocity,
                 }
-                let match_hero = ctx.select::<MatchHero>(victim_id);
+                let match_hero = ctx.select::<Player>(victim_id);
 
                 match_hero.knockback_modifier += hurtbox.power / 1000.0;
             }

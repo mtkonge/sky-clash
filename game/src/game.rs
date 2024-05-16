@@ -71,7 +71,7 @@ impl System for GameSystem {
             PlayerMovement {
                 key_set: KeySet::Wasd
             },
-            hurtbox::MatchHero {
+            hurtbox::Player {
                 kind: hurtbox::PlayerKind::Left,
                 hero: heroes.hero_1.clone(),
                 knockback_modifier: 5.5,
@@ -100,7 +100,7 @@ impl System for GameSystem {
             PlayerMovement {
                 key_set: KeySet::ArrowKeys
             },
-            hurtbox::MatchHero {
+            hurtbox::Player {
                 kind: hurtbox::PlayerKind::Right,
                 hero: heroes.hero_2.clone(),
                 knockback_modifier: 0.0,
