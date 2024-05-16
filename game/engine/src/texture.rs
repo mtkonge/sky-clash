@@ -1,6 +1,6 @@
 use super::id::Id;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Texture(pub Id);
 
 #[derive(Clone, Hash, PartialEq, Eq)]

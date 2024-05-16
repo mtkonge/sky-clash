@@ -31,6 +31,7 @@ impl System for GameSystem {
         ctx.add_system(HurtboxSystem);
         ctx.add_system(KnockoffSystem);
         ctx.add_system(PlayerAttackSystem);
+
         let heroes = ctx.clone_one::<HeroesOnBoard>();
         let hero_1_sprite = {
             let path = crate::hero_info::HeroInfo::from(&heroes.hero_1.hero_type).texture_path;
@@ -46,7 +47,7 @@ impl System for GameSystem {
 
         spawn!(
             ctx,
-            Sprite { sprite: background },
+            Sprite::new_layered(background, 1),
             RigidBody {
                 rect: (1280.0, 720.0),
                 ..Default::default()
@@ -55,9 +56,7 @@ impl System for GameSystem {
 
         spawn!(
             ctx,
-            Sprite {
-                sprite: hero_1_sprite
-            },
+            Sprite::new(hero_1_sprite),
             RigidBody {
                 pos: (400.0, 200.0),
                 rect: (128.0, 128.0),
@@ -86,9 +85,7 @@ impl System for GameSystem {
 
         spawn!(
             ctx,
-            Sprite {
-                sprite: hero_2_sprite
-            },
+            Sprite::new(hero_2_sprite),
             RigidBody {
                 pos: (600.0, 200.0),
                 rect: (128.0, 128.0),
@@ -133,7 +130,7 @@ impl System for GameSystem {
                 ..Default::default()
             },
             Collider::default(),
-            Sprite { sprite: nope },
+            Sprite::new(nope),
         );
 
         spawn!(
@@ -148,7 +145,7 @@ impl System for GameSystem {
                 power: 20.0,
                 ..Default::default()
             },
-            Sprite { sprite: nope },
+            Sprite::new(nope),
         );
 
         spawn!(
@@ -159,7 +156,7 @@ impl System for GameSystem {
                 ..Default::default()
             },
             Collider::default(),
-            Sprite { sprite: nope },
+            Sprite::new(nope),
         );
         Ok(())
     }
