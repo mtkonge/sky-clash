@@ -1,4 +1,4 @@
-use std::{rc::Rc, sync::MutexGuard};
+use std::sync::MutexGuard;
 
 use engine::{query, spawn, Component, System};
 
