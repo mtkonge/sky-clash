@@ -20,7 +20,6 @@ impl System for PlayerAttackSystem {
             let left_pressed = ctx.key_pressed(key_set.left());
             let down_pressed = ctx.key_pressed(key_set.down());
             let light_attack_pressed = ctx.key_pressed(key_set.light_attack());
-            let collider = ctx.select::<Collider>(id).clone();
             let body = ctx.select::<RigidBody>(id).clone();
             let hurtbox_texture = ctx.load_texture("textures/nuh-uh.png").unwrap();
             if !light_attack_pressed {
@@ -42,6 +41,9 @@ impl System for PlayerAttackSystem {
                         direction: HurtDirection::Down,
                         power: 20.0,
                         owner: Some(id),
+                        duration: 1.0,
+                        stun_time: Some(10.0),
+                        ..Default::default()
                     },
                 );
             } else if left_pressed && !right_pressed {

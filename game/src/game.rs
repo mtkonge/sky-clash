@@ -4,7 +4,7 @@ use engine::{
 };
 
 use crate::{
-    hurtbox::{self, HurtDirection, Hurtbox, HurtboxSystem},
+    hurtbox::{self, HurtDirection, Hurtbox, HurtboxSystem, Victim},
     key_set::KeySet,
     knockoff::KnockoffSystem,
     player_attack::{PlayerAttack, PlayerAttackSystem},
@@ -80,7 +80,8 @@ impl System for GameSystem {
             },
             PlayerAttack {
                 key_set: KeySet::Wasd
-            }
+            },
+            Victim::default()
         );
 
         spawn!(
@@ -110,7 +111,8 @@ impl System for GameSystem {
             },
             PlayerAttack {
                 key_set: KeySet::ArrowKeys
-            }
+            },
+            Victim::default(),
         );
 
         spawn!(
