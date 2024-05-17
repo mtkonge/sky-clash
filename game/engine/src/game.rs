@@ -54,7 +54,7 @@ pub struct Game<'game> {
 }
 
 #[derive(Default)]
-struct ControllerPosition {
+pub struct ControllerPosition {
     pub left_stick: (f64, f64),
     pub right_stick: (f64, f64),
     pub left_trigger: f64,
@@ -249,6 +249,8 @@ impl<'game> Game<'game> {
             fonts: &mut self.fonts,
             currently_pressed_keys: &mut self.currently_pressed_keys,
             currently_pressed_mouse_buttons: &mut self.currently_pressed_mouse_buttons,
+            currently_pressed_controller_buttons: &mut self.currently_pressed_controller_buttons,
+            controllers: &mut self.controllers,
             mouse_position: self.mouse_position,
         }
     }

@@ -6,6 +6,7 @@ use std::{
 };
 
 use sdl2::{
+    controller::Button as ControllerButton,
     image::LoadTexture,
     keyboard::Keycode,
     mouse::MouseButton,
@@ -16,7 +17,7 @@ use sdl2::{
     video::{Window, WindowContext},
 };
 
-use crate::texture::TextTextureKey;
+use crate::{game::ControllerPosition, texture::TextTextureKey};
 
 use super::{
     entity::Entity, font::Font, id::Id, system::System, text::Text, texture::Texture, Component,
@@ -41,6 +42,9 @@ where
     pub(super) fonts: &'context mut Vec<(Id, u16, PathBuf, Font<'game>)>,
     pub(super) currently_pressed_keys: &'context HashMap<Keycode, bool>,
     pub(super) currently_pressed_mouse_buttons: &'context HashMap<MouseButton, bool>,
+    pub(super) currently_pressed_controller_buttons:
+        &'context HashMap<(Id, ControllerButton), bool>,
+    pub(super) controllers: &'context Vec<(Id, ControllerPosition)>,
     pub(super) mouse_position: (i32, i32),
 }
 
@@ -398,5 +402,26 @@ impl<'context, 'game> Context<'context, 'game> {
 
     pub fn mouse_position(&self) -> (i32, i32) {
         self.mouse_position
+    }
+
+    pub fn joystick_position(&self, id: Id) -> &ControllerPosition {
+        &self
+            .controllers
+            .iter()
+            .find(|v| v.0 == id)
+            .map(|v| &v.1)
+            .unwrap()
+    }
+
+    pub fn controller_button_pressed(&self, id: Id, button: ControllerButton) -> bool {
+        self.currently_pressed_controller_buttons
+            .contains_key(&(id, button))
+    }
+
+    pub fn controller_button_just_pressed(&self, id: Id, button: ControllerButton) -> bool {
+        *self
+            .currently_pressed_controller_buttons
+            .get(&(id, button))
+            .unwrap_or(&false)
     }
 }
