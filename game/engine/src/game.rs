@@ -17,7 +17,7 @@ use sdl2::{
 };
 
 use crate::texture::TextTextureKey;
-use crate::JoystickButton;
+use crate::ControllerButton;
 use crate::Text;
 
 use super::font::Font;
@@ -48,7 +48,7 @@ pub struct Game<'game> {
     fonts: Vec<(Id, u16, PathBuf, Font<'game>)>,
     currently_pressed_keys: HashMap<Keycode, bool>,
     currently_pressed_mouse_buttons: HashMap<MouseButton, bool>,
-    currently_pressed_controller_buttons: HashMap<(Id, JoystickButton), bool>,
+    currently_pressed_controller_buttons: HashMap<(Id, ControllerButton), bool>,
     controllers: Vec<(Id, ControllerPosition)>,
     mouse_position: (i32, i32),
 }

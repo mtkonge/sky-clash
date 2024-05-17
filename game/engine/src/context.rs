@@ -415,6 +415,14 @@ impl<'context, 'game> Context<'context, 'game> {
             .contains_key(&(id, button))
     }
 
+    pub fn active_controllers(&self) -> impl Iterator<Item = Id> {
+        self.controllers
+            .iter()
+            .map(|v| v.0)
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+
     pub fn controller_button_just_pressed(&self, id: Id, button: ControllerButton) -> bool {
         *self
             .currently_pressed_controller_buttons
