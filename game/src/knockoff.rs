@@ -86,35 +86,12 @@ fn draw_match_stats_background(
     text_size: (i32, i32),
     stats_size: (u32, u32),
 ) {
-    let text_padding = 5;
+    let cooltexture = ctx.load_texture("textures/stats_left.png").unwrap();
+    let cooltexture_outline = ctx.load_texture("textures/stats_left_outline.png").unwrap();
 
-    ctx.draw_rect(
-        border_color,
-        pos.0 - border_thickness + text_offset.0 - text_padding,
-        pos.1 - border_thickness + text_offset.1 - text_padding,
-        text_size.0 as u32 + border_thickness as u32 * 2 + text_padding as u32 * 2,
-        text_size.1 as u32 + border_thickness as u32 * 2 + text_padding as u32 * 2,
-    )
-    .unwrap();
-    ctx.draw_rect(border_color, pos.0, pos.1, stats_size.0, stats_size.1)
+    ctx.draw_texture(cooltexture, 0, 0).unwrap();
+    ctx.draw_texture_with_color_mod(cooltexture_outline, 0, 0, border_color)
         .unwrap();
-
-    ctx.draw_rect(
-        (0, 0, 0),
-        pos.0 + border_thickness,
-        pos.1 + border_thickness,
-        stats_size.0 - border_thickness as u32 * 2,
-        stats_size.1 - border_thickness as u32 * 2,
-    )
-    .unwrap();
-    ctx.draw_rect(
-        (0, 0, 0),
-        pos.0 + text_offset.0 - text_padding,
-        pos.1 + text_offset.1 - text_padding,
-        text_size.0 as u32 + text_padding as u32 * 2,
-        text_size.1 as u32 + text_padding as u32 * 2,
-    )
-    .unwrap();
 }
 
 fn draw_match_stats(ctx: &mut Context, match_hero: Player) {

@@ -294,6 +294,35 @@ impl<'context, 'game> Context<'context, 'game> {
         Ok((texture.query().width, texture.query().height))
     }
 
+    pub fn draw_texture_with_color_mod(
+        &mut self,
+        texture: Texture,
+        x: i32,
+        y: i32,
+        rgb: (u8, u8, u8),
+    ) -> Result<(), Error> {
+        let texture = self
+            .textures
+            .iter_mut()
+            .find_map(|v| {
+                if v.0 == texture.0 {
+                    Some(&mut v.1)
+                } else {
+                    None
+                }
+            })
+            .ok_or("invalid sprite id")?;
+        let old_rgb = texture.color_mod();
+        texture.set_color_mod(rgb.0, rgb.1, rgb.2);
+        self.canvas.copy(
+            texture,
+            None,
+            Rect::new(x, y, texture.query().width, texture.query().height),
+        )?;
+        texture.set_color_mod(old_rgb.0, old_rgb.1, old_rgb.2);
+        Ok(())
+    }
+
     pub fn draw_texture(&mut self, texture: Texture, x: i32, y: i32) -> Result<(), Error> {
         let texture = self
             .textures
