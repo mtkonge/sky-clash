@@ -33,8 +33,8 @@ impl KeySet {
     }
     pub fn light_attack(&self) -> Keycode {
         match self {
-            KeySet::Wasd => Keycode::Q,
-            KeySet::ArrowKeys => Keycode::Delete,
+            KeySet::Wasd => Keycode::J,
+            KeySet::ArrowKeys => Keycode::KpEnter,
         }
     }
 }
