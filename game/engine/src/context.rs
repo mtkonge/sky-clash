@@ -217,7 +217,6 @@ impl<'context, 'game> Context<'context, 'game> {
             let font = Font(unsafe { (*self.ttf_context).load_font(path, size)? });
             let id = *self.entity_id_counter;
             *self.entity_id_counter += 1;
-            println!("{}: {}", line!(), self.entity_id_counter);
             self.fonts.push((id, size, path.to_path_buf(), font));
             Ok(id)
         }
@@ -234,7 +233,6 @@ impl<'context, 'game> Context<'context, 'game> {
             unsafe { (*self.texture_creator).load_texture(path.as_ref())? };
         let id = *self.entity_id_counter;
         *self.entity_id_counter += 1;
-        println!("{}: {}", line!(), self.entity_id_counter);
         self.textures.push((id, texture));
         self.texture_path_to_id_map.insert(path.as_ref().into(), id);
         Ok(Texture(id))
@@ -263,7 +261,6 @@ impl<'context, 'game> Context<'context, 'game> {
         }?;
         let id = *self.entity_id_counter;
         *self.entity_id_counter += 1;
-        println!("{}: {}", line!(), self.entity_id_counter);
 
         let texture_size = (texture.query().width, texture.query().height);
         let text = Text {
