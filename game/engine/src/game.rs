@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
 use sdl2::ttf::{self, Sdl2TtfContext};
+use sdl2::GameControllerSubsystem;
 use sdl2::{
     event::Event,
     image::{self, Sdl2ImageContext},
@@ -16,6 +17,7 @@ use sdl2::{
 };
 
 use crate::texture::TextTextureKey;
+use crate::JoystickButton;
 use crate::Text;
 
 use super::font::Font;
@@ -23,11 +25,13 @@ use super::{context::Context, entity::Entity, id::Id, system::System};
 use super::{Component, Error};
 
 pub struct Game<'game> {
-    #[allow(unused)]
+    #[allow(dead_code)]
     sdl_context: Sdl,
-    #[allow(unused)]
+    #[allow(dead_code)]
     video_subsystem: VideoSubsystem,
-    #[allow(unused)]
+    #[allow(dead_code)]
+    controller_subsystem: GameControllerSubsystem,
+    #[allow(dead_code)]
     image_context: Sdl2ImageContext,
     ttf_context: Sdl2TtfContext,
     canvas: Canvas<Window>,
@@ -44,13 +48,24 @@ pub struct Game<'game> {
     fonts: Vec<(Id, u16, PathBuf, Font<'game>)>,
     currently_pressed_keys: HashMap<Keycode, bool>,
     currently_pressed_mouse_buttons: HashMap<MouseButton, bool>,
+    currently_pressed_controller_buttons: HashMap<(Id, JoystickButton), bool>,
+    controllers: Vec<(Id, ControllerPosition)>,
     mouse_position: (i32, i32),
+}
+
+#[derive(Default)]
+struct ControllerPosition {
+    pub left_stick: (f64, f64),
+    pub right_stick: (f64, f64),
+    pub left_trigger: f64,
+    pub right_trigger: f64,
 }
 
 impl<'game> Game<'game> {
     pub fn new() -> Result<Self, Error> {
         let sdl_context = sdl2::init()?;
         let video_subsystem = sdl_context.video()?;
+        let controller_subsystem = sdl_context.game_controller()?;
         let image_context = image::init(image::InitFlag::PNG)?;
         let ttf_context = ttf::init().map_err(|e| e.to_string())?;
         let window = video_subsystem
@@ -61,6 +76,13 @@ impl<'game> Game<'game> {
 
         let mut canvas = window.into_canvas().build()?;
         let texture_creator = canvas.texture_creator();
+        let controllers = (0..controller_subsystem.num_joysticks()?)
+            .map(|id| {
+                controller_subsystem
+                    .open(id)
+                    .map(|c| (c.instance_id() as Id, ControllerPosition::default()))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
 
         canvas.set_draw_color(Color::BLACK);
         canvas.clear();
@@ -70,22 +92,25 @@ impl<'game> Game<'game> {
         Ok(Self {
             sdl_context,
             video_subsystem,
+            controller_subsystem,
             image_context,
             canvas,
             texture_creator,
             event_pump,
             ttf_context,
             entity_id_counter: 0,
-            entities: vec![],
+            entities: Default::default(),
             system_id_counter: 0,
-            systems: vec![],
-            systems_to_remove: vec![],
-            textures: vec![],
-            texture_path_to_id_map: HashMap::new(),
-            text_textures: HashMap::new(),
-            fonts: vec![],
-            currently_pressed_keys: HashMap::new(),
-            currently_pressed_mouse_buttons: HashMap::new(),
+            systems: Default::default(),
+            systems_to_remove: Default::default(),
+            textures: Default::default(),
+            texture_path_to_id_map: Default::default(),
+            text_textures: Default::default(),
+            fonts: Default::default(),
+            currently_pressed_keys: Default::default(),
+            currently_pressed_mouse_buttons: Default::default(),
+            currently_pressed_controller_buttons: Default::default(),
+            controllers,
             mouse_position,
         })
     }
@@ -95,6 +120,11 @@ impl<'game> Game<'game> {
         let time_per_frame = 1_000_000_000 / 144;
         'running: loop {
             self.currently_pressed_mouse_buttons
+                .values_mut()
+                .for_each(|value| {
+                    *value = false;
+                });
+            self.currently_pressed_controller_buttons
                 .values_mut()
                 .for_each(|value| {
                     *value = false;
@@ -109,17 +139,56 @@ impl<'game> Game<'game> {
                         keycode: Some(Keycode::Escape),
                         ..
                     } => break 'running,
-                    Event::KeyDown { keycode, .. } => {
-                        self.currently_pressed_keys.insert(keycode.unwrap(), true);
+                    Event::KeyDown { keycode: btn, .. } => {
+                        self.currently_pressed_keys.insert(btn.unwrap(), true);
                     }
-                    Event::KeyUp { keycode, .. } => {
-                        self.currently_pressed_keys.remove(&keycode.unwrap());
+                    Event::KeyUp { keycode: btn, .. } => {
+                        self.currently_pressed_keys.remove(&btn.unwrap());
                     }
-                    Event::MouseButtonDown { mouse_btn, .. } => {
-                        self.currently_pressed_mouse_buttons.insert(mouse_btn, true);
+                    Event::MouseButtonDown { mouse_btn: btn, .. } => {
+                        self.currently_pressed_mouse_buttons.insert(btn, true);
                     }
-                    Event::MouseButtonUp { mouse_btn, .. } => {
-                        self.currently_pressed_mouse_buttons.remove(&mouse_btn);
+                    Event::MouseButtonUp { mouse_btn: btn, .. } => {
+                        self.currently_pressed_mouse_buttons.remove(&btn);
+                    }
+                    Event::ControllerButtonDown {
+                        which, button: btn, ..
+                    } => {
+                        self.currently_pressed_controller_buttons
+                            .insert((which.into(), btn), true);
+                    }
+                    Event::ControllerButtonUp {
+                        which, button: btn, ..
+                    } => {
+                        self.currently_pressed_controller_buttons
+                            .remove(&(which.into(), btn));
+                    }
+                    Event::ControllerDeviceAdded { which, .. } => {
+                        self.controllers.push((which.into(), Default::default()));
+                    }
+                    Event::ControllerDeviceRemoved { which, .. } => {
+                        if let Some(pos) = self.controllers.iter().position(|v| v.0 == which.into())
+                        {
+                            self.controllers.remove(pos);
+                        };
+                    }
+                    Event::ControllerAxisMotion {
+                        value, which, axis, ..
+                    } => {
+                        let id = which.into();
+                        let value = value as f64 / i16::MAX as f64;
+                        let Some((_, pos)) = self.controllers.iter_mut().find(|v| v.0 == id) else {
+                            println!("tried to get controller positions of unregistered id {id}");
+                            continue;
+                        };
+                        match axis {
+                            sdl2::controller::Axis::LeftX => pos.left_stick.0 = value,
+                            sdl2::controller::Axis::LeftY => pos.left_stick.1 = value,
+                            sdl2::controller::Axis::RightX => pos.right_stick.0 = value,
+                            sdl2::controller::Axis::RightY => pos.right_stick.1 = value,
+                            sdl2::controller::Axis::TriggerLeft => pos.left_trigger = value,
+                            sdl2::controller::Axis::TriggerRight => pos.right_trigger = value,
+                        }
                     }
                     _ => {}
                 }

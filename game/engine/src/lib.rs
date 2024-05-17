@@ -20,5 +20,5 @@ pub use self::{
     text::Text, texture::Texture,
 };
 pub use component_macro::Component;
-pub use sdl2::keyboard::Keycode;
+pub use sdl2::controller::Button as JoystickButton;
 pub use sdl2::mouse::MouseButton;
