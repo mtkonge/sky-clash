@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
+use sdl2::controller::GameController as SdlGameController;
 use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
 use sdl2::ttf::{self, Sdl2TtfContext};
@@ -49,7 +50,7 @@ pub struct Game<'game> {
     currently_pressed_keys: HashMap<Keycode, bool>,
     currently_pressed_mouse_buttons: HashMap<MouseButton, bool>,
     currently_pressed_controller_buttons: HashMap<(Id, ControllerButton), bool>,
-    controllers: Vec<(Id, ControllerPosition)>,
+    controllers: Vec<(Id, SdlGameController, ControllerPosition)>,
     mouse_position: (i32, i32),
 }
 
@@ -76,13 +77,6 @@ impl<'game> Game<'game> {
 
         let mut canvas = window.into_canvas().build()?;
         let texture_creator = canvas.texture_creator();
-        let controllers = (0..controller_subsystem.num_joysticks()?)
-            .map(|id| {
-                controller_subsystem
-                    .open(id)
-                    .map(|c| (c.instance_id() as Id, ControllerPosition::default()))
-            })
-            .collect::<Result<Vec<_>, _>>()?;
 
         canvas.set_draw_color(Color::BLACK);
         canvas.clear();
@@ -110,7 +104,7 @@ impl<'game> Game<'game> {
             currently_pressed_keys: Default::default(),
             currently_pressed_mouse_buttons: Default::default(),
             currently_pressed_controller_buttons: Default::default(),
-            controllers,
+            controllers: Default::default(),
             mouse_position,
         })
     }
@@ -164,7 +158,9 @@ impl<'game> Game<'game> {
                             .remove(&(which.into(), btn));
                     }
                     Event::ControllerDeviceAdded { which, .. } => {
-                        self.controllers.push((which.into(), Default::default()));
+                        let controller = self.controller_subsystem.open(which).unwrap();
+                        self.controllers
+                            .push((which.into(), controller, Default::default()));
                     }
                     Event::ControllerDeviceRemoved { which, .. } => {
                         if let Some(pos) = self.controllers.iter().position(|v| v.0 == which.into())
@@ -177,7 +173,8 @@ impl<'game> Game<'game> {
                     } => {
                         let id = which.into();
                         let value = value as f64 / i16::MAX as f64;
-                        let Some((_, pos)) = self.controllers.iter_mut().find(|v| v.0 == id) else {
+                        let Some((_, _, pos)) = self.controllers.iter_mut().find(|v| v.0 == id)
+                        else {
                             println!("tried to get controller positions of unregistered id {id}");
                             continue;
                         };

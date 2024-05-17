@@ -7,6 +7,7 @@ use std::{
 
 use sdl2::{
     controller::Button as ControllerButton,
+    controller::GameController as SdlGameController,
     image::LoadTexture,
     keyboard::Keycode,
     mouse::MouseButton,
@@ -44,7 +45,7 @@ where
     pub(super) currently_pressed_mouse_buttons: &'context HashMap<MouseButton, bool>,
     pub(super) currently_pressed_controller_buttons:
         &'context HashMap<(Id, ControllerButton), bool>,
-    pub(super) controllers: &'context Vec<(Id, ControllerPosition)>,
+    pub(super) controllers: &'context Vec<(Id, SdlGameController, ControllerPosition)>,
     pub(super) mouse_position: (i32, i32),
 }
 
@@ -406,7 +407,7 @@ impl<'context, 'game> Context<'context, 'game> {
             .controllers
             .iter()
             .find(|v| v.0 == id)
-            .map(|v| &v.1)
+            .map(|v| &v.2)
             .unwrap()
     }
 
@@ -415,18 +416,18 @@ impl<'context, 'game> Context<'context, 'game> {
             .contains_key(&(id, button))
     }
 
+    pub fn controller_button_just_pressed(&self, id: Id, button: ControllerButton) -> bool {
+        *self
+            .currently_pressed_controller_buttons
+            .get(&(id, button))
+            .unwrap_or(&false)
+    }
+
     pub fn active_controllers(&self) -> impl Iterator<Item = Id> {
         self.controllers
             .iter()
             .map(|v| v.0)
             .collect::<Vec<_>>()
             .into_iter()
-    }
-
-    pub fn controller_button_just_pressed(&self, id: Id, button: ControllerButton) -> bool {
-        *self
-            .currently_pressed_controller_buttons
-            .get(&(id, button))
-            .unwrap_or(&false)
     }
 }

@@ -66,12 +66,14 @@ impl Focus {
         }
     }
     pub fn update(&mut self, dom: &mut ui::Dom, ctx: &mut engine::Context) {
-        let gamepad_next = ctx
-            .active_controllers()
-            .any(|id| ctx.controller_button_just_pressed(id, engine::ControllerButton::DPadLeft));
-        let gamepad_previous = ctx
-            .active_controllers()
-            .any(|id| ctx.controller_button_just_pressed(id, engine::ControllerButton::DPadRight));
+        let gamepad_next = ctx.active_controllers().any(|id| {
+            ctx.controller_button_just_pressed(id, engine::ControllerButton::DPadRight)
+                || ctx.controller_button_just_pressed(id, engine::ControllerButton::DPadDown)
+        });
+        let gamepad_previous = ctx.active_controllers().any(|id| {
+            ctx.controller_button_just_pressed(id, engine::ControllerButton::DPadLeft)
+                || ctx.controller_button_just_pressed(id, engine::ControllerButton::DPadUp)
+        });
         let gamepad_confirm = ctx
             .active_controllers()
             .any(|id| ctx.controller_button_just_pressed(id, engine::ControllerButton::A));
