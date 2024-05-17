@@ -18,6 +18,58 @@ impl PlayerAttack {
     }
 }
 
+struct SpawnAttackArgs {
+    id: Option<engine::Id>,
+    direction: HurtDirection,
+    pos: (f64, f64),
+    player_size: (f64, f64),
+    attack_size: (f64, f64),
+    vel: (f64, f64),
+    textures: Vec<String>,
+}
+
+fn spawn_attack(
+    ctx: &mut engine::Context,
+    SpawnAttackArgs {
+        id,
+        direction,
+        pos,
+        player_size,
+        attack_size,
+        vel,
+        textures,
+    }: SpawnAttackArgs,
+) {
+    let textures = textures
+        .into_iter()
+        .map(|path| ctx.load_texture(path).unwrap())
+        .collect::<Vec<_>>();
+    spawn!(
+        ctx,
+        Sprite::new(textures[0]),
+        RigidBody {
+            pos: (match direction {
+                HurtDirection::Up => (pos.0, pos.1 - attack_size.1),
+                HurtDirection::Down => (pos.0, pos.1 + player_size.1),
+                HurtDirection::Left => (pos.0 - attack_size.0, pos.1),
+                HurtDirection::Right => (pos.0 + player_size.0, pos.1),
+            }),
+            rect: attack_size,
+            vel,
+            ..Default::default()
+        },
+        Hurtbox {
+            direction,
+            power: 20.0,
+            owner: id,
+            duration: 0.3,
+            stun_time: Some(0.5),
+            textures,
+            ..Default::default()
+        }
+    );
+}
+
 pub struct PlayerAttackSystem(pub u64);
 impl System for PlayerAttackSystem {
     fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
@@ -29,7 +81,6 @@ impl System for PlayerAttackSystem {
             let down_pressed = ctx.key_pressed(key_set.down());
             let light_attack_pressed = ctx.key_just_pressed(key_set.light_attack());
             let body = ctx.select::<RigidBody>(id).clone();
-            let hurtbox_texture = ctx.load_texture("textures/nuh-uh.png").unwrap();
             if player_attack.cooldown >= 0.0 {
                 let player_attack = ctx.select::<PlayerAttack>(id);
                 player_attack.cooldown -= delta;
@@ -39,80 +90,78 @@ impl System for PlayerAttackSystem {
                 continue;
             }
             if down_pressed {
-                spawn!(
+                spawn_attack(
                     ctx,
-                    Sprite::new(hurtbox_texture),
-                    RigidBody {
-                        pos: (body.pos.0, body.pos.1 + body.rect.1),
-                        rect: (128.0, 128.0),
-                        ..Default::default()
-                    },
-                    Hurtbox {
+                    SpawnAttackArgs {
+                        id: Some(id),
                         direction: HurtDirection::Down,
-                        power: 20.0,
-                        owner: Some(id),
-                        duration: 1.0,
-                        stun_time: Some(1.0),
-                        ..Default::default()
+                        pos: body.pos,
+                        player_size: body.rect,
+                        attack_size: (128.0, 128.0),
+                        vel: (0.0, 0.0),
+                        textures: vec!["textures/nuh-uh.png".to_string()],
                     },
                 );
             } else if left_pressed && !right_pressed {
-                spawn!(
+                spawn_attack(
                     ctx,
-                    Sprite::new(hurtbox_texture),
-                    RigidBody {
-                        pos: (body.pos.0 - body.rect.0, body.pos.1),
-                        rect: (128.0, 128.0),
-                        ..Default::default()
-                    },
-                    Hurtbox {
+                    SpawnAttackArgs {
+                        id: Some(id),
                         direction: HurtDirection::Left,
-                        power: 20.0,
-                        owner: Some(id),
-                        duration: 1.0,
-                        stun_time: Some(1.0),
-                        ..Default::default()
+                        pos: body.pos,
+                        player_size: body.rect,
+                        attack_size: (64.0, 128.0),
+                        vel: (body.vel.0 / 2.0, body.vel.1 / 2.0),
+                        textures: vec![
+                            "textures/attacks/left_0.png".to_string(),
+                            "textures/attacks/left_1.png".to_string(),
+                            "textures/attacks/left_2.png".to_string(),
+                            "textures/attacks/left_3.png".to_string(),
+                            "textures/attacks/left_4.png".to_string(),
+                        ],
                     },
                 );
             } else if right_pressed && !left_pressed {
-                spawn!(
+                spawn_attack(
                     ctx,
-                    Sprite::new(hurtbox_texture),
-                    RigidBody {
-                        pos: (body.pos.0 + body.rect.0, body.pos.1),
-                        rect: (128.0, 128.0),
-                        ..Default::default()
-                    },
-                    Hurtbox {
+                    SpawnAttackArgs {
+                        id: Some(id),
                         direction: HurtDirection::Right,
-                        power: 20.0,
-                        owner: Some(id),
-                        duration: 1.0,
-                        stun_time: Some(1.0),
-                        ..Default::default()
+                        pos: body.pos,
+                        player_size: body.rect,
+                        attack_size: (64.0, 128.0),
+                        vel: (body.vel.0 / 2.0, body.vel.1 / 2.0),
+                        textures: vec![
+                            "textures/attacks/right_0.png".to_string(),
+                            "textures/attacks/right_1.png".to_string(),
+                            "textures/attacks/right_2.png".to_string(),
+                            "textures/attacks/right_3.png".to_string(),
+                            "textures/attacks/right_4.png".to_string(),
+                        ],
                     },
                 );
             } else {
-                spawn!(
+                spawn_attack(
                     ctx,
-                    Sprite::new(hurtbox_texture),
-                    RigidBody {
-                        pos: (body.pos.0, body.pos.1 - body.rect.1),
-                        rect: (128.0, 128.0),
-                        ..Default::default()
-                    },
-                    Hurtbox {
+                    SpawnAttackArgs {
+                        id: Some(id),
                         direction: HurtDirection::Up,
-                        power: 20.0,
-                        owner: Some(id),
-                        duration: 1.0,
-                        stun_time: Some(1.0),
-                        ..Default::default()
+                        pos: body.pos,
+                        player_size: body.rect,
+                        attack_size: (128.0, 64.0),
+                        vel: (0.0, 0.0),
+                        textures: vec![
+                            "textures/attacks/up_0.png".to_string(),
+                            "textures/attacks/up_1.png".to_string(),
+                            "textures/attacks/up_2.png".to_string(),
+                            "textures/attacks/up_3.png".to_string(),
+                            "textures/attacks/up_4.png".to_string(),
+                        ],
                     },
                 );
             }
             let player_attack = ctx.select::<PlayerAttack>(id);
-            player_attack.cooldown = 1.0;
+            player_attack.cooldown = 0.5;
         }
 
         Ok(())

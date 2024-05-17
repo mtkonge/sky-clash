@@ -2,6 +2,8 @@ use engine::rigid_body::RigidBody;
 use engine::{query, Collider, Component};
 use engine::{Context, Error, System};
 
+use crate::sprite_renderer::Sprite;
+
 #[derive(Default, Clone)]
 pub enum HurtDirection {
     #[default]
@@ -19,6 +21,7 @@ pub struct Hurtbox {
     pub duration: f64,
     pub duration_passed: f64,
     pub stun_time: Option<f64>,
+    pub textures: Vec<engine::Texture>,
 }
 
 #[derive(Component, Default, Clone)]
@@ -93,7 +96,9 @@ impl System for HurtboxSystem {
                     continue;
                 };
 
-                let velocity = hurtbox.power * knockback_modifier.powi(2) * 0.8
+                let hurtbox_vel = (rigid_body.vel.0.powi(2) + rigid_body.vel.1.powi(2)).sqrt();
+                let velocity = hurtbox_vel
+                    + hurtbox.power * knockback_modifier.powi(2) * 0.8
                     + hurtbox.power * 10.0
                     + knockback_modifier * 5.0;
 
@@ -107,6 +112,19 @@ impl System for HurtboxSystem {
 
                 player.knockback_modifier += hurtbox.power / 50.0;
             }
+        }
+        for id in query!(ctx, Hurtbox, Sprite).clone() {
+            let hurtbox = ctx.select::<Hurtbox>(id);
+            if hurtbox.textures.len() <= 1 {
+                continue;
+            }
+            let texture = hurtbox.textures[std::cmp::min(
+                (hurtbox.duration_passed / hurtbox.duration * hurtbox.textures.len() as f64).floor()
+                    as usize,
+                hurtbox.textures.len(),
+            )];
+            let sprite = ctx.select::<Sprite>(id);
+            sprite.texture = texture;
         }
         Ok(())
     }
