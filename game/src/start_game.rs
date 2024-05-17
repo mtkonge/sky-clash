@@ -1,4 +1,4 @@
-use std::sync::MutexGuard;
+use std::{borrow::BorrowMut, sync::MutexGuard};
 
 use engine::{query, spawn, Component, System};
 
@@ -11,6 +11,7 @@ use crate::{
     ui::{
         self,
         components::ProgressBar,
+        focus::Focus,
         utils::{change_image_node_content, change_text_node_content},
     },
 };
@@ -22,6 +23,7 @@ pub struct StartGame {
     left_bars: SharedPtr<BarBundle>,
     right_bars: SharedPtr<BarBundle>,
     board_responder: Option<SharedPtr<Box<dyn Res<Board>>>>,
+    focus: SharedPtr<Focus>,
 }
 
 #[repr(u64)]
@@ -34,6 +36,7 @@ enum Node {
     RightBars,
     LeftOffset,
     RightOffset,
+    StartGameButton,
 }
 
 #[repr(u64)]
@@ -104,6 +107,7 @@ impl System for StartGameSystem {
                     Vert([
                         Rect().height(400),
                         Button("Start Game")
+                            .id(Node::StartGameButton)
                             .color((255, 255, 255))
                             .padding(15)
                             .on_click(Event::StartGame),
@@ -175,6 +179,7 @@ impl System for StartGameSystem {
                     defence: right_defence_bar
                 }),
                 board_responder: None,
+                focus: SharedPtr::new(Focus::new([Node::StartGameButton]))
             }
         );
 
@@ -185,9 +190,10 @@ impl System for StartGameSystem {
 
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
         let start_game = ctx.clone_one::<StartGame>();
-        start_game.dom.lock().update(ctx);
-
         let mut dom = start_game.dom.lock();
+        dom.update(ctx);
+        start_game.focus.lock().update(dom.borrow_mut(), ctx);
+
         let responder = match start_game.board_responder {
             Some(responder) => responder,
             None => {
