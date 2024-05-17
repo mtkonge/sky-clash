@@ -47,7 +47,7 @@ impl System for GameSystem {
 
         spawn!(
             ctx,
-            Sprite::new_layered(background, 1),
+            Sprite::new_layered(background, 2),
             RigidBody {
                 rect: (1280.0, 720.0),
                 ..Default::default()
@@ -56,7 +56,7 @@ impl System for GameSystem {
 
         spawn!(
             ctx,
-            Sprite::new(hero_1_sprite),
+            Sprite::new_layered(hero_1_sprite, 1),
             RigidBody {
                 pos: (400.0, 200.0),
                 rect: (128.0, 128.0),
@@ -74,7 +74,7 @@ impl System for GameSystem {
             hurtbox::Player {
                 kind: hurtbox::PlayerKind::Left,
                 hero: heroes.hero_1.clone(),
-                knockback_modifier: 5.5,
+                knockback_modifier: 0.0,
                 lives: 3,
             },
             PlayerAttack::new(KeySet::Wasd, 0.0),
@@ -83,7 +83,7 @@ impl System for GameSystem {
 
         spawn!(
             ctx,
-            Sprite::new(hero_2_sprite),
+            Sprite::new_layered(hero_2_sprite, 1),
             RigidBody {
                 pos: (600.0, 200.0),
                 rect: (128.0, 128.0),
