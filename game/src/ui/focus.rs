@@ -66,14 +66,27 @@ impl Focus {
         }
     }
     pub fn update(&mut self, dom: &mut ui::Dom, ctx: &mut engine::Context) {
-        if ctx.key_just_pressed(engine::Keycode::Tab) {
-            if ctx.key_pressed(engine::Keycode::LShift) {
-                self.previous(dom)
-            } else {
-                self.next(dom)
-            }
+        let gamepad_next = ctx
+            .active_controllers()
+            .any(|id| ctx.controller_button_just_pressed(id, engine::ControllerButton::DPadLeft));
+        let gamepad_previous = ctx
+            .active_controllers()
+            .any(|id| ctx.controller_button_just_pressed(id, engine::ControllerButton::DPadRight));
+        let gamepad_confirm = ctx
+            .active_controllers()
+            .any(|id| ctx.controller_button_just_pressed(id, engine::ControllerButton::A));
+        let cycle_next = (ctx.key_just_pressed(engine::Keycode::Tab)
+            && !ctx.key_pressed(engine::Keycode::LShift))
+            || gamepad_next;
+        let cycle_previous = (ctx.key_just_pressed(engine::Keycode::Tab)
+            && ctx.key_pressed(engine::Keycode::LShift))
+            || gamepad_previous;
+        if cycle_next {
+            self.next(dom)
+        } else if cycle_previous {
+            self.previous(dom)
         }
-        if ctx.key_just_pressed(engine::Keycode::Return) {
+        if ctx.key_just_pressed(engine::Keycode::Return) || gamepad_confirm {
             if let Some((id, _)) = dom.nodes.iter().find(|(_, node)| node.focused) {
                 dom.click_node(*id);
             }
