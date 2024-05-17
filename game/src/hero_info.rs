@@ -26,10 +26,10 @@ impl From<&HeroKind> for HeroInfo {
         }
         .to_string();
         let texture_path = match value {
-            Centrist => PathBuf::from("./textures/sprites/centrist.png"),
-            Strong => PathBuf::from("./textures/sprites/strong.png"),
-            Speed => PathBuf::from("./textures/sprites/speed.png"),
-            Tankie => PathBuf::from("./textures/sprites/tankie.png"),
+            Centrist => PathBuf::from("./textures/heroes/centrist.png"),
+            Strong => PathBuf::from("./textures/heroes/strong.png"),
+            Speed => PathBuf::from("./textures/heroes/speed.png"),
+            Tankie => PathBuf::from("./textures/heroes/tankie.png"),
         };
         Self {
             base_stats,
