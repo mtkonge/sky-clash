@@ -756,22 +756,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pvp-game-dilapidation"
-version = "0.1.0"
-dependencies = [
- "engine",
- "mpsc",
- "pretty_assertions",
- "rand",
- "reqwest",
- "serde",
- "serde_json",
- "serde_repr",
- "shared",
- "tokio",
-]
-
-[[package]]
 name = "queue-ext"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1035,6 +1019,22 @@ version = "0.0.0"
 dependencies = [
  "serde",
  "serde_repr",
+]
+
+[[package]]
+name = "sky-clash"
+version = "0.1.0"
+dependencies = [
+ "engine",
+ "mpsc",
+ "pretty_assertions",
+ "rand",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "shared",
+ "tokio",
 ]
 
 [[package]]

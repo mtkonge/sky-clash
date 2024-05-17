@@ -49,7 +49,7 @@ impl System for MainMenuSystem {
 
         let mut dom = ui::Dom::new(
             Stack([Vert([
-                Text("SkyTrash").font_size(48),
+                Text("Sky Clash").font_size(48),
                 Button("Start Game")
                     .color((255, 255, 255))
                     .padding(15)

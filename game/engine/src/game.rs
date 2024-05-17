@@ -69,7 +69,7 @@ impl<'game> Game<'game> {
         let image_context = image::init(image::InitFlag::PNG)?;
         let ttf_context = ttf::init().map_err(|e| e.to_string())?;
         let window = video_subsystem
-            .window("pvp-game-dilapidation", 1280, 720)
+            .window("Sky Clash", 1280, 720)
             .position_centered()
             // .fullscreen()
             .build()?;
