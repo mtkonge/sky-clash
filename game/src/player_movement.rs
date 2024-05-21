@@ -15,6 +15,7 @@ impl System for PlayerMovementSystem {
             let right_pressed = ctx.key_pressed(key_set.right());
             let left_pressed = ctx.key_pressed(key_set.left());
             let up_pressed = ctx.key_pressed(key_set.up());
+            let down_pressed = ctx.key_pressed(key_set.down());
             let collider = ctx.select::<Collider>(id).clone();
             let victim = ctx.select::<Victim>(id).clone();
             let body = ctx.select::<RigidBody>(id);
@@ -27,6 +28,10 @@ impl System for PlayerMovementSystem {
                 body.vel.0 += 400.0 * delta * 8.0
             } else if left_pressed && !right_pressed && body.vel.0 > (-400.0) {
                 body.vel.0 -= 400.0 * delta * 8.0
+            }
+
+            if down_pressed && body.vel.1 < 800.0 {
+                body.vel.1 += 1600.0 * delta
             }
 
             if collider
