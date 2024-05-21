@@ -35,27 +35,28 @@ fn merge_colors(
     )
 }
 
-fn player_damage_color(damage: f64) -> (u8, u8, u8) {
-    let transition_alpha = damage % 2.5;
+fn player_damage_color(damage_taken: f64) -> (u8, u8, u8) {
+    let transition_alpha = damage_taken % 2.5;
     let colors = [
         (255, 255, 255),
         (255, 255, 0),
         (255, 127, 0),
         (255, 0, 0),
-        (0, 0, 0),
+        (127, 0, 0),
+        (30, 30, 30),
     ];
     let max_idx = colors.len() - 1;
-    let idx = ((damage - transition_alpha) / 2.5) as usize;
+    let idx = ((damage_taken - transition_alpha) / 2.5) as usize;
     let current = std::cmp::min(max_idx, idx);
     let next = std::cmp::min(max_idx, idx + 1);
-    let transition_percentage = (damage % 2.5) / 2.5;
+    let transition_percentage = (damage_taken % 2.5) / 2.5;
     merge_colors(colors[current], colors[next], transition_percentage)
 }
 
 #[derive(Component, Clone)]
 pub struct TrashTalkOffset(f64);
 
-fn win_condition(ctx: &mut Context, loser_id: engine::Id) {
+fn draw_trash_talk(ctx: &mut Context, loser_id: engine::Id) {
     let winner = 'winner: {
         for winner_id in query!(ctx, Player) {
             if winner_id == loser_id {
@@ -74,7 +75,7 @@ fn win_condition(ctx: &mut Context, loser_id: engine::Id) {
         .unwrap();
 }
 
-fn draw_match_stats_background(
+fn draw_player_background(
     ctx: &mut Context,
     player: &Player,
     border_color: (u8, u8, u8),
@@ -97,7 +98,7 @@ fn draw_match_stats_background(
         .unwrap();
 }
 
-fn draw_match_stats_idk(
+fn draw_player_stats(
     ctx: &mut Context,
     player: &Player,
     avatar_pos: (i32, i32),
@@ -131,10 +132,10 @@ fn draw_hud(ctx: &mut Context, player: &Player) {
 
     let border_pos = match player.kind {
         PlayerKind::Left => (8, 8),
-        PlayerKind::Right => (1280 - stats_size.1 - 8, 8),
+        PlayerKind::Right => (1280 - stats_size.0 - 8, 8),
     };
 
-    draw_match_stats_background(ctx, &player, border_color, border_pos);
+    draw_player_background(ctx, &player, border_color, border_pos);
 
     let avatar_pos = match player.kind {
         PlayerKind::Left => (border_pos.0 + 8, border_pos.1 + 8),
@@ -148,7 +149,7 @@ fn draw_hud(ctx: &mut Context, player: &Player) {
         PlayerKind::Right => (border_pos.0 + 6 + 1, border_pos.1 + 58 - 6),
     };
 
-    draw_match_stats_idk(ctx, &player, avatar_pos, avatar_size, text_pos)
+    draw_player_stats(ctx, &player, avatar_pos, avatar_size, text_pos)
 }
 
 pub struct HudSystem(pub u64);
@@ -163,7 +164,7 @@ impl System for HudSystem {
             let player = ctx.select::<Player>(id).clone();
             draw_hud(ctx, &player);
             if player.lives <= 0 {
-                win_condition(ctx, id);
+                draw_trash_talk(ctx, id);
                 continue;
             }
         }
