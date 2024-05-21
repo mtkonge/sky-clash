@@ -1,0 +1,25 @@
+{
+    "id_counter": 2,
+    "heroes": {
+        "1234523": {
+            "id": 0,
+            "kind": 0,
+            "rfid": "1234523",
+            "level": 0,
+            "strength_points": 8,
+            "agility_points": 8,
+            "defence_points": 8
+        },
+        "123452sda3": {
+            "id": 1,
+            "kind": 1,
+            "rfid": "123452sda3",
+            "level": 0,
+            "strength_points": 4,
+            "agility_points": 4,
+            "defence_points": 4
+        }
+    },
+    "rfid_1": "123452sda3",
+    "rfid_2": "1234523"
+}

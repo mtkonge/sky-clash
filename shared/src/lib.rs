@@ -110,6 +110,11 @@ impl Hero {
         let total_allocated = self.strength_points + self.agility_points + self.defence_points;
         self.total_skill_points() - total_allocated
     }
+    pub fn set_stats(&mut self, stats: HeroStats) {
+        self.strength_points = stats.strength;
+        self.agility_points = stats.agility;
+        self.defence_points = stats.defence;
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

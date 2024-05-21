@@ -2,6 +2,7 @@
 
 use backend_connection::BackendConnection;
 use engine::spawn;
+use mock_connection::MockConnection;
 use server::Server;
 
 mod backend_connection;
@@ -13,6 +14,7 @@ mod hurtbox;
 mod key_set;
 mod knockoff;
 mod main_menu;
+mod mock_connection;
 mod player;
 mod player_attack;
 mod player_movement;
@@ -23,8 +25,9 @@ mod start_game;
 mod ui;
 
 fn main() {
-    let mut backend_connection = BackendConnection::new();
-    let mut server = Server::new(backend_connection.clone());
+    // let mut connection = BackendConnection::new();
+    let connection = MockConnection::new();
+    let mut server = Server::new(connection.clone());
 
     let game_thread = std::thread::spawn(move || {
         let mut game = engine::Game::new().unwrap();
@@ -37,9 +40,9 @@ fn main() {
         server.quit();
     });
 
-    tokio::runtime::Runtime::new().unwrap().block_on(async {
-        backend_connection.run().await;
-    });
+    // tokio::runtime::Runtime::new().unwrap().block_on(async {
+    //     backend_connection.run().await;
+    // });
 
     game_thread.join().unwrap();
 }

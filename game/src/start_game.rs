@@ -32,6 +32,7 @@ enum Node {
     RightImage,
     ErrorText,
     ErrorPopup,
+    ErrorPopupButton,
     LeftBars,
     RightBars,
     LeftOffset,
@@ -135,6 +136,7 @@ impl System for StartGameSystem {
                 Vert([
                     Text("Error").id(Node::ErrorText).padding(5),
                     Button("Ok")
+                        .id(Node::ErrorPopupButton)
                         .background_color((100, 100, 100))
                         .padding(5)
                         .on_click(Event::ErrorPopupClick),
@@ -179,7 +181,7 @@ impl System for StartGameSystem {
                     defence: right_defence_bar
                 }),
                 board_responder: None,
-                focus: SharedPtr::new(Focus::new([Node::StartGameButton]))
+                focus: SharedPtr::new(Focus::new([Node::StartGameButton, Node::ErrorPopupButton]))
             }
         );
 

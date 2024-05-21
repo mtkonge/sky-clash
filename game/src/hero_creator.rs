@@ -36,6 +36,7 @@ enum Node {
 
     ClosePopup,
     UpdateHero,
+    Back,
     CentristButton,
     StrongButton,
     TankieButton,
@@ -46,6 +47,7 @@ enum Node {
 enum Event {
     ClosePopup,
     UpdateHero,
+    Back,
     CentristButton,
     StrongButton,
     TankieButton,
@@ -104,6 +106,11 @@ impl System for HeroCreatorSystem {
             server.update_hero_stats(shared::UpdateHeroStatsParams { rfid, stats });
         });
 
+        dom.add_event_handler(Event::Back, move |_dom, ctx, _node_id| {
+            ctx.remove_system(id);
+            ctx.add_system(MainMenuSystem);
+        });
+
         use shared::HeroKind::*;
         for (id, hero_type) in [
             (Event::CentristButton, Centrist),
@@ -144,10 +151,11 @@ impl System for HeroCreatorSystem {
                 focus: SharedPtr::new(ui::focus::Focus::new([
                     Node::ClosePopup,
                     Node::UpdateHero,
+                    Node::Back,
                     Node::CentristButton,
+                    Node::SpeedButton,
                     Node::StrongButton,
                     Node::TankieButton,
-                    Node::SpeedButton,
                 ]))
             }
         );
@@ -229,9 +237,14 @@ impl HeroCreatorSystem {
                         strength_bar.build(),
                         agility_bar.build(),
                         defence_bar.build(),
-                        Hori([ui::components::Button("Confirm")
-                            .on_click(Event::UpdateHero)
-                            .id(Node::UpdateHero)]),
+                        Hori([
+                            ui::components::Button("Confirm")
+                                .on_click(Event::UpdateHero)
+                                .id(Node::UpdateHero),
+                            ui::components::Button("Back")
+                                .on_click(Event::Back)
+                                .id(Node::Back),
+                        ]),
                         Rect().height(720 / 2 - 100),
                     ]),
                 ]),
@@ -259,7 +272,8 @@ impl HeroCreatorSystem {
                             .padding(5)
                             .on_click(Event::TankieButton)
                             .id(Node::TankieButton),
-                    ]),
+                    ])
+                    .gap(5),
                 ])
                 .id(Node::HeroKindPopup)
                 .visible(false)
