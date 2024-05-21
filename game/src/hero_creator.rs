@@ -390,7 +390,7 @@ fn initialize_hero(
         dom.select_mut(Node::AvailablePoints),
         format!("Available points: {}", hero.unallocated_skill_points()),
     );
-    let hero_info = HeroInfo::from(&hero.hero_type);
+    let hero_info = HeroInfo::from(&hero.kind);
     menu.strength_bar
         .lock()
         .set_steps_filled(hero.strength_points)

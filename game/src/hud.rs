@@ -1,21 +1,66 @@
-use engine::{query, spawn, Component, Context, Error, System};
+use engine::{query, Component, Context, Error, System};
+use shared::HeroKind;
 
 use crate::player::{Player, PlayerKind};
 
-fn player_died_text(loser: &shared::HeroKind, winner: &shared::HeroKind, counter: f64) -> String {
-    let amount_of_messages = 9;
-    let counter = counter as u8 % amount_of_messages;
-    match counter {
-        0 => format!("looks like {loser} has skill issues"),
-        1 => format!("{loser} was not Him"),
-        2 => format!("bro lost to a {winner}"),
-        3 => format!("dying to a {winner} in 2024 is crazy"),
-        4 => format!("{loser} is so loserpilled"),
-        5 => format!("bro lost to a {winner} before Gta VI"),
-        6 => format!("{loser} is losermaxxing"),
-        7 => format!("in loser town everybody knows {loser}"),
-        8 => format!("dying to a {winner} won't pay the bills"),
-        _ => unreachable!(),
+pub struct HudSystem(pub u64);
+
+impl System for HudSystem {
+    fn on_update(&self, ctx: &mut Context, delta: f64) -> Result<(), Error> {
+        for id in query!(ctx, Player).clone() {
+            let player = ctx.select::<Player>(id).clone();
+            draw_hud(ctx, &player);
+        }
+        for id in query!(ctx, TrashTalk).clone() {
+            let trash_talk = ctx.select::<TrashTalk>(id);
+            trash_talk.text_cycle_clock += delta;
+            let trash_talk = ctx.select::<TrashTalk>(id).clone();
+            trash_talk.draw(ctx);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Component)]
+pub struct TrashTalk {
+    pub winner: HeroKind,
+    pub loser: HeroKind,
+    pub text_cycle_clock: f64,
+}
+
+impl TrashTalk {
+    pub fn new(winner: HeroKind, loser: HeroKind) -> Self {
+        Self {
+            winner,
+            loser,
+            text_cycle_clock: 0.0,
+        }
+    }
+
+    fn draw(&self, ctx: &mut Context) {
+        let trash_talk = self.loser_text();
+        let font = ctx.load_font("textures/ttf/OpenSans.ttf", 48).unwrap();
+        let text = ctx.render_text(font, &trash_talk, (255, 255, 255)).unwrap();
+        ctx.draw_texture(text.texture, (1280 - text.size.0) / 2, 100)
+            .unwrap();
+    }
+
+    fn loser_text(&self) -> String {
+        let (winner, loser) = (&self.winner, &self.loser);
+        let amount_of_messages = 9;
+        let counter = self.text_cycle_clock as u64 % amount_of_messages;
+        match counter {
+            0 => format!("looks like {loser} has skill issues"),
+            1 => format!("{loser} was not Him"),
+            2 => format!("bro lost to a {winner}"),
+            3 => format!("dying to a {winner} in 2024 is crazy"),
+            4 => format!("{loser} is so loserpilled"),
+            5 => format!("bro lost to a {winner} before Gta VI"),
+            6 => format!("{loser} is losermaxxing"),
+            7 => format!("in loser town everybody knows {loser}"),
+            8 => format!("dying to a {winner} won't pay the bills"),
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -53,28 +98,6 @@ fn player_damage_color(damage_taken: f64) -> (u8, u8, u8) {
     merge_colors(colors[current], colors[next], transition_percentage)
 }
 
-#[derive(Component, Clone)]
-pub struct TrashTalkOffset(f64);
-
-fn draw_trash_talk(ctx: &mut Context, loser_id: engine::Id) {
-    let winner = 'winner: {
-        for winner_id in query!(ctx, Player) {
-            if winner_id == loser_id {
-                continue;
-            }
-            break 'winner ctx.select::<Player>(winner_id).hero.hero_type.clone();
-        }
-        unreachable!("other player somehow despawned");
-    };
-    let trash_talk_offset = ctx.select_one::<TrashTalkOffset>().0;
-    let loser = &ctx.select::<Player>(loser_id).hero.hero_type;
-    let trash_talk = player_died_text(loser, &winner, trash_talk_offset);
-    let font = ctx.load_font("textures/ttf/OpenSans.ttf", 48).unwrap();
-    let text = ctx.render_text(font, &trash_talk, (255, 255, 255)).unwrap();
-    ctx.draw_texture(text.texture, (1280 - text.size.0) / 2, 100)
-        .unwrap();
-}
-
 fn draw_player_background(
     ctx: &mut Context,
     player: &Player,
@@ -106,7 +129,7 @@ fn draw_player_stats(
     text_pos: (i32, i32),
 ) {
     let hero_sprite = {
-        let path = crate::hero_info::HeroInfo::from(&player.hero.hero_type).texture_path;
+        let path = crate::hero_info::HeroInfo::from(&player.hero.kind).texture_path;
         ctx.load_texture(path).unwrap()
     };
 
@@ -150,38 +173,4 @@ fn draw_hud(ctx: &mut Context, player: &Player) {
     };
 
     draw_player_stats(ctx, player, avatar_pos, avatar_size, text_pos)
-}
-
-#[derive(Component)]
-pub struct TrashTalk {
-    winner: PlayerKind,
-    loser: PlayerKind,
-}
-
-pub struct HudSystem(pub u64);
-
-impl System for HudSystem {
-    fn on_add(&self, ctx: &mut Context) -> Result<(), Error> {
-        spawn!(ctx, TrashTalkOffset(0.0));
-        Ok(())
-    }
-    fn on_update(&self, ctx: &mut Context, delta: f64) -> Result<(), Error> {
-        for id in query!(ctx, Player).clone() {
-            let player = ctx.select::<Player>(id).clone();
-            draw_hud(ctx, &player);
-            if player.lives <= 0 {
-                draw_trash_talk(ctx, id);
-                continue;
-            }
-        }
-        let trash_talk_offset = ctx.select_one::<TrashTalkOffset>();
-        trash_talk_offset.0 += delta;
-        Ok(())
-    }
-    fn on_remove(&self, ctx: &mut Context) -> Result<(), Error> {
-        for id in query!(ctx, TrashTalkOffset) {
-            ctx.despawn(id);
-        }
-        Ok(())
-    }
 }

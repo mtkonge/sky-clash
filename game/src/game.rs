@@ -38,11 +38,11 @@ impl System for GameSystem {
 
         let heroes = ctx.clone_one::<HeroesOnBoard>();
         let hero_1_sprite = {
-            let path = crate::hero_info::HeroInfo::from(&heroes.hero_1.hero_type).texture_path;
+            let path = crate::hero_info::HeroInfo::from(&heroes.hero_1.kind).texture_path;
             ctx.load_texture(path).unwrap()
         };
         let hero_2_sprite = {
-            let path = crate::hero_info::HeroInfo::from(&heroes.hero_2.hero_type).texture_path;
+            let path = crate::hero_info::HeroInfo::from(&heroes.hero_2.kind).texture_path;
             ctx.load_texture(path).unwrap()
         };
 

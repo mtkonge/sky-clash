@@ -264,7 +264,7 @@ fn display_hero_result(
         Some(HeroResult::Hero(hero)) => {
             change_image_node_content(
                 dom.select_mut(image_id),
-                HeroInfo::from(&hero.hero_type).texture_path,
+                HeroInfo::from(&hero.kind).texture_path,
             );
             bars.strength.set_steps_filled(hero.strength_points);
             bars.strength.update(dom);

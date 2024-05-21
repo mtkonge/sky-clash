@@ -94,9 +94,9 @@ impl From<i64> for HeroKind {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Hero {
     pub id: i64,
+    pub kind: HeroKind,
     pub rfid: String,
     pub level: i64,
-    pub hero_type: HeroKind,
     pub strength_points: i64,
     pub agility_points: i64,
     pub defence_points: i64,
