@@ -1,6 +1,6 @@
 use engine::{query, rigid_body::RigidBody, Context, Error, System};
 
-use crate::{hurtbox::Player, player_movement::PlayerMovement};
+use crate::{player::Player, player_movement::PlayerMovement};
 
 pub struct KnockoffSystem(pub u64);
 impl System for KnockoffSystem {

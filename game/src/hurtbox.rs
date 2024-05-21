@@ -2,6 +2,7 @@ use engine::rigid_body::RigidBody;
 use engine::{query, Collider, Component};
 use engine::{Context, Error, System};
 
+use crate::player::Player;
 use crate::sprite_renderer::Sprite;
 
 #[derive(Default, Clone)]
@@ -40,20 +41,6 @@ fn rects_collide(
         && pos_a.0 + size_a.0 > pos_b.0
         && pos_a.1 < pos_b.1 + size_b.1
         && pos_a.1 + size_a.1 > pos_b.1
-}
-
-#[derive(Clone, Component)]
-pub struct Player {
-    pub kind: PlayerKind,
-    pub hero: shared::Hero,
-    pub knockback_modifier: f64,
-    pub lives: i8,
-}
-
-#[derive(Clone)]
-pub enum PlayerKind {
-    Left,
-    Right,
 }
 
 pub struct HurtboxSystem(pub u64);

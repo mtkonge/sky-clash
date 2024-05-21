@@ -1,6 +1,6 @@
 use engine::{query, spawn, Component, Context, Error, System};
 
-use crate::hurtbox::{Player, PlayerKind};
+use crate::player::{Player, PlayerKind};
 
 fn player_died_text(loser: &shared::HeroKind, winner: &shared::HeroKind, counter: f64) -> String {
     let amount_of_messages = 9;
@@ -135,7 +135,7 @@ fn draw_hud(ctx: &mut Context, player: &Player) {
         PlayerKind::Right => (1280 - stats_size.0 - 8, 8),
     };
 
-    draw_player_background(ctx, &player, border_color, border_pos);
+    draw_player_background(ctx, player, border_color, border_pos);
 
     let avatar_pos = match player.kind {
         PlayerKind::Left => (border_pos.0 + 8, border_pos.1 + 8),
@@ -149,7 +149,13 @@ fn draw_hud(ctx: &mut Context, player: &Player) {
         PlayerKind::Right => (border_pos.0 + 6 + 1, border_pos.1 + 58 - 6),
     };
 
-    draw_player_stats(ctx, &player, avatar_pos, avatar_size, text_pos)
+    draw_player_stats(ctx, player, avatar_pos, avatar_size, text_pos)
+}
+
+#[derive(Component)]
+pub struct TrashTalk {
+    winner: PlayerKind,
+    loser: PlayerKind,
 }
 
 pub struct HudSystem(pub u64);

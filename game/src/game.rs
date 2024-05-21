@@ -5,9 +5,11 @@ use engine::{
 
 use crate::{
     hud::HudSystem,
-    hurtbox::{self, HurtDirection, Hurtbox, HurtboxSystem, Victim},
+    hurtbox::{HurtDirection, Hurtbox, HurtboxSystem, Victim},
     key_set::KeySet,
     knockoff::KnockoffSystem,
+    player::Player,
+    player::PlayerKind,
     player_attack::{PlayerAttack, PlayerAttackSystem},
     player_movement::{PlayerMovement, PlayerMovementSystem},
     sprite_renderer::{Sprite, SpriteRenderer},
@@ -71,8 +73,8 @@ impl System for GameSystem {
                 ..Default::default()
             },
             PlayerMovement::new(KeySet::Wasd),
-            hurtbox::Player {
-                kind: hurtbox::PlayerKind::Left,
+            Player {
+                kind: PlayerKind::Left,
                 hero: heroes.hero_1.clone(),
                 knockback_modifier: 0.0,
                 lives: 3,
@@ -96,8 +98,8 @@ impl System for GameSystem {
                 ..Default::default()
             },
             PlayerMovement::new(KeySet::ArrowKeys),
-            hurtbox::Player {
-                kind: hurtbox::PlayerKind::Right,
+            Player {
+                kind: PlayerKind::Right,
                 hero: heroes.hero_2.clone(),
                 knockback_modifier: 0.0,
                 lives: 3,

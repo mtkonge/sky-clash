@@ -13,6 +13,7 @@ mod hurtbox;
 mod key_set;
 mod knockoff;
 mod main_menu;
+mod player;
 mod player_attack;
 mod player_movement;
 mod server;
