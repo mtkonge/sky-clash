@@ -69,8 +69,8 @@ impl ServerStrategy for MockConnection {
                 kind: params.hero_type,
                 rfid: params.rfid,
                 level: 0,
-                strength_points: params.base_stats.defence,
-                agility_points: params.base_stats.defence,
+                strength_points: params.base_stats.strength,
+                agility_points: params.base_stats.agility,
                 defence_points: params.base_stats.defence,
             },
         );
