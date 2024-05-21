@@ -70,9 +70,7 @@ impl System for GameSystem {
                 resolve: true,
                 ..Default::default()
             },
-            PlayerMovement {
-                key_set: KeySet::Wasd
-            },
+            PlayerMovement::new(KeySet::Wasd),
             hurtbox::Player {
                 kind: hurtbox::PlayerKind::Left,
                 hero: heroes.hero_1.clone(),
@@ -97,9 +95,7 @@ impl System for GameSystem {
                 resolve: true,
                 ..Default::default()
             },
-            PlayerMovement {
-                key_set: KeySet::ArrowKeys
-            },
+            PlayerMovement::new(KeySet::ArrowKeys),
             hurtbox::Player {
                 kind: hurtbox::PlayerKind::Right,
                 hero: heroes.hero_2.clone(),

@@ -2,9 +2,44 @@ use engine::{query, rigid_body::RigidBody, Collider, Component, System};
 
 use crate::{hurtbox::Victim, key_set::KeySet};
 
+#[derive(Clone)]
+enum JumpState {
+    OnGround,
+    Jumped,
+    DoubleJumped,
+}
+
+impl JumpState {
+    pub fn next(&self) -> Self {
+        match self {
+            JumpState::OnGround => JumpState::Jumped,
+            JumpState::Jumped => JumpState::DoubleJumped,
+            JumpState::DoubleJumped => JumpState::DoubleJumped,
+        }
+    }
+
+    pub fn can_jump(&self) -> bool {
+        match self {
+            JumpState::OnGround => true,
+            JumpState::Jumped => true,
+            JumpState::DoubleJumped => false,
+        }
+    }
+}
+
 #[derive(Component, Clone)]
 pub struct PlayerMovement {
-    pub key_set: KeySet,
+    key_set: KeySet,
+    jump: JumpState,
+}
+
+impl PlayerMovement {
+    pub fn new(key_set: KeySet) -> Self {
+        Self {
+            key_set,
+            jump: JumpState::DoubleJumped,
+        }
+    }
 }
 
 pub struct PlayerMovementSystem(pub u64);
@@ -14,10 +49,11 @@ impl System for PlayerMovementSystem {
             let key_set = ctx.select::<PlayerMovement>(id).clone().key_set;
             let right_pressed = ctx.key_pressed(key_set.right());
             let left_pressed = ctx.key_pressed(key_set.left());
-            let up_pressed = ctx.key_pressed(key_set.up());
+            let up_pressed = ctx.key_just_pressed(key_set.up());
             let down_pressed = ctx.key_pressed(key_set.down());
             let collider = ctx.select::<Collider>(id).clone();
             let victim = ctx.select::<Victim>(id).clone();
+            let player_movement = ctx.select::<PlayerMovement>(id).clone();
             let body = ctx.select::<RigidBody>(id);
 
             if victim.stunned.is_some() {
@@ -34,12 +70,18 @@ impl System for PlayerMovementSystem {
                 body.vel.1 += 1600.0 * delta
             }
 
+            if up_pressed && player_movement.jump.can_jump() {
+                body.vel.1 = -800.0;
+                let player_movement = ctx.select::<PlayerMovement>(id);
+                player_movement.jump = player_movement.jump.next();
+            }
+
             if collider
                 .colliding
                 .is_some_and(|dir| dir.facing(engine::collision::Direction::Bottom))
-                && up_pressed
             {
-                body.vel.1 = -800.0;
+                let player_movement = ctx.select::<PlayerMovement>(id);
+                player_movement.jump = JumpState::OnGround;
             }
         }
         Ok(())
