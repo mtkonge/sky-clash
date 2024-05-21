@@ -4,6 +4,7 @@ use engine::{
 };
 
 use crate::{
+    hud::HudSystem,
     hurtbox::{self, HurtDirection, Hurtbox, HurtboxSystem, Victim},
     key_set::KeySet,
     knockoff::KnockoffSystem,
@@ -31,6 +32,7 @@ impl System for GameSystem {
         ctx.add_system(HurtboxSystem);
         ctx.add_system(KnockoffSystem);
         ctx.add_system(PlayerAttackSystem);
+        ctx.add_system(HudSystem);
 
         let heroes = ctx.clone_one::<HeroesOnBoard>();
         let hero_1_sprite = {

@@ -8,6 +8,7 @@ mod backend_connection;
 mod game;
 mod hero_creator;
 mod hero_info;
+mod hud;
 mod hurtbox;
 mod key_set;
 mod knockoff;
