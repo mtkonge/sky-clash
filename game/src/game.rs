@@ -118,42 +118,6 @@ impl System for GameSystem {
             Collider::default(),
         );
 
-        spawn!(
-            ctx,
-            RigidBody {
-                pos: (250.0, 200.0),
-                rect: (32.0, 32.0),
-                ..Default::default()
-            },
-            Collider::default(),
-            Sprite::new(nope),
-        );
-
-        spawn!(
-            ctx,
-            RigidBody {
-                pos: (800.0, 200.0),
-                rect: (32.0, 32.0),
-                ..Default::default()
-            },
-            Hurtbox {
-                direction: HurtDirection::Left,
-                power: 20.0,
-                ..Default::default()
-            },
-            Sprite::new(nope),
-        );
-
-        spawn!(
-            ctx,
-            RigidBody {
-                pos: (900.0, 400.0),
-                rect: (32.0, 32.0),
-                ..Default::default()
-            },
-            Collider::default(),
-            Sprite::new(nope),
-        );
         Ok(())
     }
 

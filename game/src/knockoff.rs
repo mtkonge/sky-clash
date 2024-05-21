@@ -18,9 +18,10 @@ impl System for KnockoffSystem {
                 let player_is_dead = player.is_dead();
                 if player_is_dead {
                     let loser_hero_kind = player.hero.kind.clone();
-                    let winner_hero_kind = ctx.select_one::<Player>().hero.kind.clone();
                     ctx.despawn(loser_id);
+                    let winner_hero_kind = ctx.select_one::<Player>().hero.kind.clone();
                     spawn!(ctx, TrashTalk::new(winner_hero_kind, loser_hero_kind));
+                    continue;
                 }
                 let rigid_body = ctx.select::<RigidBody>(loser_id);
                 rigid_body.pos = ((1280.0 - rigid_body.rect.0) / 2.0, 100.0);

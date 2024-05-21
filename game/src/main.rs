@@ -1,8 +1,6 @@
 #![allow(dead_code)]
 
-use backend_connection::BackendConnection;
 use engine::spawn;
-use mock_connection::MockConnection;
 use server::Server;
 
 mod backend_connection;
@@ -25,8 +23,8 @@ mod start_game;
 mod ui;
 
 fn main() {
-    // let mut connection = BackendConnection::new();
-    let connection = MockConnection::new();
+    // let mut connection = backend_connection::BackendConnection::new();
+    let connection = mock_connection::MockConnection::new();
     let mut server = Server::new(connection.clone());
 
     let game_thread = std::thread::spawn(move || {
@@ -41,7 +39,7 @@ fn main() {
     });
 
     // tokio::runtime::Runtime::new().unwrap().block_on(async {
-    //     backend_connection.run().await;
+    //     connection.run().await;
     // });
 
     game_thread.join().unwrap();
