@@ -31,7 +31,7 @@ impl System for GravitySystem {
                 continue;
             }
             body.vel.1 = if body.vel.1 < 400.0 {
-                body.vel.1 + 800.0 * delta
+                body.vel.1 + 1600.0 * delta
             } else {
                 body.vel.1
             };
