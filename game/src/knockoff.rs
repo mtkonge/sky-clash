@@ -79,75 +79,79 @@ fn win_condition(ctx: &mut Context, loser_id: engine::Id) {
 
 fn draw_match_stats_background(
     ctx: &mut Context,
+    player: &Player,
     border_color: (u8, u8, u8),
-    border_thickness: i32,
-    pos: (i32, i32),
-    text_offset: (i32, i32),
-    text_size: (i32, i32),
-    stats_size: (u32, u32),
+    border_pos: (i32, i32),
 ) {
-    let cooltexture = ctx.load_texture("textures/stats_left.png").unwrap();
-    let cooltexture_outline = ctx.load_texture("textures/stats_left_outline.png").unwrap();
+    let border_path = match player.kind {
+        PlayerKind::Left => "textures/stats_left.png",
+        PlayerKind::Right => "textures/stats_right.png",
+    };
+    let border_outline_path = match player.kind {
+        PlayerKind::Left => "textures/stats_left_outline.png",
+        PlayerKind::Right => "textures/stats_right_outline.png",
+    };
+    let border = ctx.load_texture(border_path).unwrap();
+    let border_outline = ctx.load_texture(border_outline_path).unwrap();
 
-    ctx.draw_texture(cooltexture, 0, 0).unwrap();
-    ctx.draw_texture_with_color_mod(cooltexture_outline, 0, 0, border_color)
+    ctx.draw_texture(border, border_pos.0, border_pos.1)
+        .unwrap();
+    ctx.draw_texture_with_color_mod(border_outline, border_pos.0, border_pos.1, border_color)
         .unwrap();
 }
 
-fn draw_match_stats(ctx: &mut Context, match_hero: Player) {
-    let lives = match_hero.lives.to_string();
-    let font = ctx.load_font("textures/ttf/OpenSans.ttf", 24).unwrap();
-    let text = ctx.render_text(font, lives, (255, 255, 255)).unwrap();
-    let stats_size = (50, 50);
-    let border_thickness = 2;
-    let border_color = player_damage_color(match_hero.knockback_modifier);
-
+fn draw_match_stats_idk(
+    ctx: &mut Context,
+    player: &Player,
+    avatar_pos: (i32, i32),
+    avatar_size: (u32, u32),
+    text_pos: (i32, i32),
+) {
     let hero_sprite = {
-        let path = crate::hero_info::HeroInfo::from(match_hero.hero.hero_type).texture_path;
+        let path = crate::hero_info::HeroInfo::from(&player.hero.hero_type).texture_path;
         ctx.load_texture(path).unwrap()
     };
 
-    let (pos, text_offset) = match match_hero.kind {
-        PlayerKind::Left => (
-            (0, 0),
-            (
-                stats_size.0 as i32 - stats_size.0 as i32 / 5,
-                stats_size.0 as i32 / 8 + stats_size.0 as i32 / 2,
-            ),
-        ),
-        PlayerKind::Right => (
-            (1280 - stats_size.0 as i32, 0),
-            (
-                -text.size.0 + stats_size.0 as i32 / 5,
-                stats_size.0 as i32 / 8 + stats_size.0 as i32 / 2,
-            ),
-        ),
-    };
-
-    draw_match_stats_background(
-        ctx,
-        border_color,
-        border_thickness,
-        pos,
-        text_offset,
-        text.size,
-        stats_size,
-    );
+    let font = ctx.load_font("textures/ttf/OpenSans.ttf", 24).unwrap();
+    let lives = player.lives.to_string();
+    let lives = ctx.render_text(font, lives, (255, 255, 255)).unwrap();
 
     ctx.draw_texture_sized(
         hero_sprite,
-        pos.0 + border_thickness,
-        pos.1 + border_thickness,
-        stats_size.0 - border_thickness as u32 * 2,
-        stats_size.1 - border_thickness as u32 * 2,
+        avatar_pos.0,
+        avatar_pos.1,
+        avatar_size.0,
+        avatar_size.1,
     )
     .unwrap();
-    ctx.draw_texture(
-        text.texture,
-        pos.0 + text_offset.0,
-        pos.1 - border_thickness + text_offset.1,
-    )
-    .unwrap();
+    ctx.draw_texture(lives.texture, text_pos.0, text_pos.1)
+        .unwrap();
+}
+
+fn draw_match_stats(ctx: &mut Context, player: Player) {
+    let stats_size = (100, 88);
+    let border_color = player_damage_color(player.knockback_modifier);
+
+    let border_pos = match player.kind {
+        PlayerKind::Left => (8, 8),
+        PlayerKind::Right => (1280 - stats_size.1 - 8, 8),
+    };
+
+    draw_match_stats_background(ctx, &player, border_color, border_pos);
+
+    let avatar_pos = match player.kind {
+        PlayerKind::Left => (border_pos.0 + 8, border_pos.1 + 8),
+        PlayerKind::Right => (border_pos.0 + 28, border_pos.1 + 8),
+    };
+
+    let avatar_size = (64, 64);
+
+    let text_pos = match player.kind {
+        PlayerKind::Left => (border_pos.0 + 78 + 1, border_pos.1 + 58 - 6),
+        PlayerKind::Right => (border_pos.0 + 6 + 1, border_pos.1 + 58 - 6),
+    };
+
+    draw_match_stats_idk(ctx, &player, avatar_pos, avatar_size, text_pos)
 }
 
 pub struct KnockoffSystem(pub u64);
