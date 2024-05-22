@@ -46,7 +46,7 @@ impl Res<Board> for BoardStatusRes {
 
 impl ServerStrategy for MockConnection {
     fn quit(&mut self) {
-        println!("{:#?}", self)
+        // nothing
     }
 
     fn update_hero_stats(&mut self, params: shared::UpdateHeroStatsParams) {

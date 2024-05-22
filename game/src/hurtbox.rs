@@ -15,6 +15,12 @@ pub enum HurtDirection {
 }
 
 #[derive(Component, Default, Clone)]
+pub struct Hitbox {
+    pub size: (f64, f64),
+    pub offset: (f64, f64),
+}
+
+#[derive(Component, Default, Clone)]
 pub struct Hurtbox {
     pub owner: Option<engine::Id>,
     pub power: f64,
@@ -56,7 +62,7 @@ impl System for HurtboxSystem {
             }
         }
         for id in query!(ctx, Hurtbox, RigidBody).clone() {
-            let rigid_body = ctx.select::<RigidBody>(id).clone();
+            let hurtbox_body = ctx.select::<RigidBody>(id).clone();
             let hurtbox = ctx.select::<Hurtbox>(id);
             hurtbox.duration_passed += delta;
             let hurtbox = ctx.select::<Hurtbox>(id).clone();
@@ -64,7 +70,7 @@ impl System for HurtboxSystem {
                 ctx.despawn(id);
                 continue;
             }
-            for victim_id in query!(ctx, RigidBody, Collider, Player, Victim) {
+            for victim_id in query!(ctx, RigidBody, Collider, Player, Victim, Hitbox) {
                 if hurtbox.owner.is_some_and(|owner| owner == victim_id) {
                     continue;
                 };
@@ -75,25 +81,34 @@ impl System for HurtboxSystem {
                 victim.hurt_by.push(id);
                 victim.stunned = hurtbox.stun_time;
 
-                let match_hero = ctx.select::<Player>(victim_id);
+                let hitbox = ctx.select::<Hitbox>(victim_id).clone();
+                let player = ctx.select::<Player>(victim_id);
 
-                let knockback_modifier = match_hero.knockback_modifier + 1.0;
-                let body = ctx.select::<RigidBody>(victim_id);
-                if !rects_collide(rigid_body.pos, rigid_body.rect, body.pos, body.rect) {
+                let knockback_modifier = player.knockback_modifier + 1.0;
+                let victim_body = ctx.select::<RigidBody>(victim_id);
+                if !rects_collide(
+                    hurtbox_body.pos,
+                    hurtbox_body.rect,
+                    (
+                        victim_body.pos.0 + hitbox.offset.0,
+                        victim_body.pos.1 + hitbox.offset.1,
+                    ),
+                    hitbox.offset,
+                ) {
                     continue;
                 };
 
-                let hurtbox_vel = (rigid_body.vel.0.powi(2) + rigid_body.vel.1.powi(2)).sqrt();
+                let hurtbox_vel = (hurtbox_body.vel.0.powi(2) + hurtbox_body.vel.1.powi(2)).sqrt();
                 let velocity = hurtbox_vel
                     + hurtbox.power * knockback_modifier.powi(2) * 0.8
                     + hurtbox.power * 10.0
                     + knockback_modifier * 5.0;
 
                 match hurtbox.direction {
-                    HurtDirection::Up => body.vel.1 -= velocity,
-                    HurtDirection::Down => body.vel.1 += velocity,
-                    HurtDirection::Left => body.vel.0 -= velocity,
-                    HurtDirection::Right => body.vel.0 += velocity,
+                    HurtDirection::Up => victim_body.vel.1 -= velocity,
+                    HurtDirection::Down => victim_body.vel.1 += velocity,
+                    HurtDirection::Left => victim_body.vel.0 -= velocity,
+                    HurtDirection::Right => victim_body.vel.0 += velocity,
                 }
                 let player = ctx.select::<Player>(victim_id);
 

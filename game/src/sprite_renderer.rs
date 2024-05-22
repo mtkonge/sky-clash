@@ -2,17 +2,24 @@ use engine::{query, rigid_body::RigidBody, Component, System};
 
 #[derive(Component, Debug, Clone)]
 pub struct Sprite {
+    pub offset: (f64, f64),
+    pub size: Option<(f64, f64)>,
     pub texture: engine::Texture,
     pub layer: i32,
 }
 
 impl Sprite {
     pub fn new(texture: engine::Texture) -> Self {
-        Self { texture, layer: 0 }
+        Self {
+            texture,
+            layer: 0,
+            offset: (0.0, 0.0),
+            size: None,
+        }
     }
 
-    pub fn new_layered(texture: engine::Texture, layer: i32) -> Self {
-        Self { texture, layer }
+    pub fn layer(self, layer: i32) -> Self {
+        Self { layer, ..self }
     }
 }
 
@@ -30,8 +37,8 @@ impl System for SpriteRenderer {
         for (sprite, pos, rect) in sprites {
             ctx.draw_texture_sized(
                 sprite.texture,
-                pos.0 as i32,
-                pos.1 as i32,
+                (pos.0 + sprite.offset.0) as i32,
+                (pos.1 + sprite.offset.1) as i32,
                 rect.0 as u32,
                 rect.1 as u32,
             )?;
