@@ -1,6 +1,6 @@
 use engine::{query, rigid_body::RigidBody, Collider, Component, System};
 
-use crate::{hurtbox::Victim, key_set::KeySet};
+use crate::{hurtbox::Victim, keyset::Keyset};
 
 #[derive(Clone)]
 enum JumpState {
@@ -29,14 +29,14 @@ impl JumpState {
 
 #[derive(Component, Clone)]
 pub struct PlayerMovement {
-    key_set: KeySet,
+    keyset: Keyset,
     jump: JumpState,
 }
 
 impl PlayerMovement {
-    pub fn new(key_set: KeySet) -> Self {
+    pub fn new(keyset: Keyset) -> Self {
         Self {
-            key_set,
+            keyset,
             jump: JumpState::DoubleJumped,
         }
     }
@@ -46,11 +46,11 @@ pub struct PlayerMovementSystem(pub u64);
 impl System for PlayerMovementSystem {
     fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
         for id in query!(ctx, PlayerMovement, Victim, RigidBody, Collider) {
-            let key_set = ctx.select::<PlayerMovement>(id).clone().key_set;
-            let right_pressed = ctx.key_pressed(key_set.right());
-            let left_pressed = ctx.key_pressed(key_set.left());
-            let up_pressed = ctx.key_just_pressed(key_set.up());
-            let down_pressed = ctx.key_pressed(key_set.down());
+            let keyset = ctx.select::<PlayerMovement>(id).clone().keyset;
+            let right_pressed = ctx.key_pressed(keyset.right());
+            let left_pressed = ctx.key_pressed(keyset.left());
+            let up_pressed = ctx.key_just_pressed(keyset.up());
+            let down_pressed = ctx.key_pressed(keyset.down());
             let collider = ctx.select::<Collider>(id).clone();
             let victim = ctx.select::<Victim>(id).clone();
             let player_movement = ctx.select::<PlayerMovement>(id).clone();

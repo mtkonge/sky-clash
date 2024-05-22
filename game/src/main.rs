@@ -9,7 +9,7 @@ mod hero_creator;
 mod hero_info;
 mod hud;
 mod hurtbox;
-mod key_set;
+mod keyset;
 mod knockoff;
 mod main_menu;
 mod mock_connection;

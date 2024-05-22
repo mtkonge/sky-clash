@@ -7,7 +7,7 @@ use engine::{
 use crate::{
     hud::HudSystem,
     hurtbox::{Hitbox, Hurtbox, HurtboxSystem, Victim},
-    key_set::KeySet,
+    keyset::Keyset,
     knockoff::KnockoffSystem,
     player::{Player, PlayerKind},
     player_attack::{PlayerAttack, PlayerAttackSystem},
@@ -49,9 +49,9 @@ impl System for GameSystem {
             },
         );
 
-        self.spawn_player(ctx, (400.0, 400.0), KeySet::Wasd, PlayerKind::Left);
+        self.spawn_player(ctx, (400.0, 400.0), Keyset::Wasd, PlayerKind::Left);
 
-        self.spawn_player(ctx, (600.0, 200.0), KeySet::ArrowKeys, PlayerKind::Right);
+        self.spawn_player(ctx, (600.0, 200.0), Keyset::ArrowKeys, PlayerKind::Right);
 
         spawn!(
             ctx,
@@ -102,7 +102,7 @@ impl GameSystem {
         &self,
         ctx: &mut engine::Context,
         pos: (f64, f64),
-        keyset: KeySet,
+        keyset: Keyset,
         kind: PlayerKind,
     ) {
         let heroes = ctx.clone_one::<HeroesOnBoard>();

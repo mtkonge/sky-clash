@@ -2,19 +2,19 @@ use engine::{query, rigid_body::RigidBody, spawn, Collider, Component, System};
 
 use crate::{
     hurtbox::{HurtDirection, Hurtbox},
-    key_set::KeySet,
+    keyset::Keyset,
     sprite_renderer::Sprite,
 };
 
 #[derive(Component, Clone)]
 pub struct PlayerAttack {
-    pub key_set: KeySet,
+    pub keyset: Keyset,
     pub cooldown: f64,
 }
 
 impl PlayerAttack {
-    pub fn new(key_set: KeySet, cooldown: f64) -> Self {
-        Self { key_set, cooldown }
+    pub fn new(keyset: Keyset, cooldown: f64) -> Self {
+        Self { keyset, cooldown }
     }
 }
 
@@ -75,11 +75,11 @@ impl System for PlayerAttackSystem {
     fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
         for id in query!(ctx, RigidBody, Collider, PlayerAttack) {
             let player_attack = ctx.select::<PlayerAttack>(id).clone();
-            let key_set = player_attack.key_set;
-            let right_pressed = ctx.key_pressed(key_set.right());
-            let left_pressed = ctx.key_pressed(key_set.left());
-            let down_pressed = ctx.key_pressed(key_set.down());
-            let light_attack_pressed = ctx.key_just_pressed(key_set.light_attack());
+            let keyset = player_attack.keyset;
+            let right_pressed = ctx.key_pressed(keyset.right());
+            let left_pressed = ctx.key_pressed(keyset.left());
+            let down_pressed = ctx.key_pressed(keyset.down());
+            let light_attack_pressed = ctx.key_just_pressed(keyset.light_attack());
             let body = ctx.select::<RigidBody>(id).clone();
             if player_attack.cooldown >= 0.0 {
                 let player_attack = ctx.select::<PlayerAttack>(id);
