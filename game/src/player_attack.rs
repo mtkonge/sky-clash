@@ -55,7 +55,7 @@ fn spawn_attack(
                 HurtDirection::Right => (pos.0 + player_size.0, pos.1),
             })
             .with_vel(vel)
-            .with_rect(attack_size),
+            .with_size(attack_size),
         Hurtbox {
             direction,
             power: 20.0,
@@ -94,7 +94,7 @@ impl System for PlayerAttackSystem {
                         id: Some(id),
                         direction: HurtDirection::Down,
                         pos: body.pos,
-                        player_size: body.rect,
+                        player_size: body.size,
                         attack_size: (128.0, 128.0),
                         vel: (0.0, 0.0),
                         textures: vec!["textures/nuh-uh.png".to_string()],
@@ -107,7 +107,7 @@ impl System for PlayerAttackSystem {
                         id: Some(id),
                         direction: HurtDirection::Left,
                         pos: body.pos,
-                        player_size: body.rect,
+                        player_size: body.size,
                         attack_size: (64.0, 128.0),
                         vel: (body.vel.0 / 2.0, body.vel.1 / 2.0),
                         textures: vec![
@@ -126,7 +126,7 @@ impl System for PlayerAttackSystem {
                         id: Some(id),
                         direction: HurtDirection::Right,
                         pos: body.pos,
-                        player_size: body.rect,
+                        player_size: body.size,
                         attack_size: (64.0, 128.0),
                         vel: (body.vel.0 / 2.0, body.vel.1 / 2.0),
                         textures: vec![
@@ -145,7 +145,7 @@ impl System for PlayerAttackSystem {
                         id: Some(id),
                         direction: HurtDirection::Up,
                         pos: body.pos,
-                        player_size: body.rect,
+                        player_size: body.size,
                         attack_size: (128.0, 64.0),
                         vel: (0.0, 0.0),
                         textures: vec![

@@ -514,12 +514,12 @@ impl System for CollisionSystem {
                 let other_body = ctx.select::<RigidBody>(other_id).clone();
 
                 let pos = V2::from(body.pos);
-                let rect = V2::from(body.rect);
+                let size = V2::from(body.size);
                 let other_pos = V2::from(other_body.pos);
-                let other_rect = V2::from(other_body.rect);
+                let other_size = V2::from(other_body.size);
                 let dp = V2::from(body.vel).extend(delta);
 
-                if !rects_within_reach(Rect::new(pos, rect), dp, Rect::new(other_pos, other_rect)) {
+                if !rects_within_reach(Rect::new(pos, size), dp, Rect::new(other_pos, other_size)) {
                     continue;
                 }
 
@@ -534,8 +534,8 @@ impl System for CollisionSystem {
                     | Direction::Right
                     | Direction::Bottom
                     | Direction::Left) => {
-                        let (p0, p1) = rect_side_corners(pos, rect, dir);
-                        let (c0, c1) = rect_side_corners(other_pos, other_rect, dir.reverse());
+                        let (p0, p1) = rect_side_corners(pos, size, dir);
+                        let (c0, c1) = rect_side_corners(other_pos, other_size, dir.reverse());
                         for p in [p0, p1] {
                             if let Some((int, t)) = point_vec_line_segment_intersect(p, dp, c0, c1)
                             {
@@ -554,9 +554,9 @@ impl System for CollisionSystem {
                     | Direction::TopRight
                     | Direction::BottomRight
                     | Direction::BottomLeft) => {
-                        let (p0, p1, p2) = rect_diagonal_corners(pos, rect, dir);
+                        let (p0, p1, p2) = rect_diagonal_corners(pos, size, dir);
                         let (c0, c1, c2) =
-                            rect_diagonal_corners(other_pos, other_rect, dir.reverse());
+                            rect_diagonal_corners(other_pos, other_size, dir.reverse());
                         let (d0, d1) = dir.clockwise();
                         for p in [p0, p1, p2] {
                             for (c0, c1, dir) in [(c0, c1, d0), (c1, c2, d1)] {
@@ -585,7 +585,7 @@ impl System for CollisionSystem {
                     let collider = ctx.select::<Collider>(id);
                     collider.colliding = Some(dir);
                     let body = ctx.select::<RigidBody>(id);
-                    resolve_collision(body, p, rect, dir)
+                    resolve_collision(body, p, size, dir)
                 }
             }
         }

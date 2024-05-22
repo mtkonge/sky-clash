@@ -43,7 +43,7 @@ impl System for GameSystem {
         spawn!(
             ctx,
             Sprite::new(background).layer(2),
-            RigidBody::new().with_rect((1280.0, 720.0)),
+            RigidBody::new().with_size((1280.0, 720.0)),
         );
 
         self.spawn_player(ctx, (400.0, 200.0), Keyset::Wasd, PlayerKind::Left);
@@ -53,7 +53,7 @@ impl System for GameSystem {
             ctx,
             RigidBody::new()
                 .with_pos((250.0, 200.0))
-                .with_rect((32.0, 32.0)),
+                .with_size((32.0, 32.0)),
             Collider::new(),
             Sprite::new(nope),
         );
@@ -62,7 +62,7 @@ impl System for GameSystem {
             ctx,
             RigidBody::new()
                 .with_pos((900.0, 400.0))
-                .with_rect((32.0, 32.0)),
+                .with_size((32.0, 32.0)),
             Collider::new(),
             Sprite::new(nope),
         );
@@ -71,7 +71,7 @@ impl System for GameSystem {
             ctx,
             RigidBody::new()
                 .with_pos((184.0, 540.0))
-                .with_rect((960.0, 128.0)),
+                .with_size((960.0, 128.0)),
             Collider::new(),
         );
 
@@ -111,7 +111,7 @@ impl GameSystem {
             },
             RigidBody::new()
                 .with_pos(pos)
-                .with_rect((32.0 * factor, 32.0 * factor))
+                .with_size((32.0 * factor, 32.0 * factor))
                 .with_gravity()
                 .with_drag(),
             Collider::new().resolving(),
@@ -147,11 +147,11 @@ impl System for DebugDrawer {
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
         for id in query!(ctx, RigidBody, Collider) {
             let body = ctx.select::<RigidBody>(id).clone();
-            self.draw_outline(ctx, body.pos, body.rect, 2.0, (0, 125, 255))?;
+            self.draw_outline(ctx, body.pos, body.size, 2.0, (0, 125, 255))?;
         }
         for id in query!(ctx, RigidBody, Hurtbox) {
             let body = ctx.select::<RigidBody>(id).clone();
-            self.draw_outline(ctx, body.pos, body.rect, 2.0, (255, 0, 0))?;
+            self.draw_outline(ctx, body.pos, body.size, 2.0, (255, 0, 0))?;
         }
         for id in query!(ctx, RigidBody, Hitbox) {
             let body = ctx.select::<RigidBody>(id).clone();

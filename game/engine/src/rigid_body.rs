@@ -5,7 +5,7 @@ use crate::{query, rigid_body, Component};
 pub struct RigidBody {
     pub pos: (f64, f64),
     pub vel: (f64, f64),
-    pub rect: (f64, f64),
+    pub size: (f64, f64),
     pub gravity: bool,
     pub drag: bool,
 }
@@ -15,7 +15,7 @@ impl RigidBody {
         Self {
             pos: (0.0, 0.0),
             vel: (0.0, 0.0),
-            rect: (0.0, 0.0),
+            size: (0.0, 0.0),
             gravity: false,
             drag: false,
         }
@@ -29,8 +29,8 @@ impl RigidBody {
         Self { vel, ..self }
     }
 
-    pub fn with_rect(self, rect: (f64, f64)) -> Self {
-        Self { rect, ..self }
+    pub fn with_size(self, size: (f64, f64)) -> Self {
+        Self { size, ..self }
     }
 
     pub fn with_gravity(self) -> Self {

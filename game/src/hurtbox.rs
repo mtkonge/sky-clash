@@ -88,7 +88,7 @@ impl System for HurtboxSystem {
                 let victim_body = ctx.select::<RigidBody>(victim_id);
                 if !rects_collide(
                     hurtbox_body.pos,
-                    hurtbox_body.rect,
+                    hurtbox_body.size,
                     (
                         victim_body.pos.0 + hitbox.offset.0,
                         victim_body.pos.1 + hitbox.offset.1,

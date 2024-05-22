@@ -42,11 +42,11 @@ impl System for SpriteRenderer {
             let body = ctx.select::<RigidBody>(id).clone();
             let sprite = ctx.select::<Sprite>(id).clone();
 
-            sprites.push((sprite, (body.pos.0, body.pos.1), (body.rect.0, body.rect.1)));
+            sprites.push((sprite, (body.pos.0, body.pos.1), (body.size.0, body.size.1)));
         }
         sprites.sort_by(|(a, _, _), (b, _, _)| b.layer.cmp(&a.layer));
-        for (sprite, pos, rect) in sprites {
-            let size = sprite.size.unwrap_or(rect);
+        for (sprite, pos, body_size) in sprites {
+            let size = sprite.size.unwrap_or(body_size);
             ctx.draw_texture_sized(
                 sprite.texture,
                 (pos.0 + sprite.offset.0) as i32,
