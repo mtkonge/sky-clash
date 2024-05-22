@@ -47,17 +47,15 @@ fn spawn_attack(
     spawn!(
         ctx,
         Sprite::new(textures[0]),
-        RigidBody {
-            pos: (match direction {
+        RigidBody::new()
+            .with_pos(match direction {
                 HurtDirection::Up => (pos.0, pos.1 - attack_size.1),
                 HurtDirection::Down => (pos.0, pos.1 + player_size.1),
                 HurtDirection::Left => (pos.0 - attack_size.0, pos.1),
                 HurtDirection::Right => (pos.0 + player_size.0, pos.1),
-            }),
-            rect: attack_size,
-            vel,
-            ..Default::default()
-        },
+            })
+            .with_vel(vel)
+            .with_rect(attack_size),
         Hurtbox {
             direction,
             power: 20.0,

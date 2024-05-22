@@ -43,45 +43,35 @@ impl System for GameSystem {
         spawn!(
             ctx,
             Sprite::new(background).layer(2),
-            RigidBody {
-                rect: (1280.0, 720.0),
-                ..Default::default()
-            },
+            RigidBody::new().with_rect((1280.0, 720.0)),
         );
 
         self.spawn_player(ctx, (400.0, 200.0), Keyset::Wasd, PlayerKind::Left);
-
         self.spawn_player(ctx, (600.0, 200.0), Keyset::ArrowKeys, PlayerKind::Right);
 
         spawn!(
             ctx,
-            RigidBody {
-                pos: (250.0, 200.0),
-                rect: (32.0, 32.0),
-                ..Default::default()
-            },
+            RigidBody::new()
+                .with_pos((250.0, 200.0))
+                .with_rect((32.0, 32.0)),
             Collider::new(),
             Sprite::new(nope),
         );
 
         spawn!(
             ctx,
-            RigidBody {
-                pos: (900.0, 400.0),
-                rect: (32.0, 32.0),
-                ..Default::default()
-            },
+            RigidBody::new()
+                .with_pos((900.0, 400.0))
+                .with_rect((32.0, 32.0)),
             Collider::new(),
             Sprite::new(nope),
         );
 
         spawn!(
             ctx,
-            RigidBody {
-                pos: (184.0, 540.0),
-                rect: (960.0, 128.0),
-                ..Default::default()
-            },
+            RigidBody::new()
+                .with_pos((184.0, 540.0))
+                .with_rect((960.0, 128.0)),
             Collider::new(),
         );
 
@@ -108,59 +98,22 @@ impl GameSystem {
         let scale = 1.5;
         let pixel_ratio = 4.0;
 
-        let heroes = ctx.clone_one::<HeroesOnBoard>();
-        let hero = match kind {
-            PlayerKind::Left => heroes.hero_1,
-            PlayerKind::Right => heroes.hero_2,
-        };
+        let hero = self.player_hero(ctx, &kind);
+        let texture = self.hero_texture(ctx, &hero.kind);
 
-        let texture = {
-            let path = crate::hero_info::HeroInfo::from(&hero.kind).texture_path;
-            ctx.load_texture(path).unwrap()
-        };
-        let size = match hero.kind {
-            shared::HeroKind::Centrist => (20.0, 28.0),
-            shared::HeroKind::Strong => (24.0, 32.0),
-            shared::HeroKind::Speed => (20.0, 29.0),
-            shared::HeroKind::Tankie => (22.0, 28.0),
-        };
-        let sprite_offset = match hero.kind {
-            shared::HeroKind::Centrist => (-4.0, -4.0),
-            shared::HeroKind::Strong => (-4.0, 0.0),
-            shared::HeroKind::Speed => (-6.0, -3.0),
-            shared::HeroKind::Tankie => (-5.0, -4.0),
-        };
-        let hitbox_size = (16.0, 24.0);
-        let hitbox_offset = (
-            (size.0 - hitbox_size.0) / 2.0,
-            (size.1 - hitbox_size.1) - 1.0,
-        );
+        let factor = scale * pixel_ratio;
         spawn!(
             ctx,
-            Sprite::new(texture)
-                .layer(1)
-                .size((32.0 * pixel_ratio * scale, 32.0 * pixel_ratio * scale))
-                .offset((
-                    sprite_offset.0 * pixel_ratio * scale,
-                    sprite_offset.1 * pixel_ratio * scale
-                )),
+            Sprite::new(texture).layer(1),
             Hitbox {
-                size: (
-                    hitbox_size.0 * pixel_ratio * scale,
-                    hitbox_size.1 * pixel_ratio * scale
-                ),
-                offset: (
-                    hitbox_offset.0 * pixel_ratio * scale,
-                    hitbox_offset.1 * pixel_ratio * scale
-                )
+                size: (24.0 * factor, 28.0 * factor),
+                offset: (4.0 * factor, 2.0 * factor)
             },
-            RigidBody {
-                pos,
-                rect: (size.0 * pixel_ratio * scale, size.1 * pixel_ratio * scale),
-                gravity: true,
-                drag: true,
-                ..Default::default()
-            },
+            RigidBody::new()
+                .with_pos(pos)
+                .with_rect((32.0 * factor, 32.0 * factor))
+                .with_gravity()
+                .with_drag(),
             Collider::new().resolving(),
             PlayerMovement::new(keyset.clone()),
             Player {
@@ -172,6 +125,19 @@ impl GameSystem {
             PlayerAttack::new(keyset, 0.0),
             Victim::default()
         );
+    }
+
+    fn player_hero(&self, ctx: &mut engine::Context, kind: &PlayerKind) -> shared::Hero {
+        let heroes = ctx.clone_one::<HeroesOnBoard>();
+        match kind {
+            PlayerKind::Left => heroes.hero_1,
+            PlayerKind::Right => heroes.hero_2,
+        }
+    }
+
+    fn hero_texture(&self, ctx: &mut engine::Context, kind: &shared::HeroKind) -> engine::Texture {
+        let path = crate::hero_info::HeroInfo::from(kind).texture_path;
+        ctx.load_texture(path).unwrap()
     }
 }
 

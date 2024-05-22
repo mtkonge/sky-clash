@@ -1,13 +1,48 @@
 use super::{Context, Error, System};
 use crate::{query, rigid_body, Component};
 
-#[derive(Component, Default, Clone, Debug)]
+#[derive(Component, Clone, Debug)]
 pub struct RigidBody {
     pub pos: (f64, f64),
     pub vel: (f64, f64),
     pub rect: (f64, f64),
     pub gravity: bool,
     pub drag: bool,
+}
+
+impl RigidBody {
+    pub fn new() -> Self {
+        Self {
+            pos: (0.0, 0.0),
+            vel: (0.0, 0.0),
+            rect: (0.0, 0.0),
+            gravity: false,
+            drag: false,
+        }
+    }
+
+    pub fn with_pos(self, pos: (f64, f64)) -> Self {
+        Self { pos, ..self }
+    }
+
+    pub fn with_vel(self, vel: (f64, f64)) -> Self {
+        Self { vel, ..self }
+    }
+
+    pub fn with_rect(self, rect: (f64, f64)) -> Self {
+        Self { rect, ..self }
+    }
+
+    pub fn with_gravity(self) -> Self {
+        Self {
+            gravity: true,
+            ..self
+        }
+    }
+
+    pub fn with_drag(self) -> Self {
+        Self { drag: true, ..self }
+    }
 }
 
 pub struct VelocitySystem(pub u64);
