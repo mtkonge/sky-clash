@@ -47,10 +47,13 @@ impl System for PlayerMovementSystem {
     fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
         for id in query!(ctx, PlayerMovement, Victim, RigidBody, Collider) {
             let keyset = ctx.select::<PlayerMovement>(id).clone().keyset;
+
             let right_pressed = ctx.key_pressed(keyset.right());
             let left_pressed = ctx.key_pressed(keyset.left());
-            let up_pressed = ctx.key_just_pressed(keyset.up());
             let down_pressed = ctx.key_pressed(keyset.down());
+
+            let up_pressed = ctx.key_just_pressed(keyset.up());
+
             let collider = ctx.select::<Collider>(id).clone();
             let victim = ctx.select::<Victim>(id).clone();
             let player_movement = ctx.select::<PlayerMovement>(id).clone();
@@ -70,18 +73,19 @@ impl System for PlayerMovementSystem {
                 body.vel.1 += 1600.0 * delta
             }
 
-            if up_pressed && player_movement.jump.can_jump() {
-                body.vel.1 = -800.0;
-                let player_movement = ctx.select::<PlayerMovement>(id);
-                player_movement.jump = player_movement.jump.next();
-            }
-
             if collider
                 .colliding
                 .is_some_and(|dir| dir.facing(engine::collision::Direction::Bottom))
             {
                 let player_movement = ctx.select::<PlayerMovement>(id);
                 player_movement.jump = JumpState::OnGround;
+            }
+
+            if up_pressed && player_movement.jump.can_jump() {
+                let body = ctx.select::<RigidBody>(id);
+                body.vel.1 = -800.0;
+                let player_movement = ctx.select::<PlayerMovement>(id);
+                player_movement.jump = player_movement.jump.next();
             }
         }
         Ok(())

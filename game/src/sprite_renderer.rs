@@ -21,6 +21,17 @@ impl Sprite {
     pub fn layer(self, layer: i32) -> Self {
         Self { layer, ..self }
     }
+
+    pub fn size(self, size: (f64, f64)) -> Self {
+        Self {
+            size: Some(size),
+            ..self
+        }
+    }
+
+    pub fn offset(self, offset: (f64, f64)) -> Self {
+        Self { offset, ..self }
+    }
 }
 
 pub struct SpriteRenderer(pub u64);
@@ -35,12 +46,13 @@ impl System for SpriteRenderer {
         }
         sprites.sort_by(|(a, _, _), (b, _, _)| b.layer.cmp(&a.layer));
         for (sprite, pos, rect) in sprites {
+            let size = sprite.size.unwrap_or(rect);
             ctx.draw_texture_sized(
                 sprite.texture,
                 (pos.0 + sprite.offset.0) as i32,
                 (pos.1 + sprite.offset.1) as i32,
-                rect.0 as u32,
-                rect.1 as u32,
+                size.0 as u32,
+                size.1 as u32,
             )?;
         }
         Ok(())

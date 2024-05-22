@@ -456,11 +456,42 @@ fn resolve_collision(body: &mut RigidBody, p: V2, rect: V2, dir: Direction) {
     }
 }
 
-#[derive(Component, Clone, Default)]
+#[derive(Component, Clone)]
 pub struct Collider {
     pub resolve: bool,
     pub colliding: Option<Direction>,
+    pub size: Option<(f64, f64)>,
+    pub offset: (f64, f64),
 }
+
+impl Collider {
+    pub fn new() -> Self {
+        Self {
+            resolve: false,
+            colliding: None,
+            size: None,
+            offset: (0.0, 0.0),
+        }
+    }
+
+    pub fn resolving(self) -> Self {
+        Self {
+            resolve: true,
+            ..self
+        }
+    }
+
+    pub fn size(self, size: (f64, f64)) -> Self {
+        Self {
+            size: Some(size),
+            ..self
+        }
+    }
+    pub fn offset(self, offset: (f64, f64)) -> Self {
+        Self { offset, ..self }
+    }
+}
+
 pub struct CollisionSystem(pub u64);
 impl System for CollisionSystem {
     fn on_update(&self, ctx: &mut Context, delta: f64) -> Result<(), Error> {

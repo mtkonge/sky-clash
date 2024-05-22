@@ -93,7 +93,7 @@ impl System for HurtboxSystem {
                         victim_body.pos.0 + hitbox.offset.0,
                         victim_body.pos.1 + hitbox.offset.1,
                     ),
-                    hitbox.offset,
+                    hitbox.size,
                 ) {
                     continue;
                 };
