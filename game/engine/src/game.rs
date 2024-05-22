@@ -134,7 +134,9 @@ impl<'game> Game<'game> {
                         ..
                     } => break 'running,
                     Event::KeyDown { keycode: btn, .. } => {
-                        self.currently_pressed_keys.insert(btn.unwrap(), true);
+                        if !self.currently_pressed_keys.contains_key(&btn.unwrap()) {
+                            self.currently_pressed_keys.insert(btn.unwrap(), true);
+                        }
                     }
                     Event::KeyUp { keycode: btn, .. } => {
                         self.currently_pressed_keys.remove(&btn.unwrap());
