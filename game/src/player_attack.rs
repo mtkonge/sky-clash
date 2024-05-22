@@ -49,10 +49,19 @@ fn spawn_attack(
         Sprite::new(textures[0]),
         RigidBody::new()
             .with_pos(match direction {
-                HurtDirection::Up => (pos.0, pos.1 - attack_size.1),
+                HurtDirection::Up => (
+                    pos.0 + (player_size.0 - attack_size.0) / 2.0,
+                    pos.1 - attack_size.1
+                ),
                 HurtDirection::Down => (pos.0, pos.1 + player_size.1),
-                HurtDirection::Left => (pos.0 - attack_size.0, pos.1),
-                HurtDirection::Right => (pos.0 + player_size.0, pos.1),
+                HurtDirection::Left => (
+                    pos.0 - attack_size.0,
+                    pos.1 + (player_size.1 - attack_size.1) / 2.0
+                ),
+                HurtDirection::Right => (
+                    pos.0 + player_size.0,
+                    pos.1 + (player_size.1 - attack_size.1) / 2.0
+                ),
             })
             .with_vel(vel)
             .with_size(attack_size),
@@ -88,80 +97,95 @@ impl System for PlayerAttackSystem {
                 continue;
             }
             if down_pressed {
-                spawn_attack(
-                    ctx,
-                    SpawnAttackArgs {
-                        id: Some(id),
-                        direction: HurtDirection::Down,
-                        pos: body.pos,
-                        player_size: body.size,
-                        attack_size: (128.0, 128.0),
-                        vel: (0.0, 0.0),
-                        textures: vec!["textures/nuh-uh.png".to_string()],
-                    },
-                );
+                self.spawn_down_attack(ctx, id, &body);
             } else if left_pressed && !right_pressed {
-                spawn_attack(
-                    ctx,
-                    SpawnAttackArgs {
-                        id: Some(id),
-                        direction: HurtDirection::Left,
-                        pos: body.pos,
-                        player_size: body.size,
-                        attack_size: (64.0, 128.0),
-                        vel: (body.vel.0 / 2.0, body.vel.1 / 2.0),
-                        textures: vec![
-                            "textures/attacks/left_0.png".to_string(),
-                            "textures/attacks/left_1.png".to_string(),
-                            "textures/attacks/left_2.png".to_string(),
-                            "textures/attacks/left_3.png".to_string(),
-                            "textures/attacks/left_4.png".to_string(),
-                        ],
-                    },
-                );
+                self.spawn_left_attack(ctx, id, &body);
             } else if right_pressed && !left_pressed {
-                spawn_attack(
-                    ctx,
-                    SpawnAttackArgs {
-                        id: Some(id),
-                        direction: HurtDirection::Right,
-                        pos: body.pos,
-                        player_size: body.size,
-                        attack_size: (64.0, 128.0),
-                        vel: (body.vel.0 / 2.0, body.vel.1 / 2.0),
-                        textures: vec![
-                            "textures/attacks/right_0.png".to_string(),
-                            "textures/attacks/right_1.png".to_string(),
-                            "textures/attacks/right_2.png".to_string(),
-                            "textures/attacks/right_3.png".to_string(),
-                            "textures/attacks/right_4.png".to_string(),
-                        ],
-                    },
-                );
+                self.spawn_right_attack(ctx, id, &body);
             } else {
-                spawn_attack(
-                    ctx,
-                    SpawnAttackArgs {
-                        id: Some(id),
-                        direction: HurtDirection::Up,
-                        pos: body.pos,
-                        player_size: body.size,
-                        attack_size: (128.0, 64.0),
-                        vel: (0.0, 0.0),
-                        textures: vec![
-                            "textures/attacks/up_0.png".to_string(),
-                            "textures/attacks/up_1.png".to_string(),
-                            "textures/attacks/up_2.png".to_string(),
-                            "textures/attacks/up_3.png".to_string(),
-                            "textures/attacks/up_4.png".to_string(),
-                        ],
-                    },
-                );
+                self.spawn_up_attack(ctx, id, &body);
             }
             let player_attack = ctx.select::<PlayerAttack>(id);
             player_attack.cooldown = 0.5;
         }
 
         Ok(())
+    }
+}
+
+impl PlayerAttackSystem {
+    fn spawn_down_attack(&self, ctx: &mut engine::Context, id: u64, body: &RigidBody) {
+        spawn_attack(
+            ctx,
+            SpawnAttackArgs {
+                id: Some(id),
+                direction: HurtDirection::Down,
+                pos: body.pos,
+                player_size: body.size,
+                attack_size: (128.0, 128.0),
+                vel: (0.0, 0.0),
+                textures: vec!["textures/nuh-uh.png".to_string()],
+            },
+        );
+    }
+    fn spawn_up_attack(&self, ctx: &mut engine::Context, id: u64, body: &RigidBody) {
+        spawn_attack(
+            ctx,
+            SpawnAttackArgs {
+                id: Some(id),
+                direction: HurtDirection::Up,
+                pos: body.pos,
+                player_size: body.size,
+                attack_size: (128.0, 64.0),
+                vel: (0.0, 0.0),
+                textures: vec![
+                    "textures/attacks/up_0.png".to_string(),
+                    "textures/attacks/up_1.png".to_string(),
+                    "textures/attacks/up_2.png".to_string(),
+                    "textures/attacks/up_3.png".to_string(),
+                    "textures/attacks/up_4.png".to_string(),
+                ],
+            },
+        );
+    }
+    fn spawn_left_attack(&self, ctx: &mut engine::Context, id: u64, body: &RigidBody) {
+        spawn_attack(
+            ctx,
+            SpawnAttackArgs {
+                id: Some(id),
+                direction: HurtDirection::Left,
+                pos: body.pos,
+                player_size: body.size,
+                attack_size: (64.0, 128.0),
+                vel: (body.vel.0 / 2.0, body.vel.1 / 2.0),
+                textures: vec![
+                    "textures/attacks/left_0.png".to_string(),
+                    "textures/attacks/left_1.png".to_string(),
+                    "textures/attacks/left_2.png".to_string(),
+                    "textures/attacks/left_3.png".to_string(),
+                    "textures/attacks/left_4.png".to_string(),
+                ],
+            },
+        );
+    }
+    fn spawn_right_attack(&self, ctx: &mut engine::Context, id: u64, body: &RigidBody) {
+        spawn_attack(
+            ctx,
+            SpawnAttackArgs {
+                id: Some(id),
+                direction: HurtDirection::Right,
+                pos: body.pos,
+                player_size: body.size,
+                attack_size: (64.0, 128.0),
+                vel: (body.vel.0 / 2.0, body.vel.1 / 2.0),
+                textures: vec![
+                    "textures/attacks/right_0.png".to_string(),
+                    "textures/attacks/right_1.png".to_string(),
+                    "textures/attacks/right_2.png".to_string(),
+                    "textures/attacks/right_3.png".to_string(),
+                    "textures/attacks/right_4.png".to_string(),
+                ],
+            },
+        );
     }
 }
