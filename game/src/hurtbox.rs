@@ -54,38 +54,24 @@ impl System for HurtboxSystem {
     fn on_update(&self, ctx: &mut Context, delta: f64) -> Result<(), Error> {
         for id in query!(ctx, Victim) {
             let victim = ctx.select::<Victim>(id);
-            let _ = victim.stunned.as_mut().map(|time| *time -= delta);
-            if let Some(time) = victim.stunned {
-                if time <= 0.0 {
-                    victim.stunned = None;
-                }
-            }
+            self.update_victim_stun_timer(victim, delta);
         }
-        for id in query!(ctx, Hurtbox, RigidBody).clone() {
-            let hurtbox_body = ctx.select::<RigidBody>(id).clone();
-            let hurtbox = ctx.select::<Hurtbox>(id);
-            hurtbox.duration_passed += delta;
-            let hurtbox = ctx.select::<Hurtbox>(id).clone();
-            if hurtbox.duration <= hurtbox.duration_passed {
-                ctx.despawn(id);
-                continue;
-            }
+        self.despawn_expired_hurtboxes(ctx, delta);
+        for hurtbox_id in query!(ctx, Hurtbox, RigidBody).clone() {
+            let hurtbox_body = ctx.select::<RigidBody>(hurtbox_id).clone();
+            let hurtbox = ctx.select::<Hurtbox>(hurtbox_id).clone();
             for victim_id in query!(ctx, RigidBody, Collider, Player, Victim, Hitbox) {
                 if hurtbox.owner.is_some_and(|owner| owner == victim_id) {
                     continue;
                 };
                 let victim = ctx.select::<Victim>(victim_id);
-                if victim.hurt_by.iter().any(|i_id| *i_id == id) {
+                if victim.hurt_by.iter().any(|i_id| *i_id == hurtbox_id) {
                     continue;
                 }
-                victim.hurt_by.push(id);
-                victim.stunned = hurtbox.stun_time;
 
                 let hitbox = ctx.select::<Hitbox>(victim_id).clone();
-                let player = ctx.select::<Player>(victim_id);
+                let victim_body = ctx.select::<RigidBody>(victim_id).clone();
 
-                let knockback_modifier = player.knockback_modifier + 1.0;
-                let victim_body = ctx.select::<RigidBody>(victim_id);
                 if !rects_collide(
                     hurtbox_body.pos,
                     hurtbox_body.size,
@@ -98,36 +84,77 @@ impl System for HurtboxSystem {
                     continue;
                 };
 
-                let hurtbox_vel = (hurtbox_body.vel.0.powi(2) + hurtbox_body.vel.1.powi(2)).sqrt();
-                let velocity = hurtbox_vel
-                    + hurtbox.power * knockback_modifier.powi(2) * 0.8
-                    + hurtbox.power * 10.0
-                    + knockback_modifier * 5.0;
-
-                match hurtbox.direction {
-                    HurtDirection::Up => victim_body.vel.1 -= velocity,
-                    HurtDirection::Down => victim_body.vel.1 += velocity,
-                    HurtDirection::Left => victim_body.vel.0 -= velocity,
-                    HurtDirection::Right => victim_body.vel.0 += velocity,
-                }
-                let player = ctx.select::<Player>(victim_id);
-
-                player.knockback_modifier += hurtbox.power / 50.0;
+                self.hurt_victim(hurtbox_id, &hurtbox, ctx, victim_id, &hurtbox_body);
             }
         }
         for id in query!(ctx, Hurtbox, Sprite).clone() {
-            let hurtbox = ctx.select::<Hurtbox>(id);
-            if hurtbox.textures.len() <= 1 {
-                continue;
-            }
-            let texture = hurtbox.textures[std::cmp::min(
-                (hurtbox.duration_passed / hurtbox.duration * hurtbox.textures.len() as f64).floor()
-                    as usize,
-                hurtbox.textures.len(),
-            )];
+            let hurtbox = ctx.select::<Hurtbox>(id).clone();
             let sprite = ctx.select::<Sprite>(id);
-            sprite.texture = texture;
+            self.draw_hurtbox_animation(hurtbox, sprite);
         }
         Ok(())
+    }
+}
+
+impl HurtboxSystem {
+    fn hurt_victim(
+        &self,
+        hurtbox_id: u64,
+        hurtbox: &Hurtbox,
+        ctx: &mut Context,
+        victim_id: u64,
+        hurtbox_body: &RigidBody,
+    ) {
+        let victim = ctx.select::<Victim>(victim_id);
+        victim.hurt_by.push(hurtbox_id);
+        victim.stunned = hurtbox.stun_time;
+
+        let knockback_modifier = ctx.select::<Player>(victim_id).knockback_modifier + 1.0;
+        let victim_body = ctx.select::<RigidBody>(victim_id);
+
+        let hurtbox_vel = (hurtbox_body.vel.0.powi(2) + hurtbox_body.vel.1.powi(2)).sqrt();
+        let velocity = hurtbox_vel
+            + hurtbox.power * knockback_modifier.powi(2) * 0.8
+            + hurtbox.power * 10.0
+            + knockback_modifier * 5.0;
+
+        match hurtbox.direction {
+            HurtDirection::Up => victim_body.vel.1 -= velocity,
+            HurtDirection::Down => victim_body.vel.1 += velocity,
+            HurtDirection::Left => victim_body.vel.0 -= velocity,
+            HurtDirection::Right => victim_body.vel.0 += velocity,
+        }
+
+        let player = ctx.select::<Player>(victim_id);
+        player.knockback_modifier += hurtbox.power / 50.0;
+    }
+
+    fn despawn_expired_hurtboxes(&self, ctx: &mut Context, delta: f64) {
+        for hurtbox_id in query!(ctx, Hurtbox) {
+            let hurtbox = ctx.select::<Hurtbox>(hurtbox_id);
+            hurtbox.duration_passed += delta;
+            if hurtbox.duration <= hurtbox.duration_passed {
+                ctx.despawn(hurtbox_id);
+                continue;
+            }
+        }
+    }
+
+    fn draw_hurtbox_animation(&self, hurtbox: Hurtbox, sprite: &mut Sprite) {
+        let texture = hurtbox.textures[std::cmp::min(
+            ((hurtbox.duration_passed / hurtbox.duration) * hurtbox.textures.len() as f64).floor()
+                as usize,
+            hurtbox.textures.len(),
+        )];
+        sprite.texture = texture;
+    }
+
+    fn update_victim_stun_timer(&self, victim: &mut Victim, delta: f64) {
+        if let Some(time) = &mut victim.stunned {
+            *time -= delta;
+            if *time <= 0.0 {
+                victim.stunned = None;
+            }
+        }
     }
 }
