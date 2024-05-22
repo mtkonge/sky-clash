@@ -52,7 +52,7 @@ impl System for GameSystem {
         spawn!(
             ctx,
             RigidBody::new()
-                .with_pos((250.0, 200.0))
+                .with_pos((200.0, 400.0))
                 .with_size((32.0, 32.0)),
             Collider::new(),
             Sprite::new(nope),
@@ -61,7 +61,7 @@ impl System for GameSystem {
         spawn!(
             ctx,
             RigidBody::new()
-                .with_pos((900.0, 400.0))
+                .with_pos((1100.0, 400.0))
                 .with_size((32.0, 32.0)),
             Collider::new(),
             Sprite::new(nope),
