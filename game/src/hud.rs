@@ -1,4 +1,4 @@
-use engine::{query, Component, Context, DrawTextureOpts, Error, System};
+use engine::{query, Component, Context, DrawTextureOpts, Error, System, V2};
 use shared::HeroKind;
 
 use crate::player::{Player, PlayerKind};
@@ -43,8 +43,7 @@ impl TrashTalk {
         let text = ctx.render_text(font, &trash_talk, (255, 255, 255)).unwrap();
         ctx.draw_texture(
             text.texture,
-            (1280 - text.size.0) / 2,
-            100,
+            V2::new((1280.0 - text.size.x) / 2.0, 100.0),
             DrawTextureOpts::new(),
         )
         .unwrap();
@@ -108,7 +107,7 @@ fn draw_player_background(
     ctx: &mut Context,
     player: &Player,
     border_color: (u8, u8, u8),
-    border_pos: (i32, i32),
+    border_pos: V2,
 ) {
     let border_path = match player.kind {
         PlayerKind::Left => "textures/stats_left.png",
@@ -121,12 +120,11 @@ fn draw_player_background(
     let border = ctx.load_texture(border_path).unwrap();
     let border_outline = ctx.load_texture(border_outline_path).unwrap();
 
-    ctx.draw_texture(border, border_pos.0, border_pos.1, DrawTextureOpts::new())
+    ctx.draw_texture(border, border_pos, DrawTextureOpts::new())
         .unwrap();
     ctx.draw_texture(
         border_outline,
-        border_pos.0,
-        border_pos.1,
+        border_pos,
         DrawTextureOpts::new().color_mod(border_color),
     )
     .unwrap();
@@ -135,9 +133,9 @@ fn draw_player_background(
 fn draw_player_stats(
     ctx: &mut Context,
     player: &Player,
-    avatar_pos: (i32, i32),
-    avatar_size: (u32, u32),
-    text_pos: (i32, i32),
+    avatar_pos: V2,
+    avatar_size: V2,
+    text_pos: V2,
 ) {
     let hero_sprite = {
         let path = crate::hero_info::HeroInfo::from(&player.hero.kind).texture_path;
@@ -150,41 +148,35 @@ fn draw_player_stats(
 
     ctx.draw_texture(
         hero_sprite,
-        avatar_pos.0,
-        avatar_pos.1,
-        DrawTextureOpts::new().size((avatar_size.0, avatar_size.1)),
+        avatar_pos,
+        DrawTextureOpts::new().size(avatar_size),
     )
     .unwrap();
-    ctx.draw_texture(
-        lives.texture,
-        text_pos.0,
-        text_pos.1,
-        DrawTextureOpts::new(),
-    )
-    .unwrap();
+    ctx.draw_texture(lives.texture, text_pos, DrawTextureOpts::new())
+        .unwrap();
 }
 
 fn draw_hud(ctx: &mut Context, player: &Player) {
-    let stats_size = (100, 88);
+    let stats_size = V2::new(100.0, 88.0);
     let border_color = player_damage_color(player.damage_taken);
 
     let border_pos = match player.kind {
-        PlayerKind::Left => (8, 8),
-        PlayerKind::Right => (1280 - stats_size.0 - 8, 8),
+        PlayerKind::Left => V2::new(8.0, 8.0),
+        PlayerKind::Right => V2::new(1280.0 - stats_size.x - 8.0, 8.0),
     };
 
     draw_player_background(ctx, player, border_color, border_pos);
 
     let avatar_pos = match player.kind {
-        PlayerKind::Left => (border_pos.0 + 8, border_pos.1 + 8),
-        PlayerKind::Right => (border_pos.0 + 28, border_pos.1 + 8),
+        PlayerKind::Left => border_pos + V2::new(8.0, 8.0),
+        PlayerKind::Right => border_pos + V2::new(28.0, 8.0),
     };
 
-    let avatar_size = (64, 64);
+    let avatar_size = V2::new(64.0, 64.0);
 
     let text_pos = match player.kind {
-        PlayerKind::Left => (border_pos.0 + 78 + 1, border_pos.1 + 58 - 6),
-        PlayerKind::Right => (border_pos.0 + 6 + 1, border_pos.1 + 58 - 6),
+        PlayerKind::Left => border_pos + V2::new(78.0 + 1.0, 58.0 - 6.0),
+        PlayerKind::Right => border_pos + V2::new(6.0 + 1.0, 58.0 - 6.0),
     };
 
     draw_player_stats(ctx, player, avatar_pos, avatar_size, text_pos)

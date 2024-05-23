@@ -1,21 +1,9 @@
-use engine::DrawTextureOpts;
+use engine::{DrawTextureOpts, V2};
 
 pub trait UiContext {
-    fn draw_rect(
-        &mut self,
-        rgb: (u8, u8, u8),
-        x: i32,
-        y: i32,
-        w: u32,
-        h: u32,
-    ) -> Result<(), engine::Error>;
+    fn draw_rect(&mut self, rgb: (u8, u8, u8), pos: V2, size: V2) -> Result<(), engine::Error>;
 
-    fn draw_texture(
-        &mut self,
-        texture: engine::Texture,
-        x: i32,
-        y: i32,
-    ) -> Result<(), engine::Error>;
+    fn draw_texture(&mut self, texture: engine::Texture, pos: V2) -> Result<(), engine::Error>;
 
     fn load_font<P>(&mut self, path: P, size: u16) -> Result<engine::Id, engine::Error>
     where
@@ -37,10 +25,8 @@ pub trait UiContext {
     fn draw_texture_sized(
         &mut self,
         texture: engine::Texture,
-        x: i32,
-        y: i32,
-        width: u32,
-        height: u32,
+        pos: V2,
+        size: V2,
     ) -> Result<(), engine::Error>;
 
     fn text_size<S: AsRef<str>>(
@@ -51,24 +37,18 @@ pub trait UiContext {
 }
 
 impl UiContext for engine::Context<'_, '_> {
-    fn draw_rect(
-        &mut self,
-        rgb: (u8, u8, u8),
-        x: i32,
-        y: i32,
-        w: u32,
-        h: u32,
-    ) -> Result<(), engine::Error> {
-        self.draw_rect(rgb, x, y, w, h)
+    fn draw_rect(&mut self, rgb: (u8, u8, u8), pos: V2, size: V2) -> Result<(), engine::Error> {
+        self.draw_rect(
+            rgb,
+            pos.x as i32,
+            pos.y as i32,
+            size.x as u32,
+            size.y as u32,
+        )
     }
 
-    fn draw_texture(
-        &mut self,
-        texture: engine::Texture,
-        x: i32,
-        y: i32,
-    ) -> Result<(), engine::Error> {
-        self.draw_texture(texture, x, y, DrawTextureOpts::new())
+    fn draw_texture(&mut self, texture: engine::Texture, pos: V2) -> Result<(), engine::Error> {
+        self.draw_texture(texture, pos, DrawTextureOpts::new())
     }
 
     fn load_font<P>(&mut self, path: P, size: u16) -> Result<engine::Id, engine::Error>
@@ -101,12 +81,10 @@ impl UiContext for engine::Context<'_, '_> {
     fn draw_texture_sized(
         &mut self,
         texture: engine::Texture,
-        x: i32,
-        y: i32,
-        width: u32,
-        height: u32,
+        pos: V2,
+        size: V2,
     ) -> Result<(), engine::Error> {
-        self.draw_texture(texture, x, y, DrawTextureOpts::new().size((width, height)))
+        self.draw_texture(texture, pos, DrawTextureOpts::new().size(size))
     }
 
     fn text_size<S: AsRef<str>>(
@@ -122,23 +100,11 @@ pub struct MockContext;
 
 #[allow(unused_variables)]
 impl UiContext for MockContext {
-    fn draw_rect(
-        &mut self,
-        rgb: (u8, u8, u8),
-        x: i32,
-        y: i32,
-        w: u32,
-        h: u32,
-    ) -> Result<(), engine::Error> {
+    fn draw_rect(&mut self, rgb: (u8, u8, u8), pos: V2, size: V2) -> Result<(), engine::Error> {
         unreachable!()
     }
 
-    fn draw_texture(
-        &mut self,
-        texture: engine::Texture,
-        x: i32,
-        y: i32,
-    ) -> Result<(), engine::Error> {
+    fn draw_texture(&mut self, texture: engine::Texture, pos: V2) -> Result<(), engine::Error> {
         unreachable!()
     }
 
@@ -172,10 +138,8 @@ impl UiContext for MockContext {
     fn draw_texture_sized(
         &mut self,
         texture: engine::Texture,
-        x: i32,
-        y: i32,
-        width: u32,
-        height: u32,
+        pos: V2,
+        size: V2,
     ) -> Result<(), engine::Error> {
         unreachable!()
     }

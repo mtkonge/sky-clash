@@ -1,9 +1,11 @@
+use engine::V2;
+
 use super::{ui_context::UiContext, Dom, EventId, InternalNodeId, Kind, Node};
 
 #[derive(Debug, PartialEq)]
 pub(super) struct LayoutTreeLeaf<'a> {
-    size: (i32, i32),
-    pos: (i32, i32),
+    size: V2,
+    pos: V2,
     node_id: InternalNodeId,
     inner: &'a Node,
 }
@@ -54,9 +56,9 @@ impl LayoutTreeLeaf<'_> {
         if let Some(thickness) = self.inner.border_thickness {
             let thickness = thickness as u32;
             let border_color = self.inner.border_color.unwrap_or((255, 255, 255));
-            ctx.draw_rect(border_color, pos.0, pos.1, size.0, thickness)
+            ctx.draw_rect(border_color, pos, V2::new(size.0, thickness))
                 .unwrap();
-            ctx.draw_rect(border_color, pos.0, pos.1, thickness, size.1)
+            ctx.draw_rect(border_color, pos, V2::new(thickness, size.1))
                 .unwrap();
             ctx.draw_rect(
                 border_color,
@@ -123,14 +125,7 @@ impl LayoutTreeLeaf<'_> {
             return;
         }
         if let Some(color) = self.inner.background_color {
-            ctx.draw_rect(
-                color,
-                self.pos.0,
-                self.pos.1,
-                self.size.0 as u32,
-                self.size.1 as u32,
-            )
-            .unwrap();
+            ctx.draw_rect(color, self.pos, self.size).unwrap();
         }
 
         match &self.inner.kind {

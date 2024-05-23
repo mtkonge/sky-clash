@@ -18,7 +18,7 @@ use sdl2::{
     video::{Window, WindowContext},
 };
 
-use crate::{game::ControllerPosition, texture::TextTextureKey};
+use crate::{game::ControllerPosition, texture::TextTextureKey, V2};
 
 use super::{
     entity::Entity, font::Font, id::Id, system::System, text::Text, texture::Texture, Component,
@@ -266,7 +266,7 @@ impl<'context, 'game> Context<'context, 'game> {
         let texture_size = (texture.query().width, texture.query().height);
         let text = Text {
             texture: Texture(id),
-            size: (
+            size: V2::new(
                 texture_size.0.try_into().unwrap(),
                 texture_size.1.try_into().unwrap(),
             ),
@@ -297,8 +297,7 @@ impl<'context, 'game> Context<'context, 'game> {
     pub fn draw_texture(
         &mut self,
         texture: Texture,
-        x: i32,
-        y: i32,
+        pos: V2,
         opts: DrawTextureOpts,
     ) -> Result<(), Error> {
         let texture = self
@@ -312,9 +311,10 @@ impl<'context, 'game> Context<'context, 'game> {
                 }
             })
             .ok_or("invalid sprite id")?;
-        let (width, height) = opts
-            .size
-            .unwrap_or((texture.query().width, texture.query().height));
+        let size = opts.size.unwrap_or(V2::new(
+            texture.query().width as f64,
+            texture.query().height as f64,
+        ));
         if let Some(color) = opts.color_mod {
             texture.set_color_mod(color.0, color.1, color.2);
         } else {
@@ -325,8 +325,11 @@ impl<'context, 'game> Context<'context, 'game> {
         } else {
             texture.set_alpha_mod(255);
         }
-        self.canvas
-            .copy(texture, None, Rect::new(x, y, width, height))?;
+        self.canvas.copy(
+            texture,
+            None,
+            Rect::new(pos.x as i32, pos.y as i32, size.x as u32, size.y as u32),
+        )?;
         Ok(())
     }
 
@@ -439,7 +442,7 @@ impl<'context, 'game> Context<'context, 'game> {
 pub struct DrawTextureOpts {
     pub color_mod: Option<(u8, u8, u8)>,
     pub opacity: Option<f64>,
-    pub size: Option<(u32, u32)>,
+    pub size: Option<V2>,
 }
 
 impl DrawTextureOpts {
@@ -450,7 +453,7 @@ impl DrawTextureOpts {
             size: None,
         }
     }
-    pub fn size(self, size: (u32, u32)) -> Self {
+    pub fn size(self, size: V2) -> Self {
         Self {
             size: Some(size),
             ..self
