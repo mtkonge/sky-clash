@@ -232,6 +232,10 @@ impl PlayerInteractionSystem {
             let victim = ctx.select::<Victim>(id).clone();
             let body = ctx.select::<RigidBody>(id).clone();
 
+            if matches!(player_attack.dodge_state, DodgeState::Dodging(_)) {
+                continue;
+            }
+
             if victim.stunned.is_some() {
                 for hurtbox_id in query!(ctx, Hurtbox, RigidBody) {
                     let hurtbox = ctx.select::<Hurtbox>(hurtbox_id);
