@@ -6,6 +6,13 @@ use crate::{
     sprite_renderer::Sprite,
 };
 
+enum AttackKind {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
 #[derive(Component, Clone)]
 pub struct PlayerAttack {
     pub keyset: Keyset,
@@ -39,13 +46,13 @@ impl System for PlayerAttackSystem {
                 continue;
             }
             if down_pressed {
-                self.spawn_attack(ctx, HurtDirection::Down, id, &body)
+                self.spawn_attack(ctx, AttackKind::Down, HurtDirection::Up, id, &body)
             } else if left_pressed && !right_pressed {
-                self.spawn_attack(ctx, HurtDirection::Left, id, &body)
+                self.spawn_attack(ctx, AttackKind::Left, HurtDirection::Left, id, &body)
             } else if right_pressed && !left_pressed {
-                self.spawn_attack(ctx, HurtDirection::Right, id, &body)
+                self.spawn_attack(ctx, AttackKind::Right, HurtDirection::Right, id, &body)
             } else {
-                self.spawn_attack(ctx, HurtDirection::Up, id, &body)
+                self.spawn_attack(ctx, AttackKind::Up, HurtDirection::Up, id, &body)
             }
             let player_attack = ctx.select::<PlayerAttack>(id);
             player_attack.cooldown = 0.5;
@@ -59,14 +66,15 @@ impl PlayerAttackSystem {
     fn spawn_attack(
         &self,
         ctx: &mut engine::Context,
+        attack_kind: AttackKind,
         direction: HurtDirection,
         id: u64,
         body: &RigidBody,
     ) {
-        let attack_size = self.attack_size(&direction);
-        let pos = self.attack_pos(&direction, body, attack_size);
-        let vel = self.attack_vel(&direction, body.vel);
-        let textures = self.attack_textures(ctx, &direction);
+        let attack_size = self.attack_size(&attack_kind);
+        let pos = self.attack_pos(&attack_kind, body, attack_size);
+        let vel = self.attack_vel(&attack_kind, body.vel);
+        let textures = self.attack_textures(ctx, &attack_kind);
         spawn!(
             ctx,
             Sprite::new(textures[0]),
@@ -88,64 +96,64 @@ impl PlayerAttackSystem {
         );
     }
 
-    fn attack_size(&self, direction: &HurtDirection) -> (f64, f64) {
-        match direction {
-            HurtDirection::Up => (128.0, 64.0),
-            HurtDirection::Down => (128.0 * 2.0, 32.0),
-            HurtDirection::Left => (64.0, 128.0),
-            HurtDirection::Right => (64.0, 128.0),
+    fn attack_size(&self, attack_kind: &AttackKind) -> (f64, f64) {
+        match attack_kind {
+            AttackKind::Up => (128.0, 64.0),
+            AttackKind::Down => (128.0 * 2.0, 32.0),
+            AttackKind::Left => (64.0, 128.0),
+            AttackKind::Right => (64.0, 128.0),
         }
     }
 
     fn attack_pos(
         &self,
-        direction: &HurtDirection,
+        attack_kind: &AttackKind,
         body: &RigidBody,
         attack_size: (f64, f64),
     ) -> (f64, f64) {
-        match direction {
-            HurtDirection::Up => (
+        match attack_kind {
+            AttackKind::Up => (
                 body.pos.0 + (body.size.0 - attack_size.0) / 2.0,
                 body.pos.1 - attack_size.1,
             ),
-            HurtDirection::Down => (
+            AttackKind::Down => (
                 body.pos.0 + (body.size.0 - attack_size.0) / 2.0,
                 body.pos.1 + body.size.1 - attack_size.1,
             ),
-            HurtDirection::Left => (
+            AttackKind::Left => (
                 body.pos.0 - attack_size.0,
                 body.pos.1 + (body.size.1 - attack_size.1) / 2.0,
             ),
-            HurtDirection::Right => (
+            AttackKind::Right => (
                 body.pos.0 + body.size.0,
                 body.pos.1 + (body.size.1 - attack_size.1) / 2.0,
             ),
         }
     }
 
-    fn attack_vel(&self, direction: &HurtDirection, vel: (f64, f64)) -> (f64, f64) {
-        match direction {
-            HurtDirection::Up => (0.0, 0.0),
-            HurtDirection::Down => (0.0, 0.0),
-            HurtDirection::Left => (vel.0 / 2.0, vel.1 / 2.0),
-            HurtDirection::Right => (vel.0 / 2.0, vel.1 / 2.0),
+    fn attack_vel(&self, attack_kind: &AttackKind, vel: (f64, f64)) -> (f64, f64) {
+        match attack_kind {
+            AttackKind::Up => (0.0, 0.0),
+            AttackKind::Down => (0.0, 0.0),
+            AttackKind::Left => (vel.0 / 2.0, vel.1 / 2.0),
+            AttackKind::Right => (vel.0 / 2.0, vel.1 / 2.0),
         }
     }
 
     fn attack_textures(
         &self,
         ctx: &mut engine::Context,
-        direction: &HurtDirection,
+        attack_kind: &AttackKind,
     ) -> Vec<engine::Texture> {
-        match direction {
-            HurtDirection::Up => vec![
+        match attack_kind {
+            AttackKind::Up => vec![
                 "textures/attacks/up_0.png".to_string(),
                 "textures/attacks/up_1.png".to_string(),
                 "textures/attacks/up_2.png".to_string(),
                 "textures/attacks/up_3.png".to_string(),
                 "textures/attacks/up_4.png".to_string(),
             ],
-            HurtDirection::Down => vec![
+            AttackKind::Down => vec![
                 "textures/attacks/down_0.png".to_string(),
                 "textures/attacks/down_1.png".to_string(),
                 "textures/attacks/down_2.png".to_string(),
@@ -155,14 +163,14 @@ impl PlayerAttackSystem {
                 "textures/attacks/down_6.png".to_string(),
                 "textures/attacks/down_7.png".to_string(),
             ],
-            HurtDirection::Left => vec![
+            AttackKind::Left => vec![
                 "textures/attacks/left_0.png".to_string(),
                 "textures/attacks/left_1.png".to_string(),
                 "textures/attacks/left_2.png".to_string(),
                 "textures/attacks/left_3.png".to_string(),
                 "textures/attacks/left_4.png".to_string(),
             ],
-            HurtDirection::Right => vec![
+            AttackKind::Right => vec![
                 "textures/attacks/right_0.png".to_string(),
                 "textures/attacks/right_1.png".to_string(),
                 "textures/attacks/right_2.png".to_string(),
