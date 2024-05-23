@@ -363,7 +363,7 @@ struct SideAttackProfile {
 impl HurtboxProfile for SideAttackProfile {
     fn outcome(&self, player: &crate::player::Player, hurtbox_body: &RigidBody) -> Outcome {
         let power = 20.0;
-        let knockback_modifier = player.damage_taken / 100.0;
+        let knockback_modifier = player.damage_taken / 75.0 + 1.0;
 
         let hurtbox_vel = (hurtbox_body.vel.0.powi(2) + hurtbox_body.vel.1.powi(2)).sqrt();
         let velocity = hurtbox_vel
@@ -389,8 +389,8 @@ struct UpAttackProfile;
 
 impl HurtboxProfile for UpAttackProfile {
     fn outcome(&self, player: &crate::player::Player, hurtbox_body: &RigidBody) -> Outcome {
-        let power = 20.0;
-        let knockback_modifier = player.damage_taken / 100.0;
+        let power = 50.0;
+        let knockback_modifier = player.damage_taken / 75.0 + 1.0;
 
         let hurtbox_vel = (hurtbox_body.vel.0.powi(2) + hurtbox_body.vel.1.powi(2)).sqrt();
         let velocity = hurtbox_vel
@@ -401,7 +401,7 @@ impl HurtboxProfile for UpAttackProfile {
         let delta_vel = (0.0, -velocity);
 
         Outcome {
-            damage: 10.0,
+            damage: 20.0,
             delta_vel,
             stun_time: Some(0.3),
         }
@@ -410,9 +410,9 @@ impl HurtboxProfile for UpAttackProfile {
 
 struct DownAttackProfile;
 impl HurtboxProfile for DownAttackProfile {
-    fn outcome(&self, player: &crate::player::Player, hurtbox_body: &RigidBody) -> Outcome {
-        let power = 20.0;
-        let knockback_modifier = player.damage_taken / 100.0;
+    fn outcome(&self, _player: &crate::player::Player, hurtbox_body: &RigidBody) -> Outcome {
+        let power = 55.0;
+        let knockback_modifier: f64 = 2.0;
 
         let hurtbox_vel = (hurtbox_body.vel.0.powi(2) + hurtbox_body.vel.1.powi(2)).sqrt();
         let velocity = hurtbox_vel
@@ -420,10 +420,10 @@ impl HurtboxProfile for DownAttackProfile {
             + power * 10.0
             + knockback_modifier * 5.0;
 
-        let delta_vel = (0.0, velocity);
+        let delta_vel = (0.0, -velocity);
 
         Outcome {
-            damage: 10.0,
+            damage: 5.0,
             delta_vel,
             stun_time: Some(0.3),
         }

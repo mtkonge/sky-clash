@@ -86,7 +86,8 @@ fn merge_colors(
 }
 
 fn player_damage_color(damage_taken: f64) -> (u8, u8, u8) {
-    let transition_alpha = damage_taken % 2.5;
+    let damage_taken_per_step = 75.0;
+    let transition_alpha = damage_taken % damage_taken_per_step;
     let colors = [
         (255, 255, 255),
         (255, 255, 0),
@@ -96,10 +97,10 @@ fn player_damage_color(damage_taken: f64) -> (u8, u8, u8) {
         (30, 30, 30),
     ];
     let max_idx = colors.len() - 1;
-    let idx = ((damage_taken - transition_alpha) / 2.5) as usize;
+    let idx = ((damage_taken - transition_alpha) / damage_taken_per_step) as usize;
     let current = std::cmp::min(max_idx, idx);
     let next = std::cmp::min(max_idx, idx + 1);
-    let transition_percentage = (damage_taken % 2.5) / 2.5;
+    let transition_percentage = (damage_taken % damage_taken_per_step) / damage_taken_per_step;
     merge_colors(colors[current], colors[next], transition_percentage)
 }
 
