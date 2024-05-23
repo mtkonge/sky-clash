@@ -19,6 +19,7 @@ mod server;
 mod shared_ptr;
 mod sprite_renderer;
 mod start_game;
+mod timer;
 mod ui;
 
 fn main() {

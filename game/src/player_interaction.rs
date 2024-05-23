@@ -4,6 +4,7 @@ use crate::{
     hurtbox::{HurtDirection, Hurtbox, Victim},
     keyset::Keyset,
     sprite_renderer::Sprite,
+    timer::Timer,
 };
 
 enum AttackKind {
@@ -14,43 +15,24 @@ enum AttackKind {
 }
 
 #[derive(Clone)]
-pub struct Dodge {
-    pub duration: f64,
-}
-
-impl Dodge {
-    pub fn new(duration: f64) -> Self {
-        Self { duration }
-    }
-
-    pub fn update(&mut self, delta: f64) {
-        self.duration -= delta;
-    }
-
-    pub fn done(&self) -> bool {
-        self.duration <= 0.0
-    }
-}
-
-#[derive(Clone)]
 pub enum DodgeState {
-    Dodging(Dodge),
-    Cooldown(f64),
+    Dodging(Timer),
+    Cooldown(Timer),
     Ready,
 }
 
 impl DodgeState {
     pub fn update(&mut self, delta: f64) {
         match self {
-            DodgeState::Dodging(dodge) => {
-                dodge.update(delta);
-                if dodge.done() {
-                    *self = DodgeState::Cooldown(2.0);
+            DodgeState::Dodging(timer) => {
+                timer.update(delta);
+                if timer.done() {
+                    *self = DodgeState::Cooldown(Timer::new(2.0));
                 }
             }
-            DodgeState::Cooldown(ref mut duration) => {
-                *duration -= delta;
-                if *duration <= 0.0 {
+            DodgeState::Cooldown(timer) => {
+                timer.update(delta);
+                if timer.done() {
                     *self = DodgeState::Ready
                 }
             }
@@ -225,50 +207,50 @@ impl PlayerInteractionSystem {
         delta: f64,
         id: u64,
     ) -> Result<(), engine::Error> {
-            let player_attack = ctx.select::<PlayerInteraction>(id).clone();
-            let keyset = player_attack.keyset;
-            let right_pressed = ctx.key_pressed(keyset.right());
-            let left_pressed = ctx.key_pressed(keyset.left());
-            let down_pressed = ctx.key_pressed(keyset.down());
-            let light_attack_pressed = ctx.key_just_pressed(keyset.light_attack());
-            let victim = ctx.select::<Victim>(id).clone();
-            let body = ctx.select::<RigidBody>(id).clone();
+        let player_attack = ctx.select::<PlayerInteraction>(id).clone();
+        let keyset = player_attack.keyset;
+        let right_pressed = ctx.key_pressed(keyset.right());
+        let left_pressed = ctx.key_pressed(keyset.left());
+        let down_pressed = ctx.key_pressed(keyset.down());
+        let light_attack_pressed = ctx.key_just_pressed(keyset.light_attack());
+        let victim = ctx.select::<Victim>(id).clone();
+        let body = ctx.select::<RigidBody>(id).clone();
 
-            if matches!(player_attack.dodge_state, DodgeState::Dodging(_)) {
+        if matches!(player_attack.dodge_state, DodgeState::Dodging(_)) {
             return Ok(());
-            }
+        }
 
-            if victim.stunned.is_some() {
-                for hurtbox_id in query!(ctx, Hurtbox, RigidBody) {
-                    let hurtbox = ctx.select::<Hurtbox>(hurtbox_id);
-                    if hurtbox.owner.is_some_and(|owner| owner == id) {
-                        hurtbox.duration_passed = hurtbox.duration
-                    };
-                }
+        if victim.stunned.is_some() {
+            for hurtbox_id in query!(ctx, Hurtbox, RigidBody) {
+                let hurtbox = ctx.select::<Hurtbox>(hurtbox_id);
+                if hurtbox.owner.is_some_and(|owner| owner == id) {
+                    hurtbox.duration_passed = hurtbox.duration
+                };
+            }
             return Ok(());
-            }
+        }
 
-            if player_attack.attack_cooldown >= 0.0 {
-                let player_attack = ctx.select::<PlayerInteraction>(id);
-                player_attack.attack_cooldown -= delta;
-            return Ok(());
-            }
-
-            if !light_attack_pressed {
-            return Ok(());
-            }
-
-            if down_pressed {
-                self.spawn_attack(ctx, AttackKind::Down, HurtDirection::Up, id, &body)
-            } else if left_pressed && !right_pressed {
-                self.spawn_attack(ctx, AttackKind::Left, HurtDirection::Left, id, &body)
-            } else if right_pressed && !left_pressed {
-                self.spawn_attack(ctx, AttackKind::Right, HurtDirection::Right, id, &body)
-            } else {
-                self.spawn_attack(ctx, AttackKind::Up, HurtDirection::Up, id, &body)
-            }
+        if player_attack.attack_cooldown >= 0.0 {
             let player_attack = ctx.select::<PlayerInteraction>(id);
-            player_attack.attack_cooldown = 0.5;
+            player_attack.attack_cooldown -= delta;
+            return Ok(());
+        }
+
+        if !light_attack_pressed {
+            return Ok(());
+        }
+
+        if down_pressed {
+            self.spawn_attack(ctx, AttackKind::Down, HurtDirection::Up, id, &body)
+        } else if left_pressed && !right_pressed {
+            self.spawn_attack(ctx, AttackKind::Left, HurtDirection::Left, id, &body)
+        } else if right_pressed && !left_pressed {
+            self.spawn_attack(ctx, AttackKind::Right, HurtDirection::Right, id, &body)
+        } else {
+            self.spawn_attack(ctx, AttackKind::Up, HurtDirection::Up, id, &body)
+        }
+        let player_attack = ctx.select::<PlayerInteraction>(id);
+        player_attack.attack_cooldown = 0.5;
 
         Ok(())
     }
@@ -279,83 +261,86 @@ impl PlayerInteractionSystem {
         delta: f64,
         id: u64,
     ) -> Result<(), engine::Error> {
-            let keyset = ctx.select::<PlayerInteraction>(id).clone().keyset;
+        let keyset = ctx.select::<PlayerInteraction>(id).clone().keyset;
 
-            let right_pressed = ctx.key_pressed(keyset.right());
-            let left_pressed = ctx.key_pressed(keyset.left());
-            let down_pressed = ctx.key_pressed(keyset.down());
+        let right_pressed = ctx.key_pressed(keyset.right());
+        let left_pressed = ctx.key_pressed(keyset.left());
+        let down_pressed = ctx.key_pressed(keyset.down());
 
-            let up_pressed = ctx.key_just_pressed(keyset.up());
+        let up_pressed = ctx.key_just_pressed(keyset.up());
 
-            let collider = ctx.select::<Collider>(id).clone();
-            let victim = ctx.select::<Victim>(id).clone();
-            let player_movement = ctx.select::<PlayerInteraction>(id).clone();
-            let body = ctx.select::<RigidBody>(id);
+        let collider = ctx.select::<Collider>(id).clone();
+        let victim = ctx.select::<Victim>(id).clone();
+        let player_movement = ctx.select::<PlayerInteraction>(id).clone();
+        let body = ctx.select::<RigidBody>(id);
 
-            if victim.stunned.is_some() {
+        if victim.stunned.is_some() {
             return Ok(());
-            }
+        }
 
-            if right_pressed && !left_pressed && body.vel.0 < 400.0 {
-                body.vel.0 += 400.0 * delta * 8.0
-            } else if left_pressed && !right_pressed && body.vel.0 > (-400.0) {
-                body.vel.0 -= 400.0 * delta * 8.0
-            }
+        if right_pressed && !left_pressed && body.vel.0 < 400.0 {
+            body.vel.0 += 400.0 * delta * 8.0
+        } else if left_pressed && !right_pressed && body.vel.0 > (-400.0) {
+            body.vel.0 -= 400.0 * delta * 8.0
+        }
 
-            if down_pressed && body.vel.1 < 800.0 {
-                body.vel.1 += 3200.0 * delta
-            }
+        if down_pressed && body.vel.1 < 800.0 {
+            body.vel.1 += 3200.0 * delta
+        }
 
-            if collider
-                .colliding
-                .is_some_and(|dir| dir.facing(engine::collision::Direction::Bottom))
-            {
-                let player_movement = ctx.select::<PlayerInteraction>(id);
-                player_movement.jump_state = JumpState::OnGround;
-            }
+        if collider
+            .colliding
+            .is_some_and(|dir| dir.facing(engine::collision::Direction::Bottom))
+        {
+            let player_movement = ctx.select::<PlayerInteraction>(id);
+            player_movement.jump_state = JumpState::OnGround;
+        }
 
-            if up_pressed && player_movement.can_jump() {
-                let body = ctx.select::<RigidBody>(id);
-                body.vel.1 = -800.0;
-                let player_movement = ctx.select::<PlayerInteraction>(id);
-                player_movement.jump_state = player_movement.jump_state.next();
+        if up_pressed && player_movement.can_jump() {
+            let body = ctx.select::<RigidBody>(id);
+            body.vel.1 = -800.0;
+            let player_movement = ctx.select::<PlayerInteraction>(id);
+            player_movement.jump_state = player_movement.jump_state.next();
         }
         Ok(())
     }
 
-    fn update_dodge(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
-        for id in query!(ctx, Sprite, PlayerInteraction, Victim, RigidBody, Collider) {
-            let player_interaction = ctx.select::<PlayerInteraction>(id);
-            let keyset = player_interaction.keyset.clone();
-            let dodge_state = &mut player_interaction.dodge_state;
+    fn update_dodge(
+        &self,
+        ctx: &mut engine::Context,
+        delta: f64,
+        id: u64,
+    ) -> Result<(), engine::Error> {
+        let player_interaction = ctx.select::<PlayerInteraction>(id);
+        let keyset = player_interaction.keyset.clone();
+        let dodge_state = &mut player_interaction.dodge_state;
 
-            dodge_state.update(delta);
+        dodge_state.update(delta);
 
-            match dodge_state {
-                DodgeState::Dodging(_) => continue,
-                DodgeState::Cooldown(_) => {
-                    let sprite = ctx.select::<Sprite>(id);
-                    sprite.set_opacity(1.0);
+        match dodge_state {
+            DodgeState::Dodging(_) => return Ok(()),
+            DodgeState::Cooldown(_) => {
+                let sprite = ctx.select::<Sprite>(id);
+                sprite.set_opacity(1.0);
                 return Ok(());
-                }
-                DodgeState::Ready => (),
             }
-
-            let dodge_pressed = ctx.key_just_pressed(keyset.dodge());
-
-            let victim = ctx.select::<Victim>(id);
-
-            if !dodge_pressed || victim.stunned.is_some() {
-            return Ok(());
-            }
-
-            let player_interaction = ctx.select::<PlayerInteraction>(id);
-            let dodge_state = &mut player_interaction.dodge_state;
-            *dodge_state = DodgeState::Dodging(Dodge::new(1.0));
-
-            let sprite = ctx.select::<Sprite>(id);
-            sprite.set_opacity(0.5);
+            DodgeState::Ready => (),
         }
+
+        let dodge_pressed = ctx.key_just_pressed(keyset.dodge());
+
+        let victim = ctx.select::<Victim>(id);
+
+        if !dodge_pressed || victim.stunned.is_some() {
+            return Ok(());
+        }
+
+        let player_interaction = ctx.select::<PlayerInteraction>(id);
+        let dodge_state = &mut player_interaction.dodge_state;
+        *dodge_state = DodgeState::Dodging(Timer::new(1.0));
+
+        let sprite = ctx.select::<Sprite>(id);
+        sprite.set_opacity(0.5);
 
         Ok(())
     }
