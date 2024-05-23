@@ -1,4 +1,4 @@
-use engine::{query, Component, Context, Error, System};
+use engine::{query, Component, Context, DrawTextureOpts, Error, System};
 use shared::HeroKind;
 
 use crate::player::{Player, PlayerKind};
@@ -41,8 +41,13 @@ impl TrashTalk {
         let trash_talk = self.loser_text();
         let font = ctx.load_font("textures/ttf/OpenSans.ttf", 48).unwrap();
         let text = ctx.render_text(font, &trash_talk, (255, 255, 255)).unwrap();
-        ctx.draw_texture(text.texture, (1280 - text.size.0) / 2, 100)
-            .unwrap();
+        ctx.draw_texture(
+            text.texture,
+            (1280 - text.size.0) / 2,
+            100,
+            DrawTextureOpts::new(),
+        )
+        .unwrap();
     }
 
     fn loser_text(&self) -> String {
@@ -115,10 +120,15 @@ fn draw_player_background(
     let border = ctx.load_texture(border_path).unwrap();
     let border_outline = ctx.load_texture(border_outline_path).unwrap();
 
-    ctx.draw_texture(border, border_pos.0, border_pos.1)
+    ctx.draw_texture(border, border_pos.0, border_pos.1, DrawTextureOpts::new())
         .unwrap();
-    ctx.draw_texture_with_color_mod(border_outline, border_pos.0, border_pos.1, border_color)
-        .unwrap();
+    ctx.draw_texture(
+        border_outline,
+        border_pos.0,
+        border_pos.1,
+        DrawTextureOpts::new().color_mod(border_color),
+    )
+    .unwrap();
 }
 
 fn draw_player_stats(
@@ -137,16 +147,20 @@ fn draw_player_stats(
     let lives = player.lives.to_string();
     let lives = ctx.render_text(font, lives, (255, 255, 255)).unwrap();
 
-    ctx.draw_texture_sized(
+    ctx.draw_texture(
         hero_sprite,
         avatar_pos.0,
         avatar_pos.1,
-        avatar_size.0,
-        avatar_size.1,
+        DrawTextureOpts::new().size((avatar_size.0, avatar_size.1)),
     )
     .unwrap();
-    ctx.draw_texture(lives.texture, text_pos.0, text_pos.1)
-        .unwrap();
+    ctx.draw_texture(
+        lives.texture,
+        text_pos.0,
+        text_pos.1,
+        DrawTextureOpts::new(),
+    )
+    .unwrap();
 }
 
 fn draw_hud(ctx: &mut Context, player: &Player) {

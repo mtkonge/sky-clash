@@ -1,3 +1,5 @@
+use engine::DrawTextureOpts;
+
 pub trait UiContext {
     fn draw_rect(
         &mut self,
@@ -66,7 +68,7 @@ impl UiContext for engine::Context<'_, '_> {
         x: i32,
         y: i32,
     ) -> Result<(), engine::Error> {
-        self.draw_texture(texture, x, y)
+        self.draw_texture(texture, x, y, DrawTextureOpts::new())
     }
 
     fn load_font<P>(&mut self, path: P, size: u16) -> Result<engine::Id, engine::Error>
@@ -104,7 +106,7 @@ impl UiContext for engine::Context<'_, '_> {
         width: u32,
         height: u32,
     ) -> Result<(), engine::Error> {
-        self.draw_texture_sized(texture, x, y, width, height)
+        self.draw_texture(texture, x, y, DrawTextureOpts::new().size((width, height)))
     }
 
     fn text_size<S: AsRef<str>>(

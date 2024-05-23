@@ -16,8 +16,8 @@ mod texture;
 
 pub use self::{
     collision::Collider, collision::CollisionSystem, component::Component, context::ComponentQuery,
-    context::Context, error::Error, game::Game, id::Id, query_runner::QueryRunner, system::System,
-    text::Text, texture::Texture,
+    context::Context, context::DrawTextureOpts, error::Error, game::Game, id::Id,
+    query_runner::QueryRunner, system::System, text::Text, texture::Texture,
 };
 pub use component_macro::Component;
 pub use sdl2::controller::Button as ControllerButton;

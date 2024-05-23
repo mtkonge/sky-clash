@@ -294,12 +294,12 @@ impl<'context, 'game> Context<'context, 'game> {
         Ok((texture.query().width, texture.query().height))
     }
 
-    pub fn draw_texture_with_color_mod(
+    pub fn draw_texture(
         &mut self,
         texture: Texture,
         x: i32,
         y: i32,
-        rgb: (u8, u8, u8),
+        opts: DrawTextureOpts,
     ) -> Result<(), Error> {
         let texture = self
             .textures
@@ -312,44 +312,19 @@ impl<'context, 'game> Context<'context, 'game> {
                 }
             })
             .ok_or("invalid sprite id")?;
-        let old_rgb = texture.color_mod();
-        texture.set_color_mod(rgb.0, rgb.1, rgb.2);
-        self.canvas.copy(
-            texture,
-            None,
-            Rect::new(x, y, texture.query().width, texture.query().height),
-        )?;
-        texture.set_color_mod(old_rgb.0, old_rgb.1, old_rgb.2);
-        Ok(())
-    }
-
-    pub fn draw_texture(&mut self, texture: Texture, x: i32, y: i32) -> Result<(), Error> {
-        let texture = self
-            .textures
-            .iter()
-            .find_map(|v| if v.0 == texture.0 { Some(&v.1) } else { None })
-            .ok_or("invalid sprite id")?;
-        self.canvas.copy(
-            texture,
-            None,
-            Rect::new(x, y, texture.query().width, texture.query().height),
-        )?;
-        Ok(())
-    }
-
-    pub fn draw_texture_sized(
-        &mut self,
-        texture: Texture,
-        x: i32,
-        y: i32,
-        width: u32,
-        height: u32,
-    ) -> Result<(), Error> {
-        let texture = self
-            .textures
-            .iter()
-            .find_map(|v| if v.0 == texture.0 { Some(&v.1) } else { None })
-            .ok_or("invalid sprite id")?;
+        let (width, height) = opts
+            .size
+            .unwrap_or((texture.query().width, texture.query().height));
+        if let Some(color) = opts.color_mod {
+            texture.set_color_mod(color.0, color.1, color.2);
+        } else {
+            texture.set_color_mod(255, 255, 255);
+        }
+        if let Some(alpha) = opts.opacity {
+            texture.set_alpha_mod((alpha * 255.0) as u8);
+        } else {
+            texture.set_alpha_mod(255);
+        }
         self.canvas
             .copy(texture, None, Rect::new(x, y, width, height))?;
         Ok(())
@@ -458,5 +433,39 @@ impl<'context, 'game> Context<'context, 'game> {
             .map(|v| v.0)
             .collect::<Vec<_>>()
             .into_iter()
+    }
+}
+
+pub struct DrawTextureOpts {
+    pub color_mod: Option<(u8, u8, u8)>,
+    pub opacity: Option<f64>,
+    pub size: Option<(u32, u32)>,
+}
+
+impl DrawTextureOpts {
+    pub fn new() -> Self {
+        Self {
+            color_mod: None,
+            opacity: None,
+            size: None,
+        }
+    }
+    pub fn size(self, size: (u32, u32)) -> Self {
+        Self {
+            size: Some(size),
+            ..self
+        }
+    }
+    pub fn color_mod(self, color_mod: (u8, u8, u8)) -> Self {
+        Self {
+            color_mod: Some(color_mod),
+            ..self
+        }
+    }
+    pub fn opacity(self, opacity: f64) -> Self {
+        Self {
+            opacity: Some(opacity),
+            ..self
+        }
     }
 }

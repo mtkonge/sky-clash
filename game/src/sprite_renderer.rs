@@ -1,4 +1,4 @@
-use engine::{query, rigid_body::RigidBody, Component, System};
+use engine::{query, rigid_body::RigidBody, Component, DrawTextureOpts, System};
 
 #[derive(Component, Debug, Clone)]
 pub struct Sprite {
@@ -6,6 +6,7 @@ pub struct Sprite {
     pub size: Option<(f64, f64)>,
     pub texture: engine::Texture,
     pub layer: i32,
+    pub opacity: Option<f64>,
 }
 
 impl Sprite {
@@ -15,6 +16,7 @@ impl Sprite {
             layer: 0,
             offset: (0.0, 0.0),
             size: None,
+            opacity: None,
         }
     }
 
@@ -32,6 +34,13 @@ impl Sprite {
     pub fn offset(self, offset: (f64, f64)) -> Self {
         Self { offset, ..self }
     }
+
+    pub fn opacity(self, opacity: f64) -> Self {
+        Self {
+            opacity: Some(opacity),
+            ..self
+        }
+    }
 }
 
 pub struct SpriteRenderer(pub u64);
@@ -47,12 +56,11 @@ impl System for SpriteRenderer {
         sprites.sort_by(|(a, _, _), (b, _, _)| b.layer.cmp(&a.layer));
         for (sprite, pos, body_size) in sprites {
             let size = sprite.size.unwrap_or(body_size);
-            ctx.draw_texture_sized(
+            ctx.draw_texture(
                 sprite.texture,
                 (pos.0 + sprite.offset.0) as i32,
                 (pos.1 + sprite.offset.1) as i32,
-                size.0 as u32,
-                size.1 as u32,
+                DrawTextureOpts::new().size((size.0 as u32, size.1 as u32)),
             )?;
         }
         Ok(())
