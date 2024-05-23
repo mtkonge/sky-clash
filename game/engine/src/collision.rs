@@ -1,71 +1,5 @@
-use crate::query;
+use crate::{query, V2};
 use crate::{rigid_body::RigidBody, Component, Context, Error, System};
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct V2 {
-    pub x: f64,
-    pub y: f64,
-}
-
-impl V2 {
-    pub fn new(x: f64, y: f64) -> Self {
-        Self { x, y }
-    }
-
-    pub fn extend(&self, rhs: f64) -> Self {
-        Self::new(self.x * rhs, self.y * rhs)
-    }
-
-    pub fn div_comps(&self, rhs: f64) -> Self {
-        Self::new(self.x / rhs, self.y / rhs)
-    }
-
-    pub fn min_comp(&self) -> f64 {
-        std::cmp::min_by(self.x, self.y, f64::total_cmp)
-    }
-
-    pub fn max_comp(&self) -> f64 {
-        std::cmp::max_by(self.x, self.y, f64::total_cmp)
-    }
-
-    pub fn len(&self) -> f64 {
-        (self.x.powi(2) + self.y.powi(2)).sqrt()
-    }
-
-    pub fn reverse(&self) -> Self {
-        Self::new(-self.x, -self.y)
-    }
-
-    pub fn add_x(&self, rhs: f64) -> Self {
-        Self::new(self.x + rhs, self.y)
-    }
-
-    pub fn add_y(&self, rhs: f64) -> Self {
-        Self::new(self.x, self.y + rhs)
-    }
-}
-
-impl std::ops::Add for V2 {
-    type Output = V2;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        Self::new(self.x + rhs.x, self.y + rhs.y)
-    }
-}
-
-impl std::ops::Sub for V2 {
-    type Output = V2;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self::new(self.x - rhs.x, self.y - rhs.y)
-    }
-}
-
-impl From<(f64, f64)> for V2 {
-    fn from((x, y): (f64, f64)) -> Self {
-        Self { x, y }
-    }
-}
 
 struct Rect {
     pub pos: V2,
@@ -437,20 +371,20 @@ fn resolve_collision(body: &mut RigidBody, p: V2, rect: V2, dir: Direction) {
     use Direction::*;
     match dir {
         Top => {
-            body.pos.1 = p.y + 1.0;
-            body.vel.1 = 0.0;
+            body.pos.y = p.y + 1.0;
+            body.vel.y = 0.0;
         }
         Bottom => {
-            body.pos.1 = p.y - rect.y - 1.0;
-            body.vel.1 = 0.0;
+            body.pos.y = p.y - rect.y - 1.0;
+            body.vel.y = 0.0;
         }
         Left => {
-            body.pos.0 = p.x + 1.0;
-            body.vel.0 = 0.0;
+            body.pos.x = p.x + 1.0;
+            body.vel.x = 0.0;
         }
         Right => {
-            body.pos.0 = p.x - rect.x - 1.0;
-            body.vel.0 = 0.0;
+            body.pos.x = p.x - rect.x - 1.0;
+            body.vel.x = 0.0;
         }
         _ => unreachable!(),
     }
@@ -460,8 +394,8 @@ fn resolve_collision(body: &mut RigidBody, p: V2, rect: V2, dir: Direction) {
 pub struct Collider {
     pub resolve: bool,
     pub colliding: Option<Direction>,
-    pub size: Option<(f64, f64)>,
-    pub offset: (f64, f64),
+    pub size: Option<V2>,
+    pub offset: V2,
 }
 
 impl Collider {
@@ -470,7 +404,7 @@ impl Collider {
             resolve: false,
             colliding: None,
             size: None,
-            offset: (0.0, 0.0),
+            offset: V2::new(0.0, 0.0),
         }
     }
 
@@ -481,13 +415,13 @@ impl Collider {
         }
     }
 
-    pub fn size(self, size: (f64, f64)) -> Self {
+    pub fn size(self, size: V2) -> Self {
         Self {
             size: Some(size),
             ..self
         }
     }
-    pub fn offset(self, offset: (f64, f64)) -> Self {
+    pub fn offset(self, offset: V2) -> Self {
         Self { offset, ..self }
     }
 }

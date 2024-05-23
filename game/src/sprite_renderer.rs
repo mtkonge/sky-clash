@@ -1,9 +1,9 @@
-use engine::{query, rigid_body::RigidBody, Component, DrawTextureOpts, System};
+use engine::{query, rigid_body::RigidBody, Component, DrawTextureOpts, System, V2};
 
 #[derive(Component, Debug, Clone)]
 pub struct Sprite {
-    pub offset: (f64, f64),
-    pub size: Option<(f64, f64)>,
+    pub offset: V2,
+    pub size: Option<V2>,
     pub texture: engine::Texture,
     pub layer: i32,
     pub opacity: Option<f64>,
@@ -14,7 +14,7 @@ impl Sprite {
         Self {
             texture,
             layer: 0,
-            offset: (0.0, 0.0),
+            offset: V2::new(0.0, 0.0),
             size: None,
             opacity: None,
         }
@@ -24,14 +24,14 @@ impl Sprite {
         Self { layer, ..self }
     }
 
-    pub fn size(self, size: (f64, f64)) -> Self {
+    pub fn size(self, size: V2) -> Self {
         Self {
             size: Some(size),
             ..self
         }
     }
 
-    pub fn offset(self, offset: (f64, f64)) -> Self {
+    pub fn offset(self, offset: V2) -> Self {
         Self { offset, ..self }
     }
 
@@ -43,12 +43,12 @@ impl Sprite {
 pub struct SpriteRenderer(pub u64);
 impl System for SpriteRenderer {
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
-        let mut sprites = Vec::<(Sprite, (f64, f64), (f64, f64))>::new();
+        let mut sprites = Vec::<(Sprite, V2, V2)>::new();
         for id in query!(ctx, RigidBody, Sprite) {
             let body = ctx.select::<RigidBody>(id).clone();
             let sprite = ctx.select::<Sprite>(id).clone();
 
-            sprites.push((sprite, (body.pos.0, body.pos.1), (body.size.0, body.size.1)));
+            sprites.push((sprite, body.pos, body.size));
         }
         sprites.sort_by(|(a, _, _), (b, _, _)| b.layer.cmp(&a.layer));
         for (sprite, pos, body_size) in sprites {
@@ -56,10 +56,10 @@ impl System for SpriteRenderer {
             let opacity = sprite.opacity.unwrap_or(1.0);
             ctx.draw_texture(
                 sprite.texture,
-                (pos.0 + sprite.offset.0) as i32,
-                (pos.1 + sprite.offset.1) as i32,
+                (pos.x + sprite.offset.x) as i32,
+                (pos.y + sprite.offset.y) as i32,
                 DrawTextureOpts::new()
-                    .size((size.0 as u32, size.1 as u32))
+                    .size((size.x as u32, size.y as u32))
                     .opacity(opacity),
             )?;
         }

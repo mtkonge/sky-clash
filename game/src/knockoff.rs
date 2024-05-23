@@ -1,4 +1,4 @@
-use engine::{query, rigid_body::RigidBody, spawn, Context, Error, System};
+use engine::{query, rigid_body::RigidBody, spawn, Context, Error, System, V2};
 
 use crate::{hud::TrashTalk, player::Player, player_interaction::PlayerInteraction};
 
@@ -24,8 +24,8 @@ impl System for KnockoffSystem {
                     continue;
                 }
                 let rigid_body = ctx.select::<RigidBody>(loser_id);
-                rigid_body.pos = ((1280.0 - rigid_body.size.0) / 2.0, 100.0);
-                rigid_body.vel = (0.0, 0.0);
+                rigid_body.pos = V2::new((1280.0 - rigid_body.size.x) / 2.0, 100.0);
+                rigid_body.vel = V2::new(0.0, 0.0);
             }
         }
         Ok(())
@@ -33,8 +33,8 @@ impl System for KnockoffSystem {
 }
 
 fn body_outside_area(rigid_body: RigidBody, max_offset_from_screen: f64) -> bool {
-    rigid_body.pos.0 + rigid_body.size.0 < -max_offset_from_screen
-        || rigid_body.pos.0 > 1280.0 + max_offset_from_screen
-        || rigid_body.pos.1 + rigid_body.size.1 < -max_offset_from_screen
-        || rigid_body.pos.1 > 720.0 + max_offset_from_screen
+    rigid_body.pos.x + rigid_body.size.x < -max_offset_from_screen
+        || rigid_body.pos.x > 1280.0 + max_offset_from_screen
+        || rigid_body.pos.y + rigid_body.size.y < -max_offset_from_screen
+        || rigid_body.pos.y > 720.0 + max_offset_from_screen
 }

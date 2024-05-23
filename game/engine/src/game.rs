@@ -18,8 +18,8 @@ use sdl2::{
 };
 
 use crate::texture::TextTextureKey;
-use crate::ControllerButton;
 use crate::Text;
+use crate::{ControllerButton, V2};
 
 use super::font::Font;
 use super::{context::Context, entity::Entity, id::Id, system::System};
@@ -56,8 +56,8 @@ pub struct Game<'game> {
 
 #[derive(Default)]
 pub struct ControllerPosition {
-    pub left_stick: (f64, f64),
-    pub right_stick: (f64, f64),
+    pub left_stick: V2,
+    pub right_stick: V2,
     pub left_trigger: f64,
     pub right_trigger: f64,
 }
@@ -181,10 +181,10 @@ impl<'game> Game<'game> {
                             continue;
                         };
                         match axis {
-                            sdl2::controller::Axis::LeftX => pos.left_stick.0 = value,
-                            sdl2::controller::Axis::LeftY => pos.left_stick.1 = value,
-                            sdl2::controller::Axis::RightX => pos.right_stick.0 = value,
-                            sdl2::controller::Axis::RightY => pos.right_stick.1 = value,
+                            sdl2::controller::Axis::LeftX => pos.left_stick.x = value,
+                            sdl2::controller::Axis::LeftY => pos.left_stick.y = value,
+                            sdl2::controller::Axis::RightX => pos.right_stick.x = value,
+                            sdl2::controller::Axis::RightY => pos.right_stick.y = value,
                             sdl2::controller::Axis::TriggerLeft => pos.left_trigger = value,
                             sdl2::controller::Axis::TriggerRight => pos.right_trigger = value,
                         }

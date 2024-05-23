@@ -13,11 +13,12 @@ pub mod rigid_body;
 mod system;
 mod text;
 mod texture;
+mod v2;
 
 pub use self::{
     collision::Collider, collision::CollisionSystem, component::Component, context::ComponentQuery,
     context::Context, context::DrawTextureOpts, error::Error, game::Game, id::Id,
-    query_runner::QueryRunner, system::System, text::Text, texture::Texture,
+    query_runner::QueryRunner, system::System, text::Text, texture::Texture, v2::V2,
 };
 pub use component_macro::Component;
 pub use sdl2::controller::Button as ControllerButton;

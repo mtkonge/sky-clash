@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use engine::rigid_body::RigidBody;
-use engine::{query, Collider, Component};
+use engine::{query, Collider, Component, V2};
 use engine::{Context, Error, System};
 
 use crate::player::Player;
@@ -20,13 +20,13 @@ pub enum HurtDirection {
 
 #[derive(Component, Default, Clone)]
 pub struct Hitbox {
-    pub size: (f64, f64),
-    pub offset: (f64, f64),
+    pub size: V2,
+    pub offset: V2,
 }
 
 pub struct Outcome {
     pub damage: f64,
-    pub delta_vel: (f64, f64),
+    pub delta_vel: V2,
     pub stun_time: Option<f64>,
 }
 
@@ -48,16 +48,11 @@ pub struct Victim {
     pub stunned: Option<f64>,
 }
 
-fn rects_collide(
-    pos_a: (f64, f64),
-    size_a: (f64, f64),
-    pos_b: (f64, f64),
-    size_b: (f64, f64),
-) -> bool {
-    pos_a.0 < pos_b.0 + size_b.0
-        && pos_a.0 + size_a.0 > pos_b.0
-        && pos_a.1 < pos_b.1 + size_b.1
-        && pos_a.1 + size_a.1 > pos_b.1
+fn rects_collide(pos_a: V2, size_a: V2, pos_b: V2, size_b: V2) -> bool {
+    pos_a.x < pos_b.x + size_b.x
+        && pos_a.x + size_a.x > pos_b.x
+        && pos_a.y < pos_b.y + size_b.y
+        && pos_a.y + size_a.y > pos_b.y
 }
 
 pub struct HurtboxSystem(pub u64);
@@ -94,10 +89,7 @@ impl System for HurtboxSystem {
                 if !rects_collide(
                     hurtbox_body.pos,
                     hurtbox_body.size,
-                    (
-                        victim_body.pos.0 + hitbox.offset.0,
-                        victim_body.pos.1 + hitbox.offset.1,
-                    ),
+                    victim_body.pos + hitbox.offset,
                     hitbox.size,
                 ) {
                     continue;
@@ -147,8 +139,7 @@ impl HurtboxSystem {
 
         let victim_body = ctx.select::<RigidBody>(victim_id);
 
-        victim_body.vel.0 += delta_vel.0;
-        victim_body.vel.1 += delta_vel.1;
+        victim_body.vel += delta_vel;
 
         let player = ctx.select::<Player>(victim_id);
 

@@ -1,7 +1,7 @@
 use engine::{
     query,
     rigid_body::{DragSystem, GravitySystem, RigidBody, VelocitySystem},
-    spawn, Collider, CollisionSystem, Component, System,
+    spawn, Collider, CollisionSystem, Component, System, V2,
 };
 
 use crate::{
@@ -41,17 +41,22 @@ impl System for GameSystem {
         spawn!(
             ctx,
             Sprite::new(background).layer(2),
-            RigidBody::new().with_size((1280.0, 720.0)),
+            RigidBody::new().with_size(V2::new(1280.0, 720.0)),
         );
 
-        self.spawn_player(ctx, (400.0, 200.0), Keyset::Wasd, PlayerKind::Left);
-        self.spawn_player(ctx, (600.0, 200.0), Keyset::ArrowKeys, PlayerKind::Right);
+        self.spawn_player(ctx, V2::new(400.0, 200.0), Keyset::Wasd, PlayerKind::Left);
+        self.spawn_player(
+            ctx,
+            V2::new(600.0, 200.0),
+            Keyset::ArrowKeys,
+            PlayerKind::Right,
+        );
 
         spawn!(
             ctx,
             RigidBody::new()
-                .with_pos((200.0, 400.0))
-                .with_size((32.0, 32.0)),
+                .with_pos(V2::new(200.0, 400.0))
+                .with_size(V2::new(32.0, 32.0)),
             Collider::new(),
             Sprite::new(nope),
         );
@@ -59,8 +64,8 @@ impl System for GameSystem {
         spawn!(
             ctx,
             RigidBody::new()
-                .with_pos((1100.0, 400.0))
-                .with_size((32.0, 32.0)),
+                .with_pos(V2::new(1100.0, 400.0))
+                .with_size(V2::new(32.0, 32.0)),
             Collider::new(),
             Sprite::new(nope),
         );
@@ -68,8 +73,8 @@ impl System for GameSystem {
         spawn!(
             ctx,
             RigidBody::new()
-                .with_pos((184.0, 540.0))
-                .with_size((960.0, 128.0)),
+                .with_pos(V2::new(184.0, 540.0))
+                .with_size(V2::new(960.0, 128.0)),
             Collider::new(),
         );
 
@@ -86,13 +91,7 @@ impl System for GameSystem {
 }
 
 impl GameSystem {
-    fn spawn_player(
-        &self,
-        ctx: &mut engine::Context,
-        pos: (f64, f64),
-        keyset: Keyset,
-        kind: PlayerKind,
-    ) {
+    fn spawn_player(&self, ctx: &mut engine::Context, pos: V2, keyset: Keyset, kind: PlayerKind) {
         let scale = 1.5;
         let pixel_ratio = 4.0;
 
@@ -104,12 +103,12 @@ impl GameSystem {
             ctx,
             Sprite::new(texture).layer(1),
             Hitbox {
-                size: (24.0 * factor, 28.0 * factor),
-                offset: (4.0 * factor, 2.0 * factor)
+                size: V2::new(24.0 * factor, 28.0 * factor),
+                offset: V2::new(4.0 * factor, 2.0 * factor)
             },
             RigidBody::new()
                 .with_pos(pos)
-                .with_size((32.0 * factor, 32.0 * factor))
+                .with_size(V2::new(32.0 * factor, 32.0 * factor))
                 .with_gravity()
                 .with_drag(),
             Collider::new().resolving(),
@@ -155,7 +154,7 @@ impl System for DebugDrawer {
             let hitbox = ctx.select::<Hitbox>(id).clone();
             self.draw_outline(
                 ctx,
-                (body.pos.0 + hitbox.offset.0, body.pos.1 + hitbox.offset.1),
+                body.pos + hitbox.offset,
                 hitbox.size,
                 2.0,
                 (0, 255, 125),
@@ -169,37 +168,37 @@ impl DebugDrawer {
     fn draw_outline(
         &self,
         ctx: &mut engine::Context,
-        pos: (f64, f64),
-        size: (f64, f64),
+        pos: V2,
+        size: V2,
         width: f64,
         color: (u8, u8, u8),
     ) -> Result<(), engine::Error> {
         ctx.draw_rect(
             color,
-            pos.0 as i32,
-            pos.1 as i32,
-            size.0 as u32,
+            pos.x as i32,
+            pos.y as i32,
+            size.x as u32,
             width as u32,
         )?;
         ctx.draw_rect(
             color,
-            (pos.0 + size.0 - width) as i32,
-            pos.1 as i32,
+            (pos.x + size.x - width) as i32,
+            pos.y as i32,
             width as u32,
-            size.1 as u32,
+            size.y as u32,
         )?;
         ctx.draw_rect(
             color,
-            pos.0 as i32,
-            pos.1 as i32,
+            pos.x as i32,
+            pos.y as i32,
             width as u32,
-            size.1 as u32,
+            size.y as u32,
         )?;
         ctx.draw_rect(
             color,
-            pos.0 as i32,
-            (pos.1 + size.1 - width) as i32,
-            size.0 as u32,
+            pos.x as i32,
+            (pos.y + size.y - width) as i32,
+            size.x as u32,
             width as u32,
         )?;
         Ok(())

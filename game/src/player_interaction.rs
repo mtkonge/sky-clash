@@ -1,4 +1,4 @@
-use engine::{query, rigid_body::RigidBody, spawn, Collider, Component, System};
+use engine::{query, rigid_body::RigidBody, spawn, Collider, Component, System, V2};
 
 use crate::{
     hurtbox::{HurtDirection, Hurtbox, HurtboxProfile, Outcome, Victim},
@@ -111,47 +111,42 @@ impl PlayerInteractionSystem {
         );
     }
 
-    fn attack_size(&self, attack_kind: &AttackKind) -> (f64, f64) {
+    fn attack_size(&self, attack_kind: &AttackKind) -> V2 {
         match attack_kind {
-            AttackKind::Up => (128.0, 64.0),
-            AttackKind::Down => (128.0 * 2.0, 32.0),
-            AttackKind::Left => (64.0, 128.0),
-            AttackKind::Right => (64.0, 128.0),
+            AttackKind::Up => V2::new(128.0, 64.0),
+            AttackKind::Down => V2::new(128.0 * 2.0, 32.0),
+            AttackKind::Left => V2::new(64.0, 128.0),
+            AttackKind::Right => V2::new(64.0, 128.0),
         }
     }
 
-    fn attack_pos(
-        &self,
-        attack_kind: &AttackKind,
-        body: &RigidBody,
-        attack_size: (f64, f64),
-    ) -> (f64, f64) {
+    fn attack_pos(&self, attack_kind: &AttackKind, body: &RigidBody, attack_size: V2) -> V2 {
         match attack_kind {
-            AttackKind::Up => (
-                body.pos.0 + (body.size.0 - attack_size.0) / 2.0,
-                body.pos.1 - attack_size.1,
+            AttackKind::Up => V2::new(
+                body.pos.x + (body.size.x - attack_size.x) / 2.0,
+                body.pos.y - attack_size.y,
             ),
-            AttackKind::Down => (
-                body.pos.0 + (body.size.0 - attack_size.0) / 2.0,
-                body.pos.1 + body.size.1 - attack_size.1,
+            AttackKind::Down => V2::new(
+                body.pos.x + (body.size.x - attack_size.x) / 2.0,
+                body.pos.y + body.size.y - attack_size.y,
             ),
-            AttackKind::Left => (
-                body.pos.0 - attack_size.0,
-                body.pos.1 + (body.size.1 - attack_size.1) / 2.0,
+            AttackKind::Left => V2::new(
+                body.pos.x - attack_size.x,
+                body.pos.y + (body.size.y - attack_size.y) / 2.0,
             ),
-            AttackKind::Right => (
-                body.pos.0 + body.size.0,
-                body.pos.1 + (body.size.1 - attack_size.1) / 2.0,
+            AttackKind::Right => V2::new(
+                body.pos.x + body.size.x,
+                body.pos.y + (body.size.y - attack_size.y) / 2.0,
             ),
         }
     }
 
-    fn attack_vel(&self, attack_kind: &AttackKind, vel: (f64, f64)) -> (f64, f64) {
+    fn attack_vel(&self, attack_kind: &AttackKind, vel: V2) -> V2 {
         match attack_kind {
-            AttackKind::Up => (0.0, 0.0),
-            AttackKind::Down => (0.0, 0.0),
-            AttackKind::Left => (vel.0 / 2.0, vel.1 / 2.0),
-            AttackKind::Right => (vel.0 / 2.0, vel.1 / 2.0),
+            AttackKind::Up => V2::new(0.0, 0.0),
+            AttackKind::Down => V2::new(0.0, 0.0),
+            AttackKind::Left => vel.div_comps(2.0),
+            AttackKind::Right => vel.div_comps(2.0),
         }
     }
 
@@ -275,14 +270,14 @@ impl PlayerInteractionSystem {
             return Ok(());
         }
 
-        if right_pressed && !left_pressed && body.vel.0 < 400.0 {
-            body.vel.0 += 400.0 * delta * 8.0
-        } else if left_pressed && !right_pressed && body.vel.0 > (-400.0) {
-            body.vel.0 -= 400.0 * delta * 8.0
+        if right_pressed && !left_pressed && body.vel.x < 400.0 {
+            body.vel.x += 400.0 * delta * 8.0
+        } else if left_pressed && !right_pressed && body.vel.x > (-400.0) {
+            body.vel.x -= 400.0 * delta * 8.0
         }
 
-        if down_pressed && body.vel.1 < 800.0 {
-            body.vel.1 += 3200.0 * delta
+        if down_pressed && body.vel.y < 800.0 {
+            body.vel.y += 3200.0 * delta
         }
 
         if collider
@@ -295,7 +290,7 @@ impl PlayerInteractionSystem {
 
         if up_pressed && player_movement.can_jump() {
             let body = ctx.select::<RigidBody>(id);
-            body.vel.1 = -800.0;
+            body.vel.y = -800.0;
             let player_movement = ctx.select::<PlayerInteraction>(id);
             player_movement.jump_state = player_movement.jump_state.next();
         }
@@ -365,15 +360,15 @@ impl HurtboxProfile for SideAttackProfile {
         let power = 20.0;
         let knockback_modifier = player.damage_taken / 75.0 + 1.0;
 
-        let hurtbox_vel = (hurtbox_body.vel.0.powi(2) + hurtbox_body.vel.1.powi(2)).sqrt();
+        let hurtbox_vel = (hurtbox_body.vel.x.powi(2) + hurtbox_body.vel.y.powi(2)).sqrt();
         let velocity = hurtbox_vel
             + power * knockback_modifier.powi(2) * 0.8
             + power * 10.0
             + knockback_modifier * 5.0;
 
         let delta_vel = match self.direction {
-            HurtDirection::Left => (-velocity, 0.0),
-            HurtDirection::Right => (velocity, 0.0),
+            HurtDirection::Left => V2::new(-velocity, 0.0),
+            HurtDirection::Right => V2::new(velocity, 0.0),
             _ => unreachable!(),
         };
 
@@ -392,13 +387,13 @@ impl HurtboxProfile for UpAttackProfile {
         let power = 50.0;
         let knockback_modifier = player.damage_taken / 75.0 + 1.0;
 
-        let hurtbox_vel = (hurtbox_body.vel.0.powi(2) + hurtbox_body.vel.1.powi(2)).sqrt();
+        let hurtbox_vel = (hurtbox_body.vel.x.powi(2) + hurtbox_body.vel.y.powi(2)).sqrt();
         let velocity = hurtbox_vel
             + power * knockback_modifier.powi(2) * 0.8
             + power * 10.0
             + knockback_modifier * 5.0;
 
-        let delta_vel = (0.0, -velocity);
+        let delta_vel = V2::new(0.0, -velocity);
 
         Outcome {
             damage: 20.0,
@@ -414,13 +409,13 @@ impl HurtboxProfile for DownAttackProfile {
         let power = 55.0;
         let knockback_modifier: f64 = 2.0;
 
-        let hurtbox_vel = (hurtbox_body.vel.0.powi(2) + hurtbox_body.vel.1.powi(2)).sqrt();
+        let hurtbox_vel = (hurtbox_body.vel.x.powi(2) + hurtbox_body.vel.y.powi(2)).sqrt();
         let velocity = hurtbox_vel
             + power * knockback_modifier.powi(2) * 0.8
             + power * 10.0
             + knockback_modifier * 5.0;
 
-        let delta_vel = (0.0, -velocity);
+        let delta_vel = V2::new(0.0, -velocity);
 
         Outcome {
             damage: 5.0,
