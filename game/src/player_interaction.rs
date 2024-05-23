@@ -106,10 +106,9 @@ impl PlayerInteractionSystem {
                 direction,
                 power: 20.0,
                 owner: Some(id),
-                duration: 0.3,
+                timer: Timer::new(0.3),
                 stun_time: Some(0.3),
                 textures,
-                ..Default::default()
             }
         );
     }
@@ -224,7 +223,7 @@ impl PlayerInteractionSystem {
             for hurtbox_id in query!(ctx, Hurtbox, RigidBody) {
                 let hurtbox = ctx.select::<Hurtbox>(hurtbox_id);
                 if hurtbox.owner.is_some_and(|owner| owner == id) {
-                    hurtbox.duration_passed = hurtbox.duration
+                    ctx.despawn(hurtbox_id)
                 };
             }
             return Ok(());

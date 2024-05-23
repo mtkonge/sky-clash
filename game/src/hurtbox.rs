@@ -5,6 +5,7 @@ use engine::{Context, Error, System};
 use crate::player::Player;
 use crate::player_interaction::{DodgeState, PlayerInteraction};
 use crate::sprite_renderer::Sprite;
+use crate::timer::Timer;
 
 #[derive(Default, Clone)]
 pub enum HurtDirection {
@@ -26,8 +27,7 @@ pub struct Hurtbox {
     pub owner: Option<engine::Id>,
     pub power: f64,
     pub direction: HurtDirection,
-    pub duration: f64,
-    pub duration_passed: f64,
+    pub timer: Timer,
     pub stun_time: Option<f64>,
     pub textures: Vec<engine::Texture>,
 }
@@ -150,8 +150,8 @@ impl HurtboxSystem {
     fn despawn_expired_hurtboxes(&self, ctx: &mut Context, delta: f64) {
         for hurtbox_id in query!(ctx, Hurtbox) {
             let hurtbox = ctx.select::<Hurtbox>(hurtbox_id);
-            hurtbox.duration_passed += delta;
-            if hurtbox.duration <= hurtbox.duration_passed {
+            hurtbox.timer.update(delta);
+            if hurtbox.timer.done() {
                 ctx.despawn(hurtbox_id);
                 continue;
             }
@@ -160,8 +160,9 @@ impl HurtboxSystem {
 
     fn draw_hurtbox_animation(&self, hurtbox: Hurtbox, sprite: &mut Sprite) {
         let texture = hurtbox.textures[std::cmp::min(
-            ((hurtbox.duration_passed / hurtbox.duration) * hurtbox.textures.len() as f64).floor()
-                as usize,
+            ((hurtbox.timer.time_passed() / hurtbox.timer.duration())
+                * hurtbox.textures.len() as f64)
+                .floor() as usize,
             hurtbox.textures.len(),
         )];
         sprite.texture = texture;

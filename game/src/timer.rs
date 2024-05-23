@@ -1,4 +1,4 @@
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Timer {
     duration: f64,
     remaining: f64,
