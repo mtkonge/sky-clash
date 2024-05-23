@@ -89,9 +89,11 @@ impl PlayerInteraction {
 pub struct PlayerInteractionSystem(pub u64);
 impl System for PlayerInteractionSystem {
     fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
-        self.update_player_attack(ctx, delta)?;
-        self.update_player_movement(ctx, delta)?;
-        self.update_dodge(ctx, delta)?;
+        for id in query!(ctx, PlayerInteraction, Victim, RigidBody, Collider) {
+            self.update_player_attack(ctx, delta, id)?;
+            self.update_player_movement(ctx, delta, id)?;
+            self.update_dodge(ctx, delta, id)?;
+        }
         Ok(())
     }
 }
@@ -221,8 +223,8 @@ impl PlayerInteractionSystem {
         &self,
         ctx: &mut engine::Context,
         delta: f64,
+        id: u64,
     ) -> Result<(), engine::Error> {
-        for id in query!(ctx, RigidBody, Collider, PlayerInteraction, Victim) {
             let player_attack = ctx.select::<PlayerInteraction>(id).clone();
             let keyset = player_attack.keyset;
             let right_pressed = ctx.key_pressed(keyset.right());
@@ -233,7 +235,7 @@ impl PlayerInteractionSystem {
             let body = ctx.select::<RigidBody>(id).clone();
 
             if matches!(player_attack.dodge_state, DodgeState::Dodging(_)) {
-                continue;
+            return Ok(());
             }
 
             if victim.stunned.is_some() {
@@ -243,17 +245,17 @@ impl PlayerInteractionSystem {
                         hurtbox.duration_passed = hurtbox.duration
                     };
                 }
-                continue;
+            return Ok(());
             }
 
             if player_attack.attack_cooldown >= 0.0 {
                 let player_attack = ctx.select::<PlayerInteraction>(id);
                 player_attack.attack_cooldown -= delta;
-                continue;
+            return Ok(());
             }
 
             if !light_attack_pressed {
-                continue;
+            return Ok(());
             }
 
             if down_pressed {
@@ -267,7 +269,6 @@ impl PlayerInteractionSystem {
             }
             let player_attack = ctx.select::<PlayerInteraction>(id);
             player_attack.attack_cooldown = 0.5;
-        }
 
         Ok(())
     }
@@ -276,8 +277,8 @@ impl PlayerInteractionSystem {
         &self,
         ctx: &mut engine::Context,
         delta: f64,
+        id: u64,
     ) -> Result<(), engine::Error> {
-        for id in query!(ctx, PlayerInteraction, Victim, RigidBody, Collider) {
             let keyset = ctx.select::<PlayerInteraction>(id).clone().keyset;
 
             let right_pressed = ctx.key_pressed(keyset.right());
@@ -292,7 +293,7 @@ impl PlayerInteractionSystem {
             let body = ctx.select::<RigidBody>(id);
 
             if victim.stunned.is_some() {
-                continue;
+            return Ok(());
             }
 
             if right_pressed && !left_pressed && body.vel.0 < 400.0 {
@@ -318,7 +319,6 @@ impl PlayerInteractionSystem {
                 body.vel.1 = -800.0;
                 let player_movement = ctx.select::<PlayerInteraction>(id);
                 player_movement.jump_state = player_movement.jump_state.next();
-            }
         }
         Ok(())
     }
@@ -336,7 +336,7 @@ impl PlayerInteractionSystem {
                 DodgeState::Cooldown(_) => {
                     let sprite = ctx.select::<Sprite>(id);
                     sprite.set_opacity(1.0);
-                    continue;
+                return Ok(());
                 }
                 DodgeState::Ready => (),
             }
@@ -346,7 +346,7 @@ impl PlayerInteractionSystem {
             let victim = ctx.select::<Victim>(id);
 
             if !dodge_pressed || victim.stunned.is_some() {
-                continue;
+            return Ok(());
             }
 
             let player_interaction = ctx.select::<PlayerInteraction>(id);
