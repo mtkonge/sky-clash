@@ -37,4 +37,11 @@ impl Keyset {
             Keyset::ArrowKeys => Keycode::KpEnter,
         }
     }
+
+    pub fn dodge(&self) -> Keycode {
+        match self {
+            Keyset::Wasd => Keycode::K,
+            Keyset::ArrowKeys => Keycode::KpPeriod,
+        }
+    }
 }

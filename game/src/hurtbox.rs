@@ -3,6 +3,7 @@ use engine::{query, Collider, Component};
 use engine::{Context, Error, System};
 
 use crate::player::Player;
+use crate::player_interaction::{self, DodgeState, PlayerInteraction};
 use crate::sprite_renderer::Sprite;
 
 #[derive(Default, Clone)]
@@ -60,7 +61,15 @@ impl System for HurtboxSystem {
         for hurtbox_id in query!(ctx, Hurtbox, RigidBody).clone() {
             let hurtbox_body = ctx.select::<RigidBody>(hurtbox_id).clone();
             let hurtbox = ctx.select::<Hurtbox>(hurtbox_id).clone();
-            for victim_id in query!(ctx, RigidBody, Collider, Player, Victim, Hitbox) {
+            for victim_id in query!(
+                ctx,
+                PlayerInteraction,
+                RigidBody,
+                Collider,
+                Player,
+                Victim,
+                Hitbox
+            ) {
                 if hurtbox.owner.is_some_and(|owner| owner == victim_id) {
                     continue;
                 };
@@ -83,6 +92,15 @@ impl System for HurtboxSystem {
                 ) {
                     continue;
                 };
+
+                let dodge_state = ctx
+                    .select::<PlayerInteraction>(victim_id)
+                    .clone()
+                    .dodge_state;
+
+                if matches!(dodge_state, DodgeState::Dodging(_)) {
+                    continue;
+                }
 
                 self.hurt_victim(hurtbox_id, &hurtbox, ctx, victim_id, &hurtbox_body);
             }

@@ -35,11 +35,8 @@ impl Sprite {
         Self { offset, ..self }
     }
 
-    pub fn opacity(self, opacity: f64) -> Self {
-        Self {
-            opacity: Some(opacity),
-            ..self
-        }
+    pub fn set_opacity(&mut self, opacity: f64) {
+        self.opacity = Some(opacity)
     }
 }
 
@@ -56,11 +53,14 @@ impl System for SpriteRenderer {
         sprites.sort_by(|(a, _, _), (b, _, _)| b.layer.cmp(&a.layer));
         for (sprite, pos, body_size) in sprites {
             let size = sprite.size.unwrap_or(body_size);
+            let opacity = sprite.opacity.unwrap_or(1.0);
             ctx.draw_texture(
                 sprite.texture,
                 (pos.0 + sprite.offset.0) as i32,
                 (pos.1 + sprite.offset.1) as i32,
-                DrawTextureOpts::new().size((size.0 as u32, size.1 as u32)),
+                DrawTextureOpts::new()
+                    .size((size.0 as u32, size.1 as u32))
+                    .opacity(opacity),
             )?;
         }
         Ok(())

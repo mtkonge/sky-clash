@@ -13,11 +13,58 @@ enum AttackKind {
     Right,
 }
 
+#[derive(Clone)]
+pub struct Dodge {
+    pub duration: f64,
+}
+
+impl Dodge {
+    pub fn new(duration: f64) -> Self {
+        Self { duration }
+    }
+
+    pub fn update(&mut self, delta: f64) {
+        self.duration -= delta;
+    }
+
+    pub fn done(&self) -> bool {
+        self.duration <= 0.0
+    }
+}
+
+#[derive(Clone)]
+pub enum DodgeState {
+    Dodging(Dodge),
+    Cooldown(f64),
+    Ready,
+}
+
+impl DodgeState {
+    pub fn update(&mut self, delta: f64) {
+        match self {
+            DodgeState::Dodging(dodge) => {
+                dodge.update(delta);
+                if dodge.done() {
+                    *self = DodgeState::Cooldown(2.0);
+                }
+            }
+            DodgeState::Cooldown(ref mut duration) => {
+                *duration -= delta;
+                if *duration <= 0.0 {
+                    *self = DodgeState::Ready
+                }
+            }
+            DodgeState::Ready => (),
+        }
+    }
+}
+
 #[derive(Component, Clone)]
 pub struct PlayerInteraction {
     pub keyset: Keyset,
     pub attack_cooldown: f64,
     pub jump_state: JumpState,
+    pub dodge_state: DodgeState,
 }
 
 impl PlayerInteraction {
@@ -26,6 +73,7 @@ impl PlayerInteraction {
             keyset,
             attack_cooldown,
             jump_state: JumpState::DoubleJumped,
+            dodge_state: DodgeState::Ready,
         }
     }
 
@@ -41,7 +89,10 @@ impl PlayerInteraction {
 pub struct PlayerInteractionSystem(pub u64);
 impl System for PlayerInteractionSystem {
     fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
-        self.update_player_attack(ctx, delta)
+        self.update_player_attack(ctx, delta)?;
+        self.update_player_movement(ctx, delta)?;
+        self.update_dodge(ctx, delta)?;
+        Ok(())
     }
 }
 
@@ -265,6 +316,43 @@ impl PlayerInteractionSystem {
                 player_movement.jump_state = player_movement.jump_state.next();
             }
         }
+        Ok(())
+    }
+
+    fn update_dodge(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
+        for id in query!(ctx, Sprite, PlayerInteraction, Victim, RigidBody, Collider) {
+            let player_interaction = ctx.select::<PlayerInteraction>(id);
+            let keyset = player_interaction.keyset.clone();
+            let dodge_state = &mut player_interaction.dodge_state;
+
+            dodge_state.update(delta);
+
+            match dodge_state {
+                DodgeState::Dodging(_) => continue,
+                DodgeState::Cooldown(_) => {
+                    let sprite = ctx.select::<Sprite>(id);
+                    sprite.set_opacity(1.0);
+                    continue;
+                }
+                DodgeState::Ready => (),
+            }
+
+            let dodge_pressed = ctx.key_just_pressed(keyset.dodge());
+
+            let victim = ctx.select::<Victim>(id);
+
+            if !dodge_pressed || victim.stunned.is_some() {
+                continue;
+            }
+
+            let player_interaction = ctx.select::<PlayerInteraction>(id);
+            let dodge_state = &mut player_interaction.dodge_state;
+            *dodge_state = DodgeState::Dodging(Dodge::new(1.0));
+
+            let sprite = ctx.select::<Sprite>(id);
+            sprite.set_opacity(0.5);
+        }
+
         Ok(())
     }
 }
