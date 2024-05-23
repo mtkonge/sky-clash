@@ -1,7 +1,7 @@
 use engine::{query, rigid_body::RigidBody, spawn, Collider, Component, System};
 
 use crate::{
-    hurtbox::{HurtDirection, Hurtbox, Victim},
+    hurtbox::{self, HurtDirection, Hurtbox, Victim},
     keyset::Keyset,
     sprite_renderer::Sprite,
 };
@@ -37,14 +37,27 @@ impl System for PlayerAttackSystem {
             let light_attack_pressed = ctx.key_just_pressed(keyset.light_attack());
             let victim = ctx.select::<Victim>(id).clone();
             let body = ctx.select::<RigidBody>(id).clone();
+
+            if victim.stunned.is_some() {
+                for hurtbox_id in query!(ctx, Hurtbox, RigidBody) {
+                    let hurtbox = ctx.select::<Hurtbox>(hurtbox_id);
+                    if hurtbox.owner.is_some_and(|owner| owner == id) {
+                        hurtbox.duration_passed = hurtbox.duration
+                    };
+                }
+                continue;
+            }
+
             if player_attack.cooldown >= 0.0 {
                 let player_attack = ctx.select::<PlayerAttack>(id);
                 player_attack.cooldown -= delta;
                 continue;
             }
-            if !light_attack_pressed || victim.stunned.is_some() {
+
+            if !light_attack_pressed {
                 continue;
             }
+
             if down_pressed {
                 self.spawn_attack(ctx, AttackKind::Down, HurtDirection::Up, id, &body)
             } else if left_pressed && !right_pressed {
