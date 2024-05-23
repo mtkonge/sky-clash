@@ -10,8 +10,7 @@ use crate::{
     keyset::Keyset,
     knockoff::KnockoffSystem,
     player::{Player, PlayerKind},
-    player_attack::{PlayerAttack, PlayerAttackSystem},
-    player_movement::{PlayerMovement, PlayerMovementSystem},
+    player_interaction::{PlayerInteraction, PlayerInteractionSystem},
     sprite_renderer::{Sprite, SpriteRenderer},
 };
 
@@ -28,12 +27,11 @@ impl System for GameSystem {
         ctx.add_system(CollisionSystem);
         ctx.add_system(VelocitySystem);
         ctx.add_system(SpriteRenderer);
-        ctx.add_system(PlayerMovementSystem);
         ctx.add_system(GravitySystem);
         ctx.add_system(DragSystem);
         ctx.add_system(HurtboxSystem);
         ctx.add_system(KnockoffSystem);
-        ctx.add_system(PlayerAttackSystem);
+        ctx.add_system(PlayerInteractionSystem);
         ctx.add_system(HudSystem);
         ctx.add_system(DebugDrawer);
 
@@ -115,14 +113,13 @@ impl GameSystem {
                 .with_gravity()
                 .with_drag(),
             Collider::new().resolving(),
-            PlayerMovement::new(keyset.clone()),
             Player {
                 kind,
                 hero,
                 knockback_modifier: 0.0,
                 lives: 3,
             },
-            PlayerAttack::new(keyset, 0.0),
+            PlayerInteraction::new(keyset, 0.0),
             Victim::default()
         );
     }

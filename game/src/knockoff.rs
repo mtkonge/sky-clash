@@ -1,12 +1,12 @@
 use engine::{query, rigid_body::RigidBody, spawn, Context, Error, System};
 
-use crate::{hud::TrashTalk, player::Player, player_movement::PlayerMovement};
+use crate::{hud::TrashTalk, player::Player, player_interaction::PlayerInteraction};
 
 pub struct KnockoffSystem(pub u64);
 impl System for KnockoffSystem {
     fn on_update(&self, ctx: &mut Context, _delta: f64) -> Result<(), Error> {
         let max_offset_from_screen = 200.0;
-        for id in query!(ctx, PlayerMovement, RigidBody, Player).clone() {
+        for id in query!(ctx, PlayerInteraction, RigidBody, Player).clone() {
             let rigid_body = ctx.select::<RigidBody>(id).clone();
             if body_outside_area(rigid_body, max_offset_from_screen) {
                 let loser_id = id;
