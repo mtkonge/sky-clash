@@ -165,7 +165,7 @@ fn draw_player_stats(
 
 fn draw_hud(ctx: &mut Context, player: &Player) {
     let stats_size = (100, 88);
-    let border_color = player_damage_color(player.knockback_modifier);
+    let border_color = player_damage_color(player.damage_taken);
 
     let border_pos = match player.kind {
         PlayerKind::Left => (8, 8),

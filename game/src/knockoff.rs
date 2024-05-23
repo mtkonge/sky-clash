@@ -12,7 +12,7 @@ impl System for KnockoffSystem {
                 let loser_id = id;
                 let player = ctx.select::<Player>(loser_id);
                 if player.is_alive() {
-                    player.knockback_modifier = 0.0;
+                    player.damage_taken = 0.0;
                     player.lives -= 1;
                 };
                 let player_is_dead = player.is_dead();

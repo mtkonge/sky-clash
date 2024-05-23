@@ -10,7 +10,7 @@ pub enum PlayerKind {
 pub struct Player {
     pub kind: PlayerKind,
     pub hero: shared::Hero,
-    pub knockback_modifier: f64,
+    pub damage_taken: f64,
     pub lives: i8,
 }
 

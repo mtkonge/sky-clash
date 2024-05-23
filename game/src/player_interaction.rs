@@ -1,7 +1,7 @@
 use engine::{query, rigid_body::RigidBody, spawn, Collider, Component, System};
 
 use crate::{
-    hurtbox::{HurtDirection, Hurtbox, Victim},
+    hurtbox::{HurtDirection, Hurtbox, HurtboxProfile, Outcome, Victim},
     keyset::Keyset,
     sprite_renderer::Sprite,
     timer::Timer,
@@ -85,7 +85,6 @@ impl PlayerInteractionSystem {
         &self,
         ctx: &mut engine::Context,
         attack_kind: AttackKind,
-        direction: HurtDirection,
         id: u64,
         body: &RigidBody,
     ) {
@@ -93,6 +92,7 @@ impl PlayerInteractionSystem {
         let pos = self.attack_pos(&attack_kind, body, attack_size);
         let vel = self.attack_vel(&attack_kind, body.vel);
         let textures = self.attack_textures(ctx, &attack_kind);
+        let profile = self.attack_profile(&attack_kind).into();
         spawn!(
             ctx,
             Sprite::new(textures[0]),
@@ -103,12 +103,10 @@ impl PlayerInteractionSystem {
                 .with_vel(vel)
                 .with_size(attack_size),
             Hurtbox {
-                direction,
-                power: 20.0,
                 owner: Some(id),
                 timer: Timer::new(0.3),
-                stun_time: Some(0.3),
                 textures,
+                profile,
             }
         );
     }
@@ -240,13 +238,13 @@ impl PlayerInteractionSystem {
         }
 
         if down_pressed {
-            self.spawn_attack(ctx, AttackKind::Down, HurtDirection::Up, id, &body)
+            self.spawn_attack(ctx, AttackKind::Down, id, &body)
         } else if left_pressed && !right_pressed {
-            self.spawn_attack(ctx, AttackKind::Left, HurtDirection::Left, id, &body)
+            self.spawn_attack(ctx, AttackKind::Left, id, &body)
         } else if right_pressed && !left_pressed {
-            self.spawn_attack(ctx, AttackKind::Right, HurtDirection::Right, id, &body)
+            self.spawn_attack(ctx, AttackKind::Right, id, &body)
         } else {
-            self.spawn_attack(ctx, AttackKind::Up, HurtDirection::Up, id, &body)
+            self.spawn_attack(ctx, AttackKind::Up, id, &body)
         }
         let player_attack = ctx.select::<PlayerInteraction>(id);
         player_attack.attack_cooldown = 0.5;
@@ -342,6 +340,93 @@ impl PlayerInteractionSystem {
         sprite.set_opacity(0.5);
 
         Ok(())
+    }
+
+    fn attack_profile(&self, attack_kind: &AttackKind) -> Box<dyn HurtboxProfile> {
+        match attack_kind {
+            AttackKind::Up => Box::new(UpAttackProfile),
+            AttackKind::Down => Box::new(DownAttackProfile),
+            AttackKind::Left => Box::new(SideAttackProfile {
+                direction: HurtDirection::Left,
+            }),
+            AttackKind::Right => Box::new(SideAttackProfile {
+                direction: HurtDirection::Right,
+            }),
+        }
+    }
+}
+
+struct SideAttackProfile {
+    direction: HurtDirection,
+}
+
+impl HurtboxProfile for SideAttackProfile {
+    fn outcome(&self, player: &crate::player::Player, hurtbox_body: &RigidBody) -> Outcome {
+        let power = 20.0;
+        let knockback_modifier = player.damage_taken / 100.0;
+
+        let hurtbox_vel = (hurtbox_body.vel.0.powi(2) + hurtbox_body.vel.1.powi(2)).sqrt();
+        let velocity = hurtbox_vel
+            + power * knockback_modifier.powi(2) * 0.8
+            + power * 10.0
+            + knockback_modifier * 5.0;
+
+        let delta_vel = match self.direction {
+            HurtDirection::Left => (-velocity, 0.0),
+            HurtDirection::Right => (velocity, 0.0),
+            _ => unreachable!(),
+        };
+
+        Outcome {
+            damage: 10.0,
+            delta_vel,
+            stun_time: Some(0.3),
+        }
+    }
+}
+
+struct UpAttackProfile;
+
+impl HurtboxProfile for UpAttackProfile {
+    fn outcome(&self, player: &crate::player::Player, hurtbox_body: &RigidBody) -> Outcome {
+        let power = 20.0;
+        let knockback_modifier = player.damage_taken / 100.0;
+
+        let hurtbox_vel = (hurtbox_body.vel.0.powi(2) + hurtbox_body.vel.1.powi(2)).sqrt();
+        let velocity = hurtbox_vel
+            + power * knockback_modifier.powi(2) * 0.8
+            + power * 10.0
+            + knockback_modifier * 5.0;
+
+        let delta_vel = (0.0, -velocity);
+
+        Outcome {
+            damage: 10.0,
+            delta_vel,
+            stun_time: Some(0.3),
+        }
+    }
+}
+
+struct DownAttackProfile;
+impl HurtboxProfile for DownAttackProfile {
+    fn outcome(&self, player: &crate::player::Player, hurtbox_body: &RigidBody) -> Outcome {
+        let power = 20.0;
+        let knockback_modifier = player.damage_taken / 100.0;
+
+        let hurtbox_vel = (hurtbox_body.vel.0.powi(2) + hurtbox_body.vel.1.powi(2)).sqrt();
+        let velocity = hurtbox_vel
+            + power * knockback_modifier.powi(2) * 0.8
+            + power * 10.0
+            + knockback_modifier * 5.0;
+
+        let delta_vel = (0.0, velocity);
+
+        Outcome {
+            damage: 10.0,
+            delta_vel,
+            stun_time: Some(0.3),
+        }
     }
 }
 

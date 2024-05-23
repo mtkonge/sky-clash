@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use engine::rigid_body::RigidBody;
 use engine::{query, Collider, Component};
 use engine::{Context, Error, System};
@@ -22,14 +24,22 @@ pub struct Hitbox {
     pub offset: (f64, f64),
 }
 
-#[derive(Component, Default, Clone)]
+pub struct Outcome {
+    pub damage: f64,
+    pub delta_vel: (f64, f64),
+    pub stun_time: Option<f64>,
+}
+
+pub trait HurtboxProfile {
+    fn outcome(&self, player: &Player, hurtbox_body: &RigidBody) -> Outcome;
+}
+
+#[derive(Component, Clone)]
 pub struct Hurtbox {
     pub owner: Option<engine::Id>,
-    pub power: f64,
-    pub direction: HurtDirection,
     pub timer: Timer,
-    pub stun_time: Option<f64>,
     pub textures: Vec<engine::Texture>,
+    pub profile: Rc<dyn HurtboxProfile>,
 }
 
 #[derive(Component, Default, Clone)]
@@ -123,28 +133,26 @@ impl HurtboxSystem {
         victim_id: u64,
         hurtbox_body: &RigidBody,
     ) {
+        let player = ctx.select::<Player>(victim_id);
+
+        let Outcome {
+            damage,
+            delta_vel,
+            stun_time,
+        } = hurtbox.profile.outcome(player, hurtbox_body);
+
         let victim = ctx.select::<Victim>(victim_id);
         victim.hurt_by.push(hurtbox_id);
-        victim.stunned = hurtbox.stun_time;
+        victim.stunned = stun_time;
 
-        let knockback_modifier = ctx.select::<Player>(victim_id).knockback_modifier + 1.0;
         let victim_body = ctx.select::<RigidBody>(victim_id);
 
-        let hurtbox_vel = (hurtbox_body.vel.0.powi(2) + hurtbox_body.vel.1.powi(2)).sqrt();
-        let velocity = hurtbox_vel
-            + hurtbox.power * knockback_modifier.powi(2) * 0.8
-            + hurtbox.power * 10.0
-            + knockback_modifier * 5.0;
-
-        match hurtbox.direction {
-            HurtDirection::Up => victim_body.vel.1 -= velocity,
-            HurtDirection::Down => victim_body.vel.1 += velocity,
-            HurtDirection::Left => victim_body.vel.0 -= velocity,
-            HurtDirection::Right => victim_body.vel.0 += velocity,
-        }
+        victim_body.vel.0 += delta_vel.0;
+        victim_body.vel.1 += delta_vel.1;
 
         let player = ctx.select::<Player>(victim_id);
-        player.knockback_modifier += hurtbox.power / 50.0;
+
+        player.damage_taken += damage;
     }
 
     fn despawn_expired_hurtboxes(&self, ctx: &mut Context, delta: f64) {
