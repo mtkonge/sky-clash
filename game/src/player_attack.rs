@@ -1,7 +1,7 @@
 use engine::{query, rigid_body::RigidBody, spawn, Collider, Component, System};
 
 use crate::{
-    hurtbox::{HurtDirection, Hurtbox},
+    hurtbox::{HurtDirection, Hurtbox, Victim},
     keyset::Keyset,
     sprite_renderer::Sprite,
 };
@@ -21,20 +21,21 @@ impl PlayerAttack {
 pub struct PlayerAttackSystem(pub u64);
 impl System for PlayerAttackSystem {
     fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
-        for id in query!(ctx, RigidBody, Collider, PlayerAttack) {
+        for id in query!(ctx, RigidBody, Collider, PlayerAttack, Victim) {
             let player_attack = ctx.select::<PlayerAttack>(id).clone();
             let keyset = player_attack.keyset;
             let right_pressed = ctx.key_pressed(keyset.right());
             let left_pressed = ctx.key_pressed(keyset.left());
             let down_pressed = ctx.key_pressed(keyset.down());
             let light_attack_pressed = ctx.key_just_pressed(keyset.light_attack());
+            let victim = ctx.select::<Victim>(id).clone();
             let body = ctx.select::<RigidBody>(id).clone();
             if player_attack.cooldown >= 0.0 {
                 let player_attack = ctx.select::<PlayerAttack>(id);
                 player_attack.cooldown -= delta;
                 continue;
             }
-            if !light_attack_pressed {
+            if !light_attack_pressed || victim.stunned.is_some() {
                 continue;
             }
             if down_pressed {
