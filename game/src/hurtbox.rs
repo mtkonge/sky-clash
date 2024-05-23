@@ -3,7 +3,7 @@ use engine::{query, Collider, Component};
 use engine::{Context, Error, System};
 
 use crate::player::Player;
-use crate::player_interaction::{self, DodgeState, PlayerInteraction};
+use crate::player_interaction::{DodgeState, PlayerInteraction};
 use crate::sprite_renderer::Sprite;
 
 #[derive(Default, Clone)]

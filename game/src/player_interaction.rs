@@ -123,7 +123,7 @@ impl PlayerInteractionSystem {
                 power: 20.0,
                 owner: Some(id),
                 duration: 0.3,
-                stun_time: Some(0.5),
+                stun_time: Some(0.3),
                 textures,
                 ..Default::default()
             }
@@ -298,7 +298,7 @@ impl PlayerInteractionSystem {
             }
 
             if down_pressed && body.vel.1 < 800.0 {
-                body.vel.1 += 1600.0 * delta
+                body.vel.1 += 3200.0 * delta
             }
 
             if collider

@@ -134,7 +134,6 @@ impl<'game> Game<'game> {
                         ..
                     } => break 'running,
                     Event::KeyDown { keycode: btn, .. } => {
-                        dbg!(btn);
                         if !self.currently_pressed_keys.contains_key(&btn.unwrap()) {
                             self.currently_pressed_keys.insert(btn.unwrap(), true);
                         }
