@@ -38,15 +38,15 @@ impl Server {
     }
 
     pub fn quit(&mut self) {
-        self.strategy.lock().unwrap().quit()
+        self.strategy.lock().unwrap().quit();
     }
 
     pub fn update_hero_stats(&mut self, params: shared::UpdateHeroStatsParams) {
-        self.strategy.lock().unwrap().update_hero_stats(params)
+        self.strategy.lock().unwrap().update_hero_stats(params);
     }
 
     pub fn create_hero(&mut self, params: shared::CreateHeroParams) {
-        self.strategy.lock().unwrap().create_hero(params)
+        self.strategy.lock().unwrap().create_hero(params);
     }
 
     pub fn board_status(&mut self) -> Box<dyn Res<Board>> {

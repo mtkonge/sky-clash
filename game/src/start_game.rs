@@ -70,8 +70,8 @@ struct MaybeHeroesOnBoard(Option<crate::game::HeroesOnBoard>);
 pub struct StartGameSystem(pub u64);
 impl System for StartGameSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
-        use ui::components::*;
-        use ui::constructors::*;
+        use ui::components::{Button, ProgressBar};
+        use ui::constructors::{Hori, Image, Rect, Stack, Text, Vert};
 
         let system_id = self.0;
 
@@ -162,7 +162,7 @@ impl System for StartGameSystem {
         dom.add_event_handler(Event::ErrorPopupClick, move |dom, ctx, _node_id| {
             ctx.remove_system(system_id);
             ctx.add_system(MainMenuSystem);
-            dom.select_mut(Node::ErrorPopup).unwrap().set_visible(false)
+            dom.select_mut(Node::ErrorPopup).unwrap().set_visible(false);
         });
 
         spawn!(

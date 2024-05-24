@@ -21,13 +21,13 @@ impl<T> Deref for Box<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        self.inner.deref()
+        &*self.inner
     }
 }
 
 impl<T> DerefMut for Box<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.inner.deref_mut()
+        &mut *self.inner
     }
 }
 
@@ -42,7 +42,7 @@ pub enum Kind {
 
 pub mod constructors {
     #![allow(non_snake_case)]
-    use super::*;
+    use super::{Box, Kind, Node, PathBuf};
     pub fn Rect() -> Box<Node> {
         Kind::Rect.into()
     }
@@ -164,15 +164,15 @@ impl Node {
                 kind,
                 parent_id,
                 user_id: self.id,
-                width: self.width.map(|v| v as f64),
-                height: self.height.map(|v| v as f64),
+                width: self.width.map(|v| f64::from(v)),
+                height: self.height.map(|v| f64::from(v)),
                 on_click: self.on_click,
                 background_color: self.background_color,
                 color: self.color,
-                gap: self.gap.map(|v| v as f64),
+                gap: self.gap.map(|v| f64::from(v)),
                 border_color: self.border_color,
-                border_thickness: self.border_thickness.map(|v| v as f64),
-                padding: self.padding.map(|v| v as f64),
+                border_thickness: self.border_thickness.map(|v| f64::from(v)),
+                padding: self.padding.map(|v| f64::from(v)),
                 font_size: self.font_size,
                 visible: self.visible,
                 focused: false,

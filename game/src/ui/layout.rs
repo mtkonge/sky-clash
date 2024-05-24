@@ -156,8 +156,8 @@ impl LayoutTreeLeaf<'_> {
                     texture,
                     self.pos + V2::new(offset, offset),
                     V2::new(
-                        self.inner.width.unwrap_or(texture_size.0 as f64),
-                        self.inner.height.unwrap_or(texture_size.1 as f64),
+                        self.inner.width.unwrap_or(f64::from(texture_size.0)),
+                        self.inner.height.unwrap_or(f64::from(texture_size.1)),
                     ),
                 )
                 .unwrap();
@@ -309,7 +309,7 @@ impl CanCreateLayoutTree for Node {
                 let font_size = self.font_size.unwrap_or(15);
                 let font_id = ctx.load_font(font, font_size).unwrap();
                 let size = ctx.text_size(font_id, text).unwrap();
-                let size = V2::new(size.0 as f64, size.1 as f64);
+                let size = V2::new(f64::from(size.0), f64::from(size.1));
                 let leaf = build_leaf(self, node_id, pos_transformer, parent_pos, size);
                 LayoutTree::Single(leaf)
             }
@@ -352,10 +352,8 @@ impl CanCreateLayoutTree for Node {
                     .map(|tree| (tree, gap))
                     .fold(V2::new(0.0, 0.0), calc_content_size);
 
-                let size = V2::new(
-                    self.width.map(|v| v as f64).unwrap_or(size.x),
-                    self.height.map(|v| v as f64).unwrap_or(size.y),
-                ) + V2::new(padding * 2.0, padding * 2.0);
+                let size = V2::new(self.width.unwrap_or(size.x), self.height.unwrap_or(size.y))
+                    + V2::new(padding * 2.0, padding * 2.0);
 
                 let pos = pos_transformer.pos(size);
                 let pos = pos + parent_pos;

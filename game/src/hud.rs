@@ -69,7 +69,7 @@ impl TrashTalk {
 }
 
 fn linear_interpolation(current: u8, next: u8, percentage: f64) -> u8 {
-    (current as f64 * (1.0 - percentage) + next as f64 * percentage) as u8
+    (f64::from(current) * (1.0 - percentage) + f64::from(next) * percentage) as u8
 }
 
 fn merge_colors(
@@ -179,5 +179,5 @@ fn draw_hud(ctx: &mut Context, player: &Player) {
         PlayerKind::Right => border_pos + V2::new(6.0 + 1.0, 58.0 - 6.0),
     };
 
-    draw_player_stats(ctx, player, avatar_pos, avatar_size, text_pos)
+    draw_player_stats(ctx, player, avatar_pos, avatar_size, text_pos);
 }

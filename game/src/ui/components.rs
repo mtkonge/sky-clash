@@ -94,7 +94,7 @@ impl ProgressBar {
     }
 
     pub fn build(&self) -> BoxedNode {
-        use super::constructors::*;
+        use super::constructors::{Hori, Rect, Text, Vert};
 
         let middle = (self.total / 2) as usize;
         let mut children: Vec<_> = (0..self.total)

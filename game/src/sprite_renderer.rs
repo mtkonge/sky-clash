@@ -36,7 +36,7 @@ impl Sprite {
     }
 
     pub fn set_opacity(&mut self, opacity: f64) {
-        self.opacity = Some(opacity)
+        self.opacity = Some(opacity);
     }
 }
 

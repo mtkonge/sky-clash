@@ -7,7 +7,7 @@ pub fn change_text_node_content<S: Into<String>>(node: Option<&mut super::Node>,
         println!("ui warning: tried to change text of non-text node");
         return;
     };
-    *text = new_text.into()
+    *text = new_text.into();
 }
 
 pub fn change_image_node_content<P: Into<std::path::PathBuf>>(
@@ -22,5 +22,5 @@ pub fn change_image_node_content<P: Into<std::path::PathBuf>>(
         println!("ui warning: tried to change texture of non-image node");
         return;
     };
-    *image = new_path.into()
+    *image = new_path.into();
 }

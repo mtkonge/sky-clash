@@ -69,7 +69,7 @@ impl BackendConnection {
                         match reqwest::get("http://65.108.91.32:8080/heroes_on_board").await {
                             Ok(body) => body.json().await.unwrap(),
                             Err(error) => {
-                                println!("e = {:?}", error);
+                                println!("e = {error:?}");
                                 break;
                             }
                         };
@@ -94,7 +94,7 @@ impl BackendConnection {
                     let body = match serde_json::to_string(&body) {
                         Ok(body) => body,
                         Err(err) => {
-                            panic!("Failed to serialize CreateHeroParams Err: {}", err)
+                            panic!("Failed to serialize CreateHeroParams Err: {err}")
                         }
                     };
                     let mut headers = HeaderMap::new();
@@ -111,10 +111,10 @@ impl BackendConnection {
                                 "create_hero response: {} '{}'",
                                 response.status().as_str(),
                                 response.text().await.unwrap()
-                            )
+                            );
                         }
                         Err(err) => {
-                            println!("{}", err);
+                            println!("{err}");
                             continue;
                         }
                     };
@@ -124,7 +124,7 @@ impl BackendConnection {
                     let body = match serde_json::to_string(&body) {
                         Ok(body) => body,
                         Err(err) => {
-                            panic!("Failed to serialize UpdateHeroStatsParams Err: {}", err)
+                            panic!("Failed to serialize UpdateHeroStatsParams Err: {err}")
                         }
                     };
                     let mut headers = HeaderMap::new();
@@ -141,10 +141,10 @@ impl BackendConnection {
                                 "update_hero_stats response: {} '{}'",
                                 response.status().as_str(),
                                 response.text().await.unwrap()
-                            )
+                            );
                         }
                         Err(err) => {
-                            println!("{}", err);
+                            println!("{err}");
                             continue;
                         }
                     };
@@ -186,7 +186,7 @@ impl ServerStrategy for BackendConnection {
 }
 
 async fn hero_by_rfid(rfid: String) -> Option<HeroResult> {
-    match reqwest::get(format!("http://65.108.91.32:8080/hero/{}", rfid)).await {
+    match reqwest::get(format!("http://65.108.91.32:8080/hero/{rfid}")).await {
         Ok(res) => {
             let body = res.json::<Option<shared::Hero>>().await.unwrap();
             let body = body
@@ -195,7 +195,7 @@ async fn hero_by_rfid(rfid: String) -> Option<HeroResult> {
             Some(body)
         }
         Err(error) => {
-            println!("e = {:?}", error);
+            println!("e = {error:?}");
             None
         }
     }

@@ -16,7 +16,7 @@ impl From<HeroKind> for HeroInfo {
 
 impl From<&HeroKind> for HeroInfo {
     fn from(value: &HeroKind) -> Self {
-        use shared::HeroKind::*;
+        use shared::HeroKind::{Centrist, Speed, Strong, Tankie};
         let base_stats = shared::HeroStats::from(value);
         let name = match value {
             Centrist => "Centrist",

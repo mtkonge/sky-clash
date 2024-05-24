@@ -10,7 +10,7 @@ impl Focus {
     where
         Node: Into<ui::NodeId>,
     {
-        let nodes: Vec<_> = nodes.into_iter().map(|v| v.into()).collect();
+        let nodes: Vec<_> = nodes.into_iter().map(std::convert::Into::into).collect();
         if nodes.is_empty() {
             println!("ui warning: created KeyboardAccessible with length of 0");
         }
@@ -62,7 +62,7 @@ impl Focus {
             }
         });
         if invisible_parent.is_some() {
-            self.step(dom, step_current)
+            self.step(dom, step_current);
         }
     }
     pub fn update(&mut self, dom: &mut ui::Dom, ctx: &mut engine::Context) {
@@ -84,9 +84,9 @@ impl Focus {
             && ctx.key_pressed(engine::Keycode::LShift))
             || gamepad_previous;
         if cycle_next {
-            self.next(dom)
+            self.next(dom);
         } else if cycle_previous {
-            self.previous(dom)
+            self.previous(dom);
         }
         if ctx.key_just_pressed(engine::Keycode::Return) || gamepad_confirm {
             if let Some((id, _)) = dom.nodes.iter().find(|(_, node)| node.focused) {

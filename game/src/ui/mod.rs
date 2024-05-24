@@ -147,7 +147,7 @@ impl Dom {
     where
         F: Fn(&mut Dom, &mut engine::Context, InternalNodeId) + 'static,
     {
-        self.event_handlers.push((event_id.into(), Rc::new(f)))
+        self.event_handlers.push((event_id.into(), Rc::new(f)));
     }
 
     fn select_node<I>(&self, node_id: I) -> Option<&Node>
@@ -268,7 +268,7 @@ impl Dom {
         tree.draw(ctx);
         if ctx.mouse_button_just_pressed(engine::MouseButton::Left) {
             let mouse_position = ctx.mouse_position();
-            let mouse_position = V2::new(mouse_position.0 as f64, mouse_position.1 as f64);
+            let mouse_position = V2::new(f64::from(mouse_position.0), f64::from(mouse_position.1));
             if let Some(event) = tree.resolve_click(mouse_position) {
                 self.event_queue.push(event);
             }

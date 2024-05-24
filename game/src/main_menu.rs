@@ -43,7 +43,7 @@ impl From<Event> for ui::EventId {
 pub struct MainMenuSystem(pub u64);
 impl System for MainMenuSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
-        use ui::constructors::*;
+        use ui::constructors::{Stack, Text, Vert};
 
         let system_id = self.0;
 

@@ -69,7 +69,7 @@ impl From<Event> for ui::EventId {
 pub struct HeroCreatorSystem(pub u64);
 impl System for HeroCreatorSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
-        use ui::components::*;
+        use ui::components::ProgressBar;
         let strength_bar = ProgressBar::new("Strength", 24);
         let agility_bar = ProgressBar::new("Agility", 24);
         let defence_bar = ProgressBar::new("Defence", 24);
@@ -111,7 +111,7 @@ impl System for HeroCreatorSystem {
             ctx.add_system(MainMenuSystem);
         });
 
-        use shared::HeroKind::*;
+        use shared::HeroKind::{Centrist, Speed, Strong, Tankie};
         for (id, hero_type) in [
             (Event::CentristButton, Centrist),
             (Event::SpeedButton, Speed),
@@ -213,8 +213,8 @@ impl HeroCreatorSystem {
         agility_bar: &ui::components::ProgressBar,
         defence_bar: &ui::components::ProgressBar,
     ) -> ui::Dom {
-        use ui::components::*;
-        use ui::constructors::*;
+        use ui::components::Button;
+        use ui::constructors::{Hori, Image, Rect, Stack, Text, Vert};
         ui::Dom::new(
             Stack([
                 Hori([

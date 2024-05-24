@@ -33,7 +33,7 @@ impl DodgeState {
             DodgeState::Cooldown(timer) => {
                 timer.update(delta);
                 if timer.done() {
-                    *self = DodgeState::Ready
+                    *self = DodgeState::Ready;
                 }
             }
             DodgeState::Ready => (),
@@ -216,7 +216,7 @@ impl PlayerInteractionSystem {
             for hurtbox_id in query!(ctx, Hurtbox, RigidBody) {
                 let hurtbox = ctx.select::<Hurtbox>(hurtbox_id);
                 if hurtbox.owner.is_some_and(|owner| owner == id) {
-                    ctx.despawn(hurtbox_id)
+                    ctx.despawn(hurtbox_id);
                 };
             }
             return Ok(());
@@ -233,13 +233,13 @@ impl PlayerInteractionSystem {
         }
 
         if down_pressed {
-            self.spawn_attack(ctx, AttackKind::Down, id, &body)
+            self.spawn_attack(ctx, AttackKind::Down, id, &body);
         } else if left_pressed && !right_pressed {
-            self.spawn_attack(ctx, AttackKind::Left, id, &body)
+            self.spawn_attack(ctx, AttackKind::Left, id, &body);
         } else if right_pressed && !left_pressed {
-            self.spawn_attack(ctx, AttackKind::Right, id, &body)
+            self.spawn_attack(ctx, AttackKind::Right, id, &body);
         } else {
-            self.spawn_attack(ctx, AttackKind::Up, id, &body)
+            self.spawn_attack(ctx, AttackKind::Up, id, &body);
         }
         let player_attack = ctx.select::<PlayerInteraction>(id);
         player_attack.attack_cooldown = 0.5;
@@ -271,13 +271,13 @@ impl PlayerInteractionSystem {
         }
 
         if right_pressed && !left_pressed && body.vel.x < 400.0 {
-            body.vel.x += 400.0 * delta * 8.0
+            body.vel.x += 400.0 * delta * 8.0;
         } else if left_pressed && !right_pressed && body.vel.x > (-400.0) {
-            body.vel.x -= 400.0 * delta * 8.0
+            body.vel.x -= 400.0 * delta * 8.0;
         }
 
         if down_pressed && body.vel.y < 800.0 {
-            body.vel.y += 3200.0 * delta
+            body.vel.y += 3200.0 * delta;
         }
 
         if collider
