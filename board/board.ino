@@ -2,46 +2,48 @@
 #include "rfid_scanner.h"
 #include <wiring_private.h>
 
-#define RFID_2_IRQ 6
-#define RFID_2_RSTO 7
+RfidPins rfid1Pins = { /*sda=*/11, /*scl=*/12, /*irq=*/5, /*rsto*/4 };
 
-#define RFID_2_SDA 1
-#define RFID_2_SCL 0
+TwoWire* rfid1Wire = &Wire;
+RfidScanner rfid1(RfidI2C(rfid1Pins.irq, rfid1Pins.rsto, rfid1Wire), rfid1Pins);
 
-#define RFID_1_IRQ 5
-#define RFID_1_RSTO 4
+RfidPins rfid2Pins = { /*sda=*/0, /*scl=*/1, /*irq=*/6, /*rsto*/7 };
 
-#define RFID_1_SDA 11
-#define RFID_1_SCL 12
-
-RfidPins rfid_1_pins = {
-  RFID_1_SDA,
-  RFID_1_SCL,
-  RFID_1_IRQ,
-  RFID_1_RSTO,
-};
-
-TwoWire* rfid_1_wire = &Wire;
-RfidScanner rfid_1(RfidI2C(rfid_1_pins.irq, rfid_1_pins.rsto, rfid_1_wire), rfid_1_pins);
-
-RfidPins rfid_2_pins = {
-  RFID_2_SDA,
-  RFID_2_SCL,
-  RFID_2_IRQ,
-  RFID_2_RSTO,
-};
-
-TwoWire otherWire(&sercom3, rfid_2_pins.sda, rfid_2_pins.scl);
-TwoWire* rfid_2_wire = &otherWire;
-RfidScanner rfid_2(RfidI2C(rfid_2_pins.irq, rfid_2_pins.rsto, rfid_2_wire), rfid_2_pins);
+TwoWire otherWire(&sercom3, rfid2Pins.sda, rfid2Pins.scl);
+TwoWire* rfid2Wire = &otherWire;
+RfidScanner rfid2(RfidI2C(rfid2Pins.irq, rfid2Pins.rsto, rfid2Wire), rfid2Pins);
 
 Wifi wifi(IPAddress(65, 108, 91, 32), 8080);
+
+struct LedPins { int red, green, blue; };
+
+LedPins led1 = { /*red=*/8, /*green=*/2, /*blue=*/3 };
+LedPins led2 = { /*red=*/10, /*green=*/A4, /*blue=*/A3 };
+
+int switchPin = 13;
 
 void setup() {
   Serial.begin(9600);
 
-  pinPeripheral(RFID_2_SDA, PIO_SERCOM);
-  pinPeripheral(RFID_2_SCL, PIO_SERCOM);
+  pinPeripheral(rfid2Pins.sda, PIO_SERCOM);
+  pinPeripheral(rfid2Pins.scl, PIO_SERCOM);
+
+  pinMode(led1.red, OUTPUT);
+  pinMode(led1.green, OUTPUT);
+  pinMode(led1.blue, OUTPUT);
+  pinMode(led2.red, OUTPUT);
+  pinMode(led2.green, OUTPUT);
+  pinMode(led2.blue, OUTPUT);
+
+  pinMode(switchPin, INPUT);
+
+  analogWrite(led1.red, 255);
+  analogWrite(led1.green, 255);
+  analogWrite(led1.blue, 255);
+  analogWrite(led2.red, 255);
+  analogWrite(led2.green, 255);
+  analogWrite(led2.blue, 255);
+
 
   otherWire.begin(2);
   Serial.println(availableMemory());
@@ -55,9 +57,9 @@ void setup() {
   // delay(1000);
 
   Serial.println("rfid 1 begin");
-  rfid_1.begin();
+  rfid1.begin();
   Serial.println("rfid 2 begin");
-  rfid_2.begin();
+  rfid2.begin();
   Serial.println("rfid loaded");
 }
 
@@ -95,8 +97,25 @@ String format_rfid(String key, uint32_t rfid) {
 }
 
 void loop() {
-  uint32_t hero_1_rfid = rfid_2.read(100);
-  uint32_t hero_2_rfid = rfid_1.read(100);
+
+  if (digitalRead(switchPin) == HIGH) {
+    analogWrite(led1.red, 255);
+    analogWrite(led1.green, 255);
+    analogWrite(led1.blue, 255);
+    analogWrite(led2.red, 255);
+    analogWrite(led2.green, 255);
+    analogWrite(led2.blue, 255);
+  } else {
+    analogWrite(led1.red, 255);
+    analogWrite(led1.green, 0);
+    analogWrite(led1.blue, 0);
+    analogWrite(led2.red, 255);
+    analogWrite(led2.green, 0);
+    analogWrite(led2.blue, 0);
+  }
+
+  uint32_t hero_1_rfid = rfid2.read(100);
+  uint32_t hero_2_rfid = rfid1.read(100);
   if (last_hero_1_rfid == hero_1_rfid && last_hero_2_rfid == hero_2_rfid) { 
     return;
   }
@@ -112,3 +131,7 @@ void loop() {
   // response = wifi.post("/update_heroes_on_board", data);
   Serial.println(response);
 }
+
+
+
+
