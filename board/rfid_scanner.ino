@@ -1,22 +1,33 @@
 void RfidScanner::begin() {
+  Serial.println(String("Loading ") + this->pins.to_string());
   int attempts = 0;
   Serial.println(String("attempt ") + attempts);
+  Serial.println("RFID begin()...");
   bool success = this->rfid.begin();
   if (!success) {
-    Serial.println("RFID failed");
+    Serial.println("RFID begin() failed");
   }
-
+  Serial.println("RFID begin() ok");
+  Serial.println("RFID getFirmwareVersion()...");
   uint32_t version = this->rfid.getFirmwareVersion();
+  Serial.println("RFID getFirmwareVersion() yielded");
   while (version == 0) {
     Serial.println("version == 0");
     delay(500);
+    Serial.println("RFID begin()...");
     bool success = this->rfid.begin();
     if (!success) {
-      Serial.println("RFID failed");
+      Serial.println("RFID begin() failed");
     }
+    Serial.println("RFID begin() ok");
+    Serial.println("RFID getFirmwareVersion()...");
     version = this->rfid.getFirmwareVersion();
+    Serial.println("RFID getFirmwareVersion() yielded");
     Serial.println(String("attempt ") + attempts);
     attempts++;
+    if (attempts > 20) {
+      while (1) {}
+    }
   }
   Serial.println(String("version = ") + version);
 

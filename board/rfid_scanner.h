@@ -37,11 +37,35 @@ struct RfidSPI final : public RfidConnection {
   HardwareSerial* serial;
 };
 
+struct RfidPins {
+  int sda;
+  int scl;
+  int irq;
+  int rsto;
+
+  String to_string() const;
+};
+
+String RfidPins::to_string() const {
+  String result;
+  result += "RFID { sda: ";
+  result += this->sda;
+  result += ", scl: ";
+  result += this->scl;
+  result += ", irq: ";
+  result += this->irq;
+  result += ", rsto: ";
+  result += this->rsto;
+  result += " }";
+  return result;
+}
+
 class RfidScanner {
   public:
     template<typename T>
-    RfidScanner(T connection)
+    RfidScanner(T connection, RfidPins pins)
       : rfid(connection.build())
+      , pins(pins)
     {
     }
 
@@ -51,4 +75,5 @@ class RfidScanner {
 
   private:
     Adafruit_PN532 rfid;
+    RfidPins pins;
 };

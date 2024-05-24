@@ -2,39 +2,63 @@
 #include "rfid_scanner.h"
 #include <wiring_private.h>
 
-#define IRQ_PIN 6
-#define RSTO_PIN 7
+#define RFID_2_IRQ 6
+#define RFID_2_RSTO 7
 
-#define OTHER_IRQ_PIN 4
-#define OTHER_RSTO_PIN 5
+#define RFID_2_SDA 1
+#define RFID_2_SCL 0
 
-#define OTHER_SDA 0
-#define OTHER_SCL 1
+#define RFID_1_IRQ 5
+#define RFID_1_RSTO 4
 
-TwoWire otherWire(&sercom3, 0, 1);   // Create the new wire instance assigning it to pin 0 and 1
+#define RFID_1_SDA 11
+#define RFID_1_SCL 12
 
-RfidScanner rfid_scanner(RfidI2C(IRQ_PIN, RSTO_PIN, &Wire));
-RfidScanner other_rfid_scanner(RfidI2C(OTHER_IRQ_PIN, OTHER_RSTO_PIN, &otherWire));
+RfidPins rfid_1_pins = {
+  RFID_1_SDA,
+  RFID_1_SCL,
+  RFID_1_IRQ,
+  RFID_1_RSTO,
+};
+
+TwoWire* rfid_1_wire = &Wire;
+RfidScanner rfid_1(RfidI2C(rfid_1_pins.irq, rfid_1_pins.rsto, rfid_1_wire), rfid_1_pins);
+
+RfidPins rfid_2_pins = {
+  RFID_2_SDA,
+  RFID_2_SCL,
+  RFID_2_IRQ,
+  RFID_2_RSTO,
+};
+
+TwoWire otherWire(&sercom3, rfid_2_pins.sda, rfid_2_pins.scl);
+TwoWire* rfid_2_wire = &otherWire;
+RfidScanner rfid_2(RfidI2C(rfid_2_pins.irq, rfid_2_pins.rsto, rfid_2_wire), rfid_2_pins);
 
 Wifi wifi(IPAddress(65, 108, 91, 32), 8080);
 
 void setup() {
   Serial.begin(9600);
-  pinPeripheral(OTHER_SDA, PIO_SERCOM);
-  pinPeripheral(OTHER_SCL, PIO_SERCOM);
+
+  pinPeripheral(RFID_2_SDA, PIO_SERCOM);
+  pinPeripheral(RFID_2_SCL, PIO_SERCOM);
+
   otherWire.begin(2);
   Serial.println(availableMemory());
   while (!Serial) {
     delay(100);
   }
 
-  wifi.connect();
-  delay(500);
-  wifi.ping();
-  delay(1000);
+  // wifi.connect();
+  // delay(500);
+  // wifi.ping();
+  // delay(1000);
 
-  rfid_scanner.begin();
-  other_rfid_scanner.begin();
+  Serial.println("rfid 1 begin");
+  rfid_1.begin();
+  Serial.println("rfid 2 begin");
+  rfid_2.begin();
+  Serial.println("rfid loaded");
 }
 
 extern "C" {
@@ -71,8 +95,8 @@ String format_rfid(String key, uint32_t rfid) {
 }
 
 void loop() {
-  uint32_t hero_1_rfid = rfid_scanner.read(100);
-  uint32_t hero_2_rfid = other_rfid_scanner.read(100);
+  uint32_t hero_1_rfid = rfid_2.read(100);
+  uint32_t hero_2_rfid = rfid_1.read(100);
   if (last_hero_1_rfid == hero_1_rfid && last_hero_2_rfid == hero_2_rfid) { 
     return;
   }
@@ -85,6 +109,6 @@ void loop() {
   String hero_2_data = format_rfid(String("\"hero_2_rfid\":"), hero_2_rfid);
   String data = String("{") + hero_1_data + ',' + hero_2_data + '}';
   Serial.println(String("data: ") + data);
-  response = wifi.post("/update_heroes_on_board", data);
+  // response = wifi.post("/update_heroes_on_board", data);
   Serial.println(response);
 }
