@@ -70,7 +70,7 @@ struct MaybeHeroesOnBoard(Option<crate::game::HeroesOnBoard>);
 pub struct StartGameSystem(pub u64);
 impl System for StartGameSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
-        use ui::components::{Button, ProgressBar};
+        use ui::components::Button;
         use ui::constructors::{Hori, Image, Rect, Stack, Text, Vert};
 
         let system_id = self.0;

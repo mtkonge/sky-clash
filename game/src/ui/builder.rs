@@ -21,13 +21,13 @@ impl<T> Deref for Box<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        &*self.inner
+        &self.inner
     }
 }
 
 impl<T> DerefMut for Box<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut *self.inner
+        &mut self.inner
     }
 }
 
@@ -164,15 +164,15 @@ impl Node {
                 kind,
                 parent_id,
                 user_id: self.id,
-                width: self.width.map(|v| f64::from(v)),
-                height: self.height.map(|v| f64::from(v)),
+                width: self.width.map(f64::from),
+                height: self.height.map(f64::from),
                 on_click: self.on_click,
                 background_color: self.background_color,
                 color: self.color,
-                gap: self.gap.map(|v| f64::from(v)),
+                gap: self.gap.map(f64::from),
                 border_color: self.border_color,
-                border_thickness: self.border_thickness.map(|v| f64::from(v)),
-                padding: self.padding.map(|v| f64::from(v)),
+                border_thickness: self.border_thickness.map(f64::from),
+                padding: self.padding.map(f64::from),
                 font_size: self.font_size,
                 visible: self.visible,
                 focused: false,
