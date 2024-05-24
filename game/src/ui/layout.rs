@@ -407,12 +407,15 @@ fn troller_no_trolling_min() {
         use LayoutTree::*;
 
         let focus_color = (53, 73, 136);
-        let focus_thickness = 4;
+        let focus_thickness = 4.0;
 
         Multiple(
             LayoutTreeLeaf {
-                size: (16 + 2 + 16 + 2 + 16 + 2, 16 + 2 + 16 + 2 + 16 + 2),
-                pos: (0, 0),
+                size: V2::new(
+                    16.0 + 2.0 + 16.0 + 2.0 + 16.0 + 2.0,
+                    16.0 + 2.0 + 16.0 + 2.0 + 16.0 + 2.0,
+                ),
+                pos: V2::new(0.0, 0.0),
                 node_id: InternalNodeId(0),
                 inner: Box::leak(Box::new(Node {
                     kind: Hori(vec![InternalNodeId(1)]),
@@ -423,8 +426,8 @@ fn troller_no_trolling_min() {
                     on_click: None,
                     background_color: None,
                     color: None,
-                    border_thickness: Some(1),
-                    padding: Some(8),
+                    border_thickness: Some(1.0),
+                    padding: Some(8.0),
                     gap: None,
                     border_color: None,
                     font_size: None,
@@ -436,8 +439,8 @@ fn troller_no_trolling_min() {
             },
             vec![Multiple(
                 LayoutTreeLeaf {
-                    size: (16 + 2 + 16 + 2, 16 + 2 + 16 + 2),
-                    pos: (8 + 1, 8 + 1),
+                    size: V2::new(16.0 + 2.0 + 16.0 + 2.0, 16.0 + 2.0 + 16.0 + 2.0),
+                    pos: V2::new(8.0 + 1.0, 8.0 + 1.0),
                     node_id: InternalNodeId(1),
                     inner: Box::leak(Box::new(Node {
                         kind: Vert(vec![InternalNodeId(2)]),
@@ -448,8 +451,8 @@ fn troller_no_trolling_min() {
                         on_click: None,
                         background_color: None,
                         color: None,
-                        border_thickness: Some(1),
-                        padding: Some(8),
+                        border_thickness: Some(1.0),
+                        padding: Some(8.0),
                         gap: None,
                         border_color: None,
                         font_size: None,
@@ -460,8 +463,8 @@ fn troller_no_trolling_min() {
                     })),
                 },
                 vec![Single(LayoutTreeLeaf {
-                    size: (16 + 2, 16 + 2),
-                    pos: (8 + 1 + 8 + 1, 8 + 1 + 8 + 1),
+                    size: V2::new(16.0 + 2.0, 16.0 + 2.0),
+                    pos: V2::new(8.0 + 1.0 + 8.0 + 1.0, 8.0 + 1.0 + 8.0 + 1.0),
                     node_id: InternalNodeId(2),
                     inner: Box::leak(Box::new(Node {
                         kind: Rect,
@@ -472,8 +475,8 @@ fn troller_no_trolling_min() {
                         on_click: None,
                         background_color: None,
                         color: None,
-                        border_thickness: Some(1),
-                        padding: Some(8),
+                        border_thickness: Some(1.0),
+                        padding: Some(8.0),
                         gap: None,
                         border_color: None,
                         font_size: None,
