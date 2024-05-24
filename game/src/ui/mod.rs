@@ -8,6 +8,7 @@ mod ui_context;
 pub mod utils;
 
 pub use builder::constructors;
+use engine::V2;
 
 pub type BoxedNode = builder::Box<builder::Node>;
 
@@ -60,19 +61,19 @@ pub struct Node {
     pub kind: Kind,
     parent_id: Option<InternalNodeId>,
     user_id: Option<NodeId>,
-    width: Option<i32>,
-    height: Option<i32>,
+    width: Option<f64>,
+    height: Option<f64>,
     on_click: Option<EventId>,
     background_color: Option<(u8, u8, u8)>,
     color: Option<(u8, u8, u8)>,
-    border_thickness: Option<i32>,
-    padding: Option<i32>,
-    gap: Option<i32>,
+    border_thickness: Option<f64>,
+    padding: Option<f64>,
+    gap: Option<f64>,
     border_color: Option<(u8, u8, u8)>,
     font_size: Option<u16>,
     visible: bool,
     focused: bool,
-    focus_thickness: i32,
+    focus_thickness: f64,
     focus_color: (u8, u8, u8),
 }
 
@@ -85,14 +86,14 @@ macro_rules! make_set_function {
 }
 
 impl Node {
-    make_set_function!(set_width, width, i32);
-    make_set_function!(set_height, height, i32);
+    make_set_function!(set_width, width, f64);
+    make_set_function!(set_height, height, f64);
     make_set_function!(set_background_color, background_color, (u8, u8, u8));
     make_set_function!(set_color, color, (u8, u8, u8));
     make_set_function!(set_border_color, border_color, (u8, u8, u8));
-    make_set_function!(set_border_thickness, border_thickness, i32);
-    make_set_function!(set_padding, padding, i32);
-    make_set_function!(set_gap, gap, i32);
+    make_set_function!(set_border_thickness, border_thickness, f64);
+    make_set_function!(set_padding, padding, f64);
+    make_set_function!(set_gap, gap, f64);
     make_set_function!(set_font_size, font_size, u16);
 
     pub fn set_focused(&mut self, focused: bool) {
@@ -227,7 +228,7 @@ impl Dom {
             .find(|(id, _)| *id == self.root_id)
             .map(|(_, node)| node)
             .unwrap()
-            .build_layout_tree(self.root_id, self, ctx, (0, 0), &mut NoTransform)
+            .build_layout_tree(self.root_id, self, ctx, V2::new(0.0, 0.0), &mut NoTransform)
     }
 
     fn internal_ancestry_find_map<T, F: Fn(&Node) -> Option<T>>(
@@ -266,7 +267,9 @@ impl Dom {
         let tree = self.build_layout_tree(ctx);
         tree.draw(ctx);
         if ctx.mouse_button_just_pressed(engine::MouseButton::Left) {
-            if let Some(event) = tree.resolve_click(ctx.mouse_position()) {
+            let mouse_position = ctx.mouse_position();
+            let mouse_position = V2::new(mouse_position.0 as f64, mouse_position.1 as f64);
+            if let Some(event) = tree.resolve_click(mouse_position) {
                 self.event_queue.push(event);
             }
         }

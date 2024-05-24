@@ -29,7 +29,7 @@ impl LayoutTree<'_> {
         }
     }
 
-    pub fn resolve_click(&self, mouse_pos: (i32, i32)) -> Option<(EventId, InternalNodeId)> {
+    pub fn resolve_click(&self, mouse_pos: V2) -> Option<(EventId, InternalNodeId)> {
         match self {
             LayoutTree::Single(leaf) => leaf.resolve_click(mouse_pos),
             LayoutTree::Multiple(leaf, children) => {
@@ -49,72 +49,78 @@ impl LayoutTree<'_> {
     }
 }
 
+fn min<T: PartialOrd>(lhs: T, rhs: T) -> T {
+    if lhs < rhs {
+        lhs
+    } else {
+        rhs
+    }
+}
+
+fn max<T: PartialOrd>(lhs: T, rhs: T) -> T {
+    if lhs > rhs {
+        lhs
+    } else {
+        rhs
+    }
+}
+
 impl LayoutTreeLeaf<'_> {
     fn draw_border(&self, ctx: &mut impl UiContext) {
         let pos = self.pos;
-        let size = (self.size.0 as u32, self.size.1 as u32);
+        let size = self.size;
         if let Some(thickness) = self.inner.border_thickness {
-            let thickness = thickness as u32;
             let border_color = self.inner.border_color.unwrap_or((255, 255, 255));
-            ctx.draw_rect(border_color, pos, V2::new(size.0, thickness))
+            ctx.draw_rect(border_color, pos, V2::new(size.x, thickness))
                 .unwrap();
-            ctx.draw_rect(border_color, pos, V2::new(thickness, size.1))
+            ctx.draw_rect(border_color, pos, V2::new(thickness, size.y))
                 .unwrap();
             ctx.draw_rect(
                 border_color,
-                pos.0 + size.0 as i32 - thickness as i32,
-                pos.1,
-                thickness,
-                size.1,
+                V2::new(pos.x + size.x - thickness, pos.y),
+                V2::new(thickness, size.y),
             )
             .unwrap();
             ctx.draw_rect(
                 border_color,
-                pos.0,
-                pos.1 + size.1 as i32 - thickness as i32,
-                size.0,
-                thickness,
+                V2::new(pos.x, pos.y + size.y - thickness),
+                V2::new(size.x, thickness),
             )
             .unwrap();
         }
         if self.inner.focused {
             let thickness = self.inner.focus_thickness;
-            let pos = (self.pos.0 - thickness, self.pos.1 - thickness);
-            let thickness = thickness as u32;
+            let pos = V2::new(self.pos.x - thickness, self.pos.y - thickness);
             let border_color = self.inner.focus_color;
-            let size = (size.0 + thickness * 2, size.1 + thickness * 2);
-            ctx.draw_rect(border_color, pos.0, pos.1, size.0, thickness)
+            let size = size + V2::new(thickness, thickness).extend(2.0);
+            ctx.draw_rect(border_color, pos, V2::new(size.x, thickness))
                 .unwrap();
-            ctx.draw_rect(border_color, pos.0, pos.1, thickness, size.1)
+            ctx.draw_rect(border_color, pos, V2::new(thickness, size.y))
                 .unwrap();
             ctx.draw_rect(
                 border_color,
-                pos.0 + size.0 as i32 - thickness as i32,
-                pos.1,
-                thickness,
-                size.1,
+                V2::new(pos.x + size.x - thickness, pos.y),
+                V2::new(thickness, size.y),
             )
             .unwrap();
             ctx.draw_rect(
                 border_color,
-                pos.0,
-                pos.1 + size.1 as i32 - thickness as i32,
-                size.0,
-                thickness,
+                V2::new(pos.x, pos.y + size.y - thickness),
+                V2::new(size.x, thickness),
             )
             .unwrap();
         }
     }
 
-    pub fn resolve_click(&self, mouse_position: (i32, i32)) -> Option<(EventId, InternalNodeId)> {
+    pub fn resolve_click(&self, mouse_position: V2) -> Option<(EventId, InternalNodeId)> {
         if !self.inner.visible {
             return None;
         }
 
         let event_id = self.inner.on_click?;
 
-        if !((self.pos.0..self.pos.0 + self.size.0).contains(&mouse_position.0)
-            && (self.pos.1..self.pos.1 + self.size.1).contains(&mouse_position.1))
+        if !((self.pos.x..self.pos.x + self.size.x).contains(&mouse_position.x)
+            && (self.pos.y..self.pos.y + self.size.y).contains(&mouse_position.y))
         {
             return None;
         }
@@ -137,21 +143,22 @@ impl LayoutTreeLeaf<'_> {
                     .render_text(font_id, text, self.inner.color.unwrap_or((255, 255, 255)))
                     .unwrap();
                 let offset =
-                    self.inner.padding.unwrap_or(0) + self.inner.border_thickness.unwrap_or(0);
-                ctx.draw_texture(text.texture, self.pos.0 + offset, self.pos.1 + offset)
+                    self.inner.padding.unwrap_or(0.0) + self.inner.border_thickness.unwrap_or(0.0);
+                ctx.draw_texture(text.texture, self.pos + V2::new(offset, offset))
                     .unwrap();
             }
             Kind::Image(src) => {
                 let texture = ctx.load_texture(src).unwrap();
                 let texture_size = ctx.texture_size(texture).unwrap();
                 let offset =
-                    self.inner.padding.unwrap_or(0) + self.inner.border_thickness.unwrap_or(0);
+                    self.inner.padding.unwrap_or(0.0) + self.inner.border_thickness.unwrap_or(0.0);
                 ctx.draw_texture_sized(
                     texture,
-                    self.pos.0 + offset,
-                    self.pos.1 + offset,
-                    self.inner.width.unwrap_or(texture_size.0 as i32) as u32,
-                    self.inner.height.unwrap_or(texture_size.1 as i32) as u32,
+                    self.pos + V2::new(offset, offset),
+                    V2::new(
+                        self.inner.width.unwrap_or(texture_size.0 as f64),
+                        self.inner.height.unwrap_or(texture_size.1 as f64),
+                    ),
                 )
                 .unwrap();
             }
@@ -167,13 +174,13 @@ pub(super) trait CanCreateLayoutTree {
         node_id: InternalNodeId,
         dom: &'dom Dom,
         ctx: &mut impl UiContext,
-        parent_pos: (i32, i32),
+        parent_pos: V2,
         pos_transformer: &mut dyn TransformersRobotsInDisguise,
     ) -> LayoutTree<'dom>;
 }
 
 pub(super) trait TransformersRobotsInDisguise {
-    fn pos(&mut self, size: (i32, i32)) -> (i32, i32);
+    fn pos(&mut self, size: V2) -> V2;
     fn boxed(self) -> Box<dyn TransformersRobotsInDisguise>
     where
         Self: Sized + 'static,
@@ -183,15 +190,15 @@ pub(super) trait TransformersRobotsInDisguise {
 }
 
 pub(super) struct HoriTransform {
-    acc: i32,
-    content_size: (i32, i32),
-    padding: i32,
-    gap: i32,
+    acc: f64,
+    content_size: V2,
+    padding: f64,
+    gap: f64,
 }
 impl HoriTransform {
-    fn new(content_size: (i32, i32), padding: i32, gap: i32) -> Self {
+    fn new(content_size: V2, padding: f64, gap: f64) -> Self {
         Self {
-            acc: 0,
+            acc: 0.0,
             content_size,
             padding,
             gap,
@@ -199,24 +206,24 @@ impl HoriTransform {
     }
 }
 impl TransformersRobotsInDisguise for HoriTransform {
-    fn pos(&mut self, child_size: (i32, i32)) -> (i32, i32) {
+    fn pos(&mut self, child_size: V2) -> V2 {
         let x = self.acc;
-        let y = (self.content_size.1 - child_size.1) / 2;
-        self.acc += child_size.0 + self.gap;
-        (x + self.padding, y)
+        let y = (self.content_size.y - child_size.y) / 2.0;
+        self.acc += child_size.x + self.gap;
+        V2::new(x + self.padding, y)
     }
 }
 
 pub(super) struct VertTransform {
-    acc: i32,
-    content_size: (i32, i32),
-    padding: i32,
-    gap: i32,
+    acc: f64,
+    content_size: V2,
+    padding: f64,
+    gap: f64,
 }
 impl VertTransform {
-    fn new(content_size: (i32, i32), padding: i32, gap: i32) -> Self {
+    fn new(content_size: V2, padding: f64, gap: f64) -> Self {
         Self {
-            acc: 0,
+            acc: 0.0,
             content_size,
             padding,
             gap,
@@ -224,20 +231,20 @@ impl VertTransform {
     }
 }
 impl TransformersRobotsInDisguise for VertTransform {
-    fn pos(&mut self, child_size: (i32, i32)) -> (i32, i32) {
-        let x = (self.content_size.0 - child_size.0) / 2;
+    fn pos(&mut self, child_size: V2) -> V2 {
+        let x = (self.content_size.x - child_size.x) / 2.0;
         let y = self.acc;
-        self.acc += child_size.1 + self.gap;
-        (x, y + self.padding)
+        self.acc += child_size.y + self.gap;
+        V2::new(x, y + self.padding)
     }
 }
 
 struct StackTransform {
-    content_size: (i32, i32),
-    padding: i32,
+    content_size: V2,
+    padding: f64,
 }
 impl StackTransform {
-    fn new(content_size: (i32, i32), padding: i32) -> Self {
+    fn new(content_size: V2, padding: f64) -> Self {
         Self {
             content_size,
             padding,
@@ -245,17 +252,15 @@ impl StackTransform {
     }
 }
 impl TransformersRobotsInDisguise for StackTransform {
-    fn pos(&mut self, child_size: (i32, i32)) -> (i32, i32) {
-        let x = (self.content_size.0 - child_size.0) / 2;
-        let y = (self.content_size.1 - child_size.1) / 2;
-        (x, y)
+    fn pos(&mut self, child_size: V2) -> V2 {
+        (self.content_size - child_size).div_comps(2.0)
     }
 }
 
 pub(super) struct NoTransform;
 impl TransformersRobotsInDisguise for NoTransform {
-    fn pos(&mut self, _child_size: (i32, i32)) -> (i32, i32) {
-        (0, 0)
+    fn pos(&mut self, _child_size: V2) -> V2 {
+        V2::new(0.0, 0.0)
     }
 }
 
@@ -265,13 +270,13 @@ impl CanCreateLayoutTree for Node {
         node_id: InternalNodeId,
         dom: &'dom Dom,
         ctx: &mut impl UiContext,
-        parent_pos: (i32, i32),
+        parent_pos: V2,
         pos_transformer: &mut dyn TransformersRobotsInDisguise,
     ) -> LayoutTree<'dom> {
         if !self.visible {
             return LayoutTree::Single(LayoutTreeLeaf {
-                size: (0, 0),
-                pos: (0, 0),
+                size: V2::new(0.0, 0.0),
+                pos: V2::new(0.0, 0.0),
                 inner: self,
                 node_id,
             });
@@ -280,16 +285,17 @@ impl CanCreateLayoutTree for Node {
             node: &'a Node,
             node_id: InternalNodeId,
             pos_offset: &mut dyn TransformersRobotsInDisguise,
-            parent_pos: (i32, i32),
-            default_size: (i32, i32),
+            parent_pos: V2,
+            default_size: V2,
         ) -> LayoutTreeLeaf<'a> {
-            let padding = node.padding.unwrap_or(0) + node.border_thickness.unwrap_or(0);
-            let size = (
-                node.width.unwrap_or(default_size.0) + padding * 2,
-                node.height.unwrap_or(default_size.1) + padding * 2,
-            );
+            let padding =
+                (node.padding.unwrap_or(0.0) + node.border_thickness.unwrap_or(0.0)) * 2.0;
+            let size = V2::new(
+                node.width.unwrap_or(default_size.x),
+                node.height.unwrap_or(default_size.y),
+            ) + V2::new(padding, padding);
             let pos = pos_offset.pos(size);
-            let pos = (pos.0 + parent_pos.0, pos.1 + parent_pos.1);
+            let pos = pos + parent_pos;
             LayoutTreeLeaf {
                 size,
                 pos,
@@ -303,33 +309,36 @@ impl CanCreateLayoutTree for Node {
                 let font_size = self.font_size.unwrap_or(15);
                 let font_id = ctx.load_font(font, font_size).unwrap();
                 let size = ctx.text_size(font_id, text).unwrap();
-                let size = (size.0 as i32, size.1 as i32);
+                let size = V2::new(size.0 as f64, size.1 as f64);
                 let leaf = build_leaf(self, node_id, pos_transformer, parent_pos, size);
                 LayoutTree::Single(leaf)
             }
             Kind::Rect | Kind::Image(_) => {
-                let leaf = build_leaf(self, node_id, pos_transformer, parent_pos, (0, 0));
+                let leaf = build_leaf(
+                    self,
+                    node_id,
+                    pos_transformer,
+                    parent_pos,
+                    V2::new(0.0, 0.0),
+                );
                 LayoutTree::Single(leaf)
             }
             kind @ (Kind::Hori(children) | Kind::Vert(children) | Kind::Stack(children)) => {
-                let padding = self.padding.unwrap_or(0) + self.border_thickness.unwrap_or(0);
-                let gap = self.gap.unwrap_or(0);
+                let padding = self.padding.unwrap_or(0.0) + self.border_thickness.unwrap_or(0.0);
+                let gap = self.gap.unwrap_or(0.0);
 
                 let calc_content_size = match kind {
-                    Kind::Vert(_) => |acc: (i32, i32), (curr, gap): (LayoutTree, i32)| {
+                    Kind::Vert(_) => |acc: V2, (curr, gap): (LayoutTree, f64)| {
                         let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
-                        (std::cmp::max(acc.0, leaf.size.0), acc.1 + leaf.size.1 + gap)
+                        V2::new(max(acc.x, leaf.size.x), acc.y + leaf.size.y + gap)
                     },
-                    Kind::Hori(_) => |acc: (i32, i32), (curr, gap): (LayoutTree, i32)| {
+                    Kind::Hori(_) => |acc: V2, (curr, gap): (LayoutTree, f64)| {
                         let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
-                        (acc.0 + leaf.size.0 + gap, std::cmp::max(acc.1, leaf.size.1))
+                        V2::new(acc.x + leaf.size.x + gap, max(acc.y, leaf.size.y))
                     },
-                    Kind::Stack(_) => |acc: (i32, i32), (curr, _gap): (LayoutTree, i32)| {
+                    Kind::Stack(_) => |acc: V2, (curr, _gap): (LayoutTree, f64)| {
                         let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
-                        (
-                            std::cmp::max(acc.0, leaf.size.0),
-                            std::cmp::max(acc.1, leaf.size.1),
-                        )
+                        V2::new(max(acc.x, leaf.size.x), max(acc.y, leaf.size.y))
                     },
                     _ => unreachable!("not matched prior"),
                 };
@@ -338,18 +347,18 @@ impl CanCreateLayoutTree for Node {
                     .iter()
                     .filter_map(|id| dom.select_node(*id).map(|node| (*id, node)))
                     .map(|(id, node)| {
-                        node.build_layout_tree(id, dom, ctx, (0, 0), &mut NoTransform)
+                        node.build_layout_tree(id, dom, ctx, V2::new(0.0, 0.0), &mut NoTransform)
                     })
                     .map(|tree| (tree, gap))
-                    .fold((0, 0), calc_content_size);
+                    .fold(V2::new(0.0, 0.0), calc_content_size);
 
-                let size = (
-                    self.width.unwrap_or(size.0) + padding * 2,
-                    self.height.unwrap_or(size.1) + padding * 2,
-                );
+                let size = V2::new(
+                    self.width.map(|v| v as f64).unwrap_or(size.x),
+                    self.height.map(|v| v as f64).unwrap_or(size.y),
+                ) + V2::new(padding * 2.0, padding * 2.0);
 
                 let pos = pos_transformer.pos(size);
-                let pos = (pos.0 + parent_pos.0, pos.1 + parent_pos.1);
+                let pos = pos + parent_pos;
 
                 let mut transformer = match kind {
                     Kind::Vert(_) => VertTransform::new(size, padding, gap).boxed(),
@@ -366,7 +375,7 @@ impl CanCreateLayoutTree for Node {
                     .collect();
 
                 let leaf = LayoutTreeLeaf {
-                    size: (size.0, size.1),
+                    size,
                     pos,
                     inner: self,
                     node_id,

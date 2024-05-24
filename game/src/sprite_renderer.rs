@@ -56,11 +56,8 @@ impl System for SpriteRenderer {
             let opacity = sprite.opacity.unwrap_or(1.0);
             ctx.draw_texture(
                 sprite.texture,
-                (pos.x + sprite.offset.x) as i32,
-                (pos.y + sprite.offset.y) as i32,
-                DrawTextureOpts::new()
-                    .size((size.x as u32, size.y as u32))
-                    .opacity(opacity),
+                pos + sprite.offset,
+                DrawTextureOpts::new().size(size).opacity(opacity),
             )?;
         }
         Ok(())
