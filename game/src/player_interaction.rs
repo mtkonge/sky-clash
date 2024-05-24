@@ -1,4 +1,4 @@
-use engine::{query, rigid_body::RigidBody, spawn, Collider, Component, System, V2};
+use engine::{max, query, rigid_body::RigidBody, spawn, Collider, Component, System, V2};
 
 use crate::{
     hurtbox::{HurtDirection, Hurtbox, HurtboxProfile, Outcome, Victim},
@@ -394,11 +394,10 @@ impl HurtboxProfile for UpAttackProfile {
             + knockback_modifier * 5.0;
 
         let delta_vel = V2::new(0.0, -velocity);
-
         Outcome {
             damage: 20.0,
             delta_vel,
-            stun_time: Some(0.3),
+            stun_time: Some(max(0.3, delta_vel.len() / 2500.0)),
         }
     }
 }

@@ -1,4 +1,4 @@
-use engine::V2;
+use engine::{max, V2};
 
 use super::{ui_context::UiContext, Dom, EventId, InternalNodeId, Kind, Node};
 
@@ -46,22 +46,6 @@ impl LayoutTree<'_> {
                 None
             }
         }
-    }
-}
-
-fn min<T: PartialOrd>(lhs: T, rhs: T) -> T {
-    if lhs < rhs {
-        lhs
-    } else {
-        rhs
-    }
-}
-
-fn max<T: PartialOrd>(lhs: T, rhs: T) -> T {
-    if lhs > rhs {
-        lhs
-    } else {
-        rhs
     }
 }
 

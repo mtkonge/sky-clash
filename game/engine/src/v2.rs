@@ -76,3 +76,19 @@ impl Default for V2 {
         Self { x: 0.0, y: 0.0 }
     }
 }
+
+pub fn min<T: PartialOrd>(lhs: T, rhs: T) -> T {
+    if lhs < rhs {
+        lhs
+    } else {
+        rhs
+    }
+}
+
+pub fn max<T: PartialOrd>(lhs: T, rhs: T) -> T {
+    if lhs > rhs {
+        lhs
+    } else {
+        rhs
+    }
+}
