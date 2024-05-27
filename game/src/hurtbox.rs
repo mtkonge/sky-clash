@@ -31,7 +31,12 @@ pub struct Outcome {
 }
 
 pub trait HurtboxProfile {
-    fn outcome(&self, player: &Player, hurtbox_body: &RigidBody) -> Outcome;
+    fn outcome(
+        &self,
+        victim: &Player,
+        attacker: Option<&Player>,
+        hurtbox_body: &RigidBody,
+    ) -> Outcome;
 }
 
 #[derive(Component, Clone)]
@@ -125,14 +130,27 @@ impl HurtboxSystem {
         victim_id: u64,
         hurtbox_body: &RigidBody,
     ) {
-        let player = ctx.select::<Player>(victim_id);
+        let attacker = hurtbox.owner.map(|id| ctx.select::<Player>(id).clone());
+
+        let attacker_strength = attacker
+            .as_ref()
+            .map(|a| a.hero.strength_points)
+            .unwrap_or(0);
+
+        let victim = ctx.select::<Player>(victim_id);
+        let victim_defence = victim.hero.defence_points;
 
         let Outcome {
             damage,
             delta_vel,
             stun_time,
-        } = hurtbox.profile.outcome(player, hurtbox_body);
+        } = hurtbox
+            .profile
+            .outcome(victim, attacker.as_ref(), hurtbox_body);
 
+        let damage_multiplier =
+            1.0 + attacker_strength as f64 / 24.0 - (victim_defence as f64 + 1.0) / 24.0;
+        let damage = damage * damage_multiplier;
         let victim = ctx.select::<Victim>(victim_id);
         victim.hurt_by.push(hurtbox_id);
         victim.stunned = stun_time;

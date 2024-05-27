@@ -3,6 +3,7 @@
 use engine::spawn;
 use server::Server;
 
+mod attacks;
 mod backend_connection;
 mod game;
 mod hero_creator;

@@ -1,18 +1,13 @@
-use engine::{max, query, rigid_body::RigidBody, spawn, Collider, Component, System, V2};
+use engine::{query, rigid_body::RigidBody, spawn, Collider, Component, System, V2};
 
 use crate::{
-    hurtbox::{HurtDirection, Hurtbox, HurtboxProfile, Outcome, Victim},
+    attacks::{self, AttackKind},
+    hurtbox::{HurtDirection, Hurtbox, HurtboxProfile, Victim},
     keyset::Keyset,
+    player::Player,
     sprite_renderer::Sprite,
     timer::Timer,
 };
-
-enum AttackKind {
-    Up,
-    Down,
-    Left,
-    Right,
-}
 
 #[derive(Clone)]
 pub enum DodgeState {
@@ -241,8 +236,17 @@ impl PlayerInteractionSystem {
         } else {
             self.spawn_attack(ctx, AttackKind::Up, id, &body);
         }
+        let agility = ctx.select::<Player>(id).hero.agility_points;
         let player_attack = ctx.select::<PlayerInteraction>(id);
-        player_attack.attack_cooldown = 0.5;
+
+        let min_attack_cooldown = 0.5;
+        let max_attack_cooldown = 1.0;
+
+        let attack_cooldown = (max_attack_cooldown - min_attack_cooldown)
+            * (1.0 - agility as f64 / 24.0)
+            + min_attack_cooldown;
+
+        player_attack.attack_cooldown = attack_cooldown;
 
         Ok(())
     }
@@ -264,16 +268,20 @@ impl PlayerInteractionSystem {
         let collider = ctx.select::<Collider>(id).clone();
         let victim = ctx.select::<Victim>(id).clone();
         let player_movement = ctx.select::<PlayerInteraction>(id).clone();
+        let agility = ctx.select::<Player>(id).hero.agility_points;
         let body = ctx.select::<RigidBody>(id);
 
         if victim.stunned.is_some() {
             return Ok(());
         }
 
-        if right_pressed && !left_pressed && body.vel.x < 400.0 {
-            body.vel.x += 400.0 * delta * 8.0;
-        } else if left_pressed && !right_pressed && body.vel.x > (-400.0) {
-            body.vel.x -= 400.0 * delta * 8.0;
+        let acceleration = 300.0 * delta * 8.0 * (1.0 + agility as f64 / 24.0);
+        let max_speed = 300.0 * (1.0 + agility as f64 / 24.0);
+
+        if right_pressed && !left_pressed && body.vel.x < max_speed {
+            body.vel.x += acceleration;
+        } else if left_pressed && !right_pressed && body.vel.x > (-max_speed) {
+            body.vel.x -= acceleration;
         }
 
         if down_pressed && body.vel.y < 800.0 {
@@ -329,7 +337,7 @@ impl PlayerInteractionSystem {
 
         let player_interaction = ctx.select::<PlayerInteraction>(id);
         let dodge_state = &mut player_interaction.dodge_state;
-        *dodge_state = DodgeState::Dodging(Timer::new(1.0));
+        *dodge_state = DodgeState::Dodging(Timer::new(0.5));
 
         let sprite = ctx.select::<Sprite>(id);
         sprite.set_opacity(0.5);
@@ -339,87 +347,14 @@ impl PlayerInteractionSystem {
 
     fn attack_profile(&self, attack_kind: &AttackKind) -> Box<dyn HurtboxProfile> {
         match attack_kind {
-            AttackKind::Up => Box::new(UpAttackProfile),
-            AttackKind::Down => Box::new(DownAttackProfile),
-            AttackKind::Left => Box::new(SideAttackProfile {
+            AttackKind::Up => Box::new(attacks::UpAttackProfile),
+            AttackKind::Down => Box::new(attacks::DownAttackProfile),
+            AttackKind::Left => Box::new(attacks::SideAttackProfile {
                 direction: HurtDirection::Left,
             }),
-            AttackKind::Right => Box::new(SideAttackProfile {
+            AttackKind::Right => Box::new(attacks::SideAttackProfile {
                 direction: HurtDirection::Right,
             }),
-        }
-    }
-}
-
-struct SideAttackProfile {
-    direction: HurtDirection,
-}
-
-impl HurtboxProfile for SideAttackProfile {
-    fn outcome(&self, player: &crate::player::Player, hurtbox_body: &RigidBody) -> Outcome {
-        let power = 20.0;
-        let knockback_modifier = player.damage_taken / 75.0 + 1.0;
-
-        let hurtbox_vel = (hurtbox_body.vel.x.powi(2) + hurtbox_body.vel.y.powi(2)).sqrt();
-        let velocity = hurtbox_vel
-            + power * knockback_modifier.powi(2) * 0.8
-            + power * 10.0
-            + knockback_modifier * 5.0;
-
-        let delta_vel = match self.direction {
-            HurtDirection::Left => V2::new(-velocity, 0.0),
-            HurtDirection::Right => V2::new(velocity, 0.0),
-            _ => unreachable!(),
-        };
-
-        Outcome {
-            damage: 10.0,
-            delta_vel,
-            stun_time: Some(0.3),
-        }
-    }
-}
-
-struct UpAttackProfile;
-
-impl HurtboxProfile for UpAttackProfile {
-    fn outcome(&self, player: &crate::player::Player, hurtbox_body: &RigidBody) -> Outcome {
-        let power = 50.0;
-        let knockback_modifier = player.damage_taken / 75.0 + 1.0;
-
-        let hurtbox_vel = (hurtbox_body.vel.x.powi(2) + hurtbox_body.vel.y.powi(2)).sqrt();
-        let velocity = hurtbox_vel
-            + power * knockback_modifier.powi(2) * 0.8
-            + power * 10.0
-            + knockback_modifier * 5.0;
-
-        let delta_vel = V2::new(0.0, -velocity);
-        Outcome {
-            damage: 20.0,
-            delta_vel,
-            stun_time: Some(max(0.3, delta_vel.len() / 2500.0)),
-        }
-    }
-}
-
-struct DownAttackProfile;
-impl HurtboxProfile for DownAttackProfile {
-    fn outcome(&self, _player: &crate::player::Player, hurtbox_body: &RigidBody) -> Outcome {
-        let power = 55.0;
-        let knockback_modifier: f64 = 2.0;
-
-        let hurtbox_vel = (hurtbox_body.vel.x.powi(2) + hurtbox_body.vel.y.powi(2)).sqrt();
-        let velocity = hurtbox_vel
-            + power * knockback_modifier.powi(2) * 0.8
-            + power * 10.0
-            + knockback_modifier * 5.0;
-
-        let delta_vel = V2::new(0.0, -velocity);
-
-        Outcome {
-            damage: 5.0,
-            delta_vel,
-            stun_time: Some(0.3),
         }
     }
 }
