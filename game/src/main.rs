@@ -17,11 +17,9 @@ mod mock_connection;
 mod player;
 mod player_interaction;
 mod server;
-mod shared_ptr;
 mod sprite_renderer;
 mod start_game;
 mod timer;
-mod ui;
 
 fn main() {
     // let mut connection = backend_connection::BackendConnection::new();

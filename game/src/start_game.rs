@@ -1,19 +1,21 @@
 use std::{borrow::BorrowMut, sync::MutexGuard};
 
-use engine::{query, spawn, Component, System};
-
-use crate::{
-    game::GameSystem,
-    hero_info::HeroInfo,
-    main_menu::MainMenuSystem,
-    server::{Board, HeroResult, Res, Server},
-    shared_ptr::SharedPtr,
+use engine::{
+    query, spawn,
     ui::{
         self,
         components::ProgressBar,
         focus::Focus,
         utils::{change_image_node_content, change_text_node_content},
     },
+    Component, SharedPtr, System,
+};
+
+use crate::{
+    game::GameSystem,
+    hero_info::HeroInfo,
+    main_menu::MainMenuSystem,
+    server::{Board, HeroResult, Res, Server},
 };
 
 #[derive(Component, Clone)]

@@ -1,14 +1,14 @@
 mod builder;
+mod layout;
+mod ui_context;
 
 pub mod components;
 pub mod focus;
 pub mod id_offset;
-mod layout;
-mod ui_context;
 pub mod utils;
 
+use crate::{Context, V2};
 pub use builder::constructors;
-use engine::V2;
 
 pub type BoxedNode = builder::Box<builder::Node>;
 
@@ -114,7 +114,7 @@ impl Node {
     }
 }
 
-type EventHandler = Rc<dyn Fn(&mut Dom, &mut engine::Context, InternalNodeId)>;
+type EventHandler = Rc<dyn Fn(&mut Dom, &mut Context, InternalNodeId)>;
 
 pub struct Dom {
     nodes: Vec<(InternalNodeId, Node)>,
@@ -145,7 +145,7 @@ impl Dom {
 
     pub fn add_event_handler<Id: Into<EventId>, F>(&mut self, event_id: Id, f: F)
     where
-        F: Fn(&mut Dom, &mut engine::Context, InternalNodeId) + 'static,
+        F: Fn(&mut Dom, &mut Context, InternalNodeId) + 'static,
     {
         self.event_handlers.push((event_id.into(), Rc::new(f)));
     }
@@ -161,6 +161,7 @@ impl Dom {
             .map(|(_, node)| node)
     }
 
+    #[allow(dead_code)]
     fn select_node_mut<I>(&mut self, node_id: I) -> Option<&mut Node>
     where
         I: Into<InternalNodeId>,
@@ -211,7 +212,7 @@ impl Dom {
             .map(|(_, node)| node)
     }
 
-    pub fn handle_events(&mut self, ctx: &mut engine::Context) {
+    pub fn handle_events(&mut self, ctx: &mut Context) {
         let drained = std::mem::take(&mut self.event_queue);
         for (event_id, node_id) in drained {
             for (event_id_candidate, f) in self.event_handlers.clone() {
@@ -263,10 +264,10 @@ impl Dom {
         };
     }
 
-    pub fn update(&mut self, ctx: &mut engine::Context) {
+    pub fn update(&mut self, ctx: &mut Context) {
         let tree = self.build_layout_tree(ctx);
         tree.draw(ctx);
-        if ctx.mouse_button_just_pressed(engine::MouseButton::Left) {
+        if ctx.mouse_button_just_pressed(crate::MouseButton::Left) {
             let mouse_position = ctx.mouse_position();
             let mouse_position = V2::new(f64::from(mouse_position.0), f64::from(mouse_position.1));
             if let Some(event) = tree.resolve_click(mouse_position) {

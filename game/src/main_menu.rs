@@ -1,8 +1,8 @@
 use crate::hero_creator::HeroCreatorSystem;
-use crate::shared_ptr::SharedPtr;
 use crate::start_game::StartGameSystem;
-use crate::ui;
-use crate::ui::components::Button;
+use engine::ui;
+use engine::ui::components::Button;
+use engine::SharedPtr;
 use engine::{query, spawn};
 use engine::{Component, System};
 

@@ -4,12 +4,13 @@ use crate::server::Board;
 use crate::server::HeroResult;
 use crate::server::Res;
 use crate::server::Server;
-use crate::shared_ptr::SharedPtr;
-use crate::ui;
-use crate::ui::utils::change_image_node_content;
-use crate::ui::utils::change_text_node_content;
 use engine::query_one;
 use engine::spawn;
+use engine::ui::{
+    self,
+    utils::{change_image_node_content, change_text_node_content},
+};
+use engine::SharedPtr;
 use engine::{Component, System};
 
 #[derive(Component, Clone)]

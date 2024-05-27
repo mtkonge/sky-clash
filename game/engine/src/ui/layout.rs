@@ -1,4 +1,4 @@
-use engine::{max, V2};
+use crate::{max, V2};
 
 use super::{ui_context::UiContext, Dom, EventId, InternalNodeId, Kind, Node};
 
@@ -225,14 +225,10 @@ impl TransformersRobotsInDisguise for VertTransform {
 
 struct StackTransform {
     content_size: V2,
-    padding: f64,
 }
 impl StackTransform {
-    fn new(content_size: V2, padding: f64) -> Self {
-        Self {
-            content_size,
-            padding,
-        }
+    fn new(content_size: V2) -> Self {
+        Self { content_size }
     }
 }
 impl TransformersRobotsInDisguise for StackTransform {
@@ -345,7 +341,7 @@ impl CanCreateLayoutTree for Node {
                 let mut transformer = match kind {
                     Kind::Vert(_) => VertTransform::new(size, padding, gap).boxed(),
                     Kind::Hori(_) => HoriTransform::new(size, padding, gap).boxed(),
-                    Kind::Stack(_) => StackTransform::new(size, padding).boxed(),
+                    Kind::Stack(_) => StackTransform::new(size).boxed(),
                     _ => unreachable!(),
                 };
                 let children: Vec<_> = children

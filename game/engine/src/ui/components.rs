@@ -1,4 +1,4 @@
-use crate::shared_ptr::SharedPtr;
+use crate::{Context, SharedPtr};
 
 use super::{
     builder, constructors::Text, id_offset::IdOffset, BoxedNode, Dom, InternalNodeId, Kind, Node,
@@ -128,7 +128,7 @@ impl ProgressBar {
         let upper_limit = self.upper_limit.clone();
         dom.add_event_handler(
             self.id(0),
-            move |_dom: &mut Dom, _ctx: &mut engine::Context, _id: InternalNodeId| {
+            move |_dom: &mut Dom, _ctx: &mut Context, _id: InternalNodeId| {
                 if *steps_filled.lock() == 0 {
                     return;
                 }
@@ -141,7 +141,7 @@ impl ProgressBar {
         let steps_filled = self.filled.clone();
         dom.add_event_handler(
             self.id(1),
-            move |_dom: &mut Dom, _ctx: &mut engine::Context, _id: InternalNodeId| {
+            move |_dom: &mut Dom, _ctx: &mut Context, _id: InternalNodeId| {
                 if *steps_filled.lock() == steps_total {
                     return;
                 }
