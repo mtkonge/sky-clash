@@ -44,6 +44,30 @@ void Wifi::print_info() {
 
 }
 
+String Wifi::get(const String& path) {
+  if (client.connect(this->ip, this->port)) {
+    client.println(String("GET ") + path + " HTTP/1.1");
+    client.println(String("Host: ") + this->ip + ":" + this->port);
+    client.println();
+    while (client.available() == 0) {
+      delay(100);
+    }
+    String response;
+    int bytes_left = client.available();
+    for (int i = 0; i < bytes_left; i++) {
+      int byte = client.read();
+      if (byte == -1) {
+        break;
+      }
+      response += static_cast<char>(byte);
+    }
+    return response;
+  } else {
+    Serial.println(String("Could not get ") + this->ip + ":" + this->port + ", unresolved hostname" );
+    return "Unresolved hostname";
+  }
+}
+
 String Wifi::post(const String& path, const String& data) {
   if (client.connect(this->ip, this->port)) {
     client.println(String("POST ") + path + " HTTP/1.1");
@@ -57,7 +81,8 @@ String Wifi::post(const String& path, const String& data) {
       delay(100);
     }
     String response;
-    for (int i = 0; i < client.available(); i++) {
+    int bytes_left = client.available();
+    for (int i = 0; i < bytes_left; i++) {
       int byte = client.read();
       if (byte == -1) {
         break;
