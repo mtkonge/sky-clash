@@ -129,3 +129,18 @@ pub struct UpdateHeroStatsParams {
     pub rfid: String,
     pub stats: HeroStats,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UpdateBoardColorsParams {
+    pub hero_1_color: (u8, u8, u8),
+    pub hero_2_color: (u8, u8, u8),
+}
+
+#[derive(Clone, Debug)]
+pub struct BoardColors(pub [(u8, u8, u8); 2]);
+
+impl BoardColors {
+    pub fn new(default: (u8, u8, u8)) -> Self {
+        Self([default; 2])
+    }
+}

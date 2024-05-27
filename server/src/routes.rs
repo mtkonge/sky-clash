@@ -1,4 +1,4 @@
-use crate::{database::Database, BoardState, DbParam};
+use crate::{database::Database, BoardColors, BoardState, DbParam};
 use actix_web::{
     get, post,
     web::{Data, Json, Path},
@@ -59,4 +59,22 @@ pub async fn update_heroes_on_board(
 #[get("heroes_on_board")]
 pub async fn heroes_on_board(board_state: Data<BoardState>) -> impl Responder {
     HttpResponse::Ok().json(board_state.lock().await.clone())
+}
+
+#[post("update_board_colors")]
+pub async fn update_board_colors(
+    board_colors: Data<BoardColors>,
+    req_body: Json<shared::UpdateBoardColorsParams>,
+) -> impl Responder {
+    let Json(shared::UpdateBoardColorsParams {
+        hero_1_color,
+        hero_2_color,
+    }) = req_body;
+    board_colors.lock().await.0 = [hero_1_color, hero_2_color];
+    HttpResponse::Ok()
+}
+
+#[get("board_colors")]
+pub async fn get_board_colors(board_colors: Data<BoardColors>) -> impl Responder {
+    HttpResponse::Ok().json(board_colors.lock().await.0)
 }
