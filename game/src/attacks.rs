@@ -25,19 +25,19 @@ impl HurtboxProfile for SideAttackProfile {
         let attacker = attacker.expect("attack always perpetraited");
 
         let power = 200.0;
-        let knockback_per_strength = 100.0;
-        let knockback_per_defence = -100.0;
+        let knockback_per_strength = 5.0;
+        let knockback_per_defence = -5.0;
         let knockback_per_damage_taken_squared = 0.015;
-        let base_damage_taken_squared = 1.0;
+        let base_damage_taken_factor = 1.0;
 
         let hurtbox_vel = hurtbox_body.vel.len();
 
         let velocity = hurtbox_vel
-            + (base_damage_taken_squared
-                + stat_factor(attacker.hero.strength_points) * knockback_per_strength
-                + stat_factor(victim.hero.defence_points) * knockback_per_defence)
-                * victim.damage_taken.powi(2)
-                * knockback_per_damage_taken_squared
+            + victim.damage_taken
+                * (base_damage_taken_factor
+                    + stat_factor(attacker.hero.strength_points) * knockback_per_strength
+                    + stat_factor(victim.hero.defence_points) * knockback_per_defence)
+            + victim.damage_taken.powi(2) * knockback_per_damage_taken_squared
             + power;
 
         let delta_vel = match self.direction {
@@ -49,7 +49,7 @@ impl HurtboxProfile for SideAttackProfile {
         Outcome {
             damage: 10.0,
             delta_vel,
-            stun_time: Some(0.3),
+            stun_time: Some(stun_time_by_velocity(0.3, delta_vel)),
         }
     }
 }
@@ -68,7 +68,7 @@ impl HurtboxProfile for UpAttackProfile {
         let knockback_per_strength = 5.0;
         let knockback_per_defence = -5.0;
         let knockback_per_damage_taken_squared = 0.015;
-        let base_damage_taken_squared = 1.0;
+        let base_damage_taken_factor = 1.0;
 
         let hurtbox_vel = hurtbox_body.vel.len();
 
@@ -76,7 +76,7 @@ impl HurtboxProfile for UpAttackProfile {
             0.0,
             -(hurtbox_vel
                 + victim.damage_taken
-                    * (base_damage_taken_squared
+                    * (base_damage_taken_factor
                         + stat_factor(attacker.hero.strength_points) * knockback_per_strength
                         + stat_factor(victim.hero.defence_points) * knockback_per_defence)
                 + victim.damage_taken.powi(2) * knockback_per_damage_taken_squared
@@ -86,7 +86,7 @@ impl HurtboxProfile for UpAttackProfile {
         Outcome {
             damage: 10.0,
             delta_vel,
-            stun_time: Some(max(0.3, delta_vel.len() / 2500.0)),
+            stun_time: Some(stun_time_by_velocity(0.3, delta_vel)),
         }
     }
 }
@@ -111,11 +111,15 @@ impl HurtboxProfile for DownAttackProfile {
                 + power),
         );
         Outcome {
-            damage: 10.0,
+            damage: 5.0,
             delta_vel,
             stun_time: Some(0.5),
         }
     }
+}
+
+fn stun_time_by_velocity(stun_time: f64, delta_vel: V2) -> f64 {
+    max(stun_time, delta_vel.len() / 2500.0)
 }
 
 fn strength_and_defence_modifier(victim_defence: i64, owner_strength: i64) -> f64 {

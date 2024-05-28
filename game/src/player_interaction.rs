@@ -239,7 +239,7 @@ impl PlayerInteractionSystem {
         let agility = ctx.select::<Player>(id).hero.agility_points;
         let player_attack = ctx.select::<PlayerInteraction>(id);
 
-        let min_attack_cooldown = 0.5;
+        let min_attack_cooldown = 0.4;
         let max_attack_cooldown = 1.0;
 
         let attack_cooldown = (max_attack_cooldown - min_attack_cooldown)

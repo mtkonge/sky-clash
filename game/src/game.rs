@@ -53,23 +53,23 @@ impl System for GameSystem {
             PlayerKind::Right,
         );
 
-        spawn!(
-            ctx,
-            RigidBody::new()
-                .with_pos(V2::new(200.0, 400.0))
-                .with_size(V2::new(32.0, 32.0)),
-            Collider::new(),
-            Sprite::new(nope),
-        );
+        // spawn!(
+        //     ctx,
+        //     RigidBody::new()
+        //         .with_pos(V2::new(200.0, 400.0))
+        //         .with_size(V2::new(32.0, 32.0)),
+        //     Collider::new(),
+        //     Sprite::new(nope),
+        // );
 
-        spawn!(
-            ctx,
-            RigidBody::new()
-                .with_pos(V2::new(1100.0, 400.0))
-                .with_size(V2::new(32.0, 32.0)),
-            Collider::new(),
-            Sprite::new(nope),
-        );
+        // spawn!(
+        //     ctx,
+        //     RigidBody::new()
+        //         .with_pos(V2::new(1100.0, 400.0))
+        //         .with_size(V2::new(32.0, 32.0)),
+        //     Collider::new(),
+        //     Sprite::new(nope),
+        // );
 
         spawn!(
             ctx,
@@ -93,7 +93,7 @@ impl System for GameSystem {
 
 impl GameSystem {
     fn spawn_player(&self, ctx: &mut engine::Context, pos: V2, keyset: Keyset, kind: PlayerKind) {
-        let scale = 1.5;
+        let scale = 1.0;
         let pixel_ratio = 4.0;
 
         let hero = self.player_hero(ctx, &kind);
