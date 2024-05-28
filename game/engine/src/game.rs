@@ -133,13 +133,17 @@ impl<'game> Game<'game> {
                         keycode: Some(Keycode::Escape),
                         ..
                     } => break 'running,
-                    Event::KeyDown { keycode: btn, .. } => {
-                        if !self.currently_pressed_keys.contains_key(&btn.unwrap()) {
-                            self.currently_pressed_keys.insert(btn.unwrap(), true);
+                    Event::KeyDown {
+                        keycode: Some(btn), ..
+                    } => {
+                        if !self.currently_pressed_keys.contains_key(&btn) {
+                            self.currently_pressed_keys.insert(btn, true);
                         }
                     }
-                    Event::KeyUp { keycode: btn, .. } => {
-                        self.currently_pressed_keys.remove(&btn.unwrap());
+                    Event::KeyUp {
+                        keycode: Some(btn), ..
+                    } => {
+                        self.currently_pressed_keys.remove(&btn);
                     }
                     Event::MouseButtonDown { mouse_btn: btn, .. } => {
                         self.currently_pressed_mouse_buttons.insert(btn, true);
