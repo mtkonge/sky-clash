@@ -65,8 +65,8 @@ impl HurtboxProfile for UpAttackProfile {
         let attacker = attacker.expect("attack always perpetraited");
 
         let power = 600.0;
-        let knockback_per_strength = 100.0;
-        let knockback_per_defence = -100.0;
+        let knockback_per_strength = 5.0;
+        let knockback_per_defence = -5.0;
         let knockback_per_damage_taken_squared = 0.015;
         let base_damage_taken_squared = 1.0;
 
@@ -75,11 +75,11 @@ impl HurtboxProfile for UpAttackProfile {
         let delta_vel = V2::new(
             0.0,
             -(hurtbox_vel
-                + (base_damage_taken_squared
-                    + stat_factor(attacker.hero.strength_points) * knockback_per_strength
-                    + stat_factor(victim.hero.defence_points) * knockback_per_defence)
-                    * victim.damage_taken.powi(2)
-                    * knockback_per_damage_taken_squared
+                + victim.damage_taken
+                    * (base_damage_taken_squared
+                        + stat_factor(attacker.hero.strength_points) * knockback_per_strength
+                        + stat_factor(victim.hero.defence_points) * knockback_per_defence)
+                + victim.damage_taken.powi(2) * knockback_per_damage_taken_squared
                 + power),
         );
 

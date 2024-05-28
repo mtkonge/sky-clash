@@ -148,8 +148,9 @@ impl HurtboxSystem {
             .profile
             .outcome(victim, attacker.as_ref(), hurtbox_body);
 
-        let damage_multiplier =
-            1.0 + attacker_strength as f64 / 24.0 - (victim_defence as f64 + 1.0) / 24.0;
+        let max_points = 24.0;
+        let damage_multiplier = 1.0 + attacker_strength as f64 / (max_points * 2.0)
+            - (victim_defence as f64 + 1.0) / (max_points * 2.0);
         let damage = damage * damage_multiplier;
         let victim = ctx.select::<Victim>(victim_id);
         victim.hurt_by.push(hurtbox_id);
