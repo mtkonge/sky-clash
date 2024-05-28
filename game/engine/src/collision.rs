@@ -1,4 +1,4 @@
-use crate::{query, V2};
+use crate::{max, min, query, V2};
 use crate::{rigid_body::RigidBody, Component, Context, Error, System};
 
 struct Rect {
@@ -372,19 +372,19 @@ fn resolve_collision(body: &mut RigidBody, p: V2, rect: V2, dir: Direction) {
     match dir {
         Top => {
             body.pos.y = p.y + 1.0;
-            body.vel.y = 0.0;
+            body.vel.y = max(0.0, body.vel.y);
         }
         Bottom => {
             body.pos.y = p.y - rect.y - 1.0;
-            body.vel.y = 0.0;
+            body.vel.y = min(0.0, body.vel.y);
         }
         Left => {
             body.pos.x = p.x + 1.0;
-            body.vel.x = 0.0;
+            body.vel.x = max(0.0, body.vel.x);
         }
         Right => {
             body.pos.x = p.x - rect.x - 1.0;
-            body.vel.x = 0.0;
+            body.vel.x = min(0.0, body.vel.x);
         }
         _ => unreachable!(),
     }

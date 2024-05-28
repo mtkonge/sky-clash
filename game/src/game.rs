@@ -37,7 +37,7 @@ impl System for GameSystem {
 
         // let background = ctx.load_texture("textures/literally_dprk.png").unwrap();
         let background = ctx.load_texture("textures/xp_backwound.png").unwrap();
-        // let nope = ctx.load_texture("textures/nuh-uh.png").unwrap();
+        let nope = ctx.load_texture("textures/nuh-uh.png").unwrap();
 
         spawn!(
             ctx,
@@ -53,23 +53,23 @@ impl System for GameSystem {
             PlayerKind::Right,
         );
 
-        // spawn!(
-        //     ctx,
-        //     RigidBody::new()
-        //         .with_pos(V2::new(200.0, 400.0))
-        //         .with_size(V2::new(32.0, 32.0)),
-        //     Collider::new(),
-        //     Sprite::new(nope),
-        // );
+        spawn!(
+            ctx,
+            RigidBody::new()
+                .with_pos(V2::new(200.0, 400.0))
+                .with_size(V2::new(32.0, 32.0)),
+            Collider::new(),
+            Sprite::new(nope),
+        );
 
-        // spawn!(
-        //     ctx,
-        //     RigidBody::new()
-        //         .with_pos(V2::new(1100.0, 400.0))
-        //         .with_size(V2::new(32.0, 32.0)),
-        //     Collider::new(),
-        //     Sprite::new(nope),
-        // );
+        spawn!(
+            ctx,
+            RigidBody::new()
+                .with_pos(V2::new(1100.0, 400.0))
+                .with_size(V2::new(32.0, 32.0)),
+            Collider::new(),
+            Sprite::new(nope),
+        );
 
         spawn!(
             ctx,
