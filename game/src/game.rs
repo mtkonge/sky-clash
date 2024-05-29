@@ -37,7 +37,7 @@ impl System for GameSystem {
 
         // let background = ctx.load_texture("textures/literally_dprk.png").unwrap();
         let background = ctx.load_texture("textures/xp_backwound.png").unwrap();
-        let nope = ctx.load_texture("textures/nuh-uh.png").unwrap();
+        // let nope = ctx.load_texture("textures/nuh-uh.png").unwrap();
 
         spawn!(
             ctx,

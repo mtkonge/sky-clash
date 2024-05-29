@@ -92,3 +92,11 @@ pub fn max<T: PartialOrd>(lhs: T, rhs: T) -> T {
         rhs
     }
 }
+
+pub fn clamp(value: f64, max: f64) -> f64 {
+    if value > max {
+        max
+    } else {
+        value
+    }
+}

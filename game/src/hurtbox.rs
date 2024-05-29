@@ -35,6 +35,7 @@ pub trait HurtboxProfile {
         &self,
         victim: &Player,
         attacker: Option<&Player>,
+        victim_body: &RigidBody,
         hurtbox_body: &RigidBody,
     ) -> Outcome;
 }
@@ -137,6 +138,7 @@ impl HurtboxSystem {
             .map(|a| a.hero.strength_points)
             .unwrap_or(0);
 
+        let victim_body = ctx.select::<RigidBody>(victim_id).clone();
         let victim = ctx.select::<Player>(victim_id);
         let victim_defence = victim.hero.defence_points;
 
@@ -146,7 +148,7 @@ impl HurtboxSystem {
             stun_time,
         } = hurtbox
             .profile
-            .outcome(victim, attacker.as_ref(), hurtbox_body);
+            .outcome(victim, attacker.as_ref(), hurtbox_body, &victim_body);
 
         let max_points = 24.0;
         let damage_multiplier = 1.0 + attacker_strength as f64 / (max_points * 2.0)
