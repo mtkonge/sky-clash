@@ -168,7 +168,8 @@ impl HurtboxProfile for UpAttackProfile {
         let attack_angle = clamp(attack_angle, max_angle);
 
         let attack_angle_percentage = attack_angle / max_angle;
-        let x_vel = attack_angle_percentage * velocity;
+        let angle_factor = 0.5;
+        let x_vel = attack_angle_percentage * velocity * angle_factor;
 
         let delta_vel = if hurtbox_body.pos.x < victim_body.pos.x {
             V2::new(x_vel, -velocity)
