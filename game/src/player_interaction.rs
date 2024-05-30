@@ -1,4 +1,4 @@
-use engine::{query, rigid_body::RigidBody, spawn, Collider, Component, System, V2};
+use engine::{query, rigid_body::RigidBody, spawn, Component, SolidCollider, System, V2};
 
 use crate::{
     attacks::{self, AttackKind},
@@ -66,7 +66,7 @@ impl PlayerInteraction {
 pub struct PlayerInteractionSystem(pub u64);
 impl System for PlayerInteractionSystem {
     fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
-        for id in query!(ctx, PlayerInteraction, Victim, RigidBody, Collider) {
+        for id in query!(ctx, PlayerInteraction, Victim, RigidBody, SolidCollider) {
             self.update_player_attack(ctx, delta, id)?;
             self.update_player_movement(ctx, delta, id)?;
             self.update_dodge(ctx, delta, id)?;
@@ -265,7 +265,7 @@ impl PlayerInteractionSystem {
 
         let up_pressed = ctx.key_just_pressed(keyset.up());
 
-        let collider = ctx.select::<Collider>(id).clone();
+        let collider = ctx.select::<SolidCollider>(id).clone();
         let victim = ctx.select::<Victim>(id).clone();
         let player_movement = ctx.select::<PlayerInteraction>(id).clone();
         let agility = ctx.select::<Player>(id).hero.agility_points;

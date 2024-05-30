@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use engine::rigid_body::RigidBody;
-use engine::{query, Collider, Component, V2};
+use engine::{query, SolidCollider, Component, V2};
 use engine::{Context, Error, System};
 
 use crate::player::Player;
@@ -76,7 +76,7 @@ impl System for HurtboxSystem {
                 ctx,
                 PlayerInteraction,
                 RigidBody,
-                Collider,
+                SolidCollider,
                 Player,
                 Victim,
                 Hitbox

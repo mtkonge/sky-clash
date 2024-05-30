@@ -19,7 +19,7 @@ pub mod shared_ptr;
 pub mod ui;
 
 pub use self::{
-    collision::Collider, collision::CollisionSystem, component::Component, context::ComponentQuery,
+    collision::SolidCollider, collision::CollisionSystem, component::Component, context::ComponentQuery,
     context::Context, context::DrawTextureOpts, error::Error, game::Game, id::Id,
     query_runner::QueryRunner, shared_ptr::SharedPtr, system::System, text::Text, texture::Texture,
     v2::clamp, v2::max, v2::min, v2::V2,

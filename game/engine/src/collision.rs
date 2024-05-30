@@ -1,4 +1,4 @@
-use crate::{max, min, query, V2};
+use crate::{max, min, query, Id, V2};
 use crate::{rigid_body::RigidBody, Component, Context, Error, System};
 
 struct Rect {
@@ -274,17 +274,18 @@ impl From<f64> for Boyk {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(i32)]
 pub enum Direction {
-    None,
-    Top,
-    Right,
-    Bottom,
-    Left,
-    TopLeft,
-    TopRight,
-    BottomRight,
-    BottomLeft,
+    None = 0,
+    Top = 1,
+    Right = 2,
+    Bottom = 3,
+    Left = 4,
+    TopLeft = 5,
+    TopRight = 6,
+    BottomRight = 7,
+    BottomLeft = 8,
 }
 
 impl Direction {
@@ -345,6 +346,41 @@ impl From<V2> for Direction {
     }
 }
 
+#[derive(Component, Clone)]
+struct Directions {
+    flags: i32,
+}
+
+impl Directions {
+    pub fn new() -> Self {
+        Self { flags: 0 }
+    }
+
+    pub fn set(&mut self, dir: Direction) {
+        self.flags |= 1 << dir as i32;
+    }
+
+    pub fn unset(&mut self, dir: Direction) {
+        self.flags &= !(1 << dir as i32);
+    }
+
+    pub fn is_set(&self, dir: Direction) -> bool {
+        (self.flags & 1 << dir as i32) != 0
+    }
+}
+
+#[test]
+fn test_directions() {
+    let mut dirs = Directions::new();
+
+    dirs.set(Direction::Top);
+    dirs.set(Direction::Left);
+
+    assert_eq!(dirs.is_set(Direction::Top), true);
+    assert_eq!(dirs.is_set(Direction::Left), true);
+    assert_eq!(dirs.is_set(Direction::Right), false);
+}
+
 fn rect_side_corners(pos: V2, rect: V2, dir: Direction) -> (V2, V2) {
     use Direction::*;
     match dir {
@@ -391,14 +427,32 @@ fn resolve_collision(body: &mut RigidBody, p: V2, rect: V2, dir: Direction) {
 }
 
 #[derive(Component, Clone)]
-pub struct Collider {
+pub struct ShallowCollider {
+    directions: Directions,
+}
+
+impl ShallowCollider {
+    pub fn new() -> Self {
+        Self {
+            directions: Directions::new(),
+        }
+    }
+
+    pub fn with_direction(mut self, dir: Direction) -> Self {
+        self.directions.set(dir);
+        self
+    }
+}
+
+#[derive(Component, Clone)]
+pub struct SolidCollider {
     pub resolve: bool,
     pub colliding: Option<Direction>,
     pub size: Option<V2>,
     pub offset: V2,
 }
 
-impl Collider {
+impl SolidCollider {
     pub fn new() -> Self {
         Self {
             resolve: false,
@@ -429,19 +483,28 @@ impl Collider {
 pub struct CollisionSystem(pub u64);
 impl System for CollisionSystem {
     fn on_update(&self, ctx: &mut Context, delta: f64) -> Result<(), Error> {
-        for id in query!(ctx, RigidBody, Collider) {
-            let collider = ctx.select::<Collider>(id).clone();
+        for id in query!(ctx, RigidBody, SolidCollider) {
+            let collider = ctx.select::<SolidCollider>(id).clone();
             if !collider.resolve {
                 continue;
             }
-            let collider = ctx.select::<Collider>(id);
+            let collider = ctx.select::<SolidCollider>(id);
             collider.colliding = None;
             let body = ctx.select::<RigidBody>(id).clone();
-            for other_id in query!(ctx, RigidBody, Collider) {
+            let collider = ctx.select::<SolidCollider>(id).clone();
+
+            let mut collisions = Vec::<(V2, Direction, f64)>::new();
+            collisions.append(&mut shallow_intersections(ctx, id, &body, collider, delta));
+            // collisions.push(solid_intersections());
+            // resolve_collisions(collisions);
+
+            // handle_shallow_collisions(ctx, delta, id, &body);
+
+            for other_id in query!(ctx, RigidBody, SolidCollider) {
                 if id == other_id {
                     continue;
                 }
-                let other_collider = ctx.select::<Collider>(other_id).clone();
+                let other_collider = ctx.select::<SolidCollider>(other_id).clone();
                 if other_collider.resolve {
                     continue;
                 }
@@ -451,17 +514,21 @@ impl System for CollisionSystem {
                 let size = V2::from(body.size);
                 let other_pos = V2::from(other_body.pos);
                 let other_size = V2::from(other_body.size);
-                let dp = V2::from(body.vel).extend(delta);
+                let delta_pos = V2::from(body.vel).extend(delta);
 
-                if !rects_within_reach(Rect::new(pos, size), dp, Rect::new(other_pos, other_size)) {
+                if !rects_within_reach(
+                    Rect::new(pos, size),
+                    delta_pos,
+                    Rect::new(other_pos, other_size),
+                ) {
                     continue;
                 }
 
-                let mut ints = Vec::<(V2, Direction, f64)>::new();
+                let mut intersections = Vec::<(V2, Direction, f64)>::new();
 
-                match Direction::from(dp) {
+                match Direction::from(delta_pos) {
                     dir @ Direction::None => {
-                        let collider = ctx.select::<Collider>(id);
+                        let collider = ctx.select::<SolidCollider>(id);
                         collider.colliding = Some(dir);
                     }
                     dir @ (Direction::Top
@@ -471,16 +538,17 @@ impl System for CollisionSystem {
                         let (p0, p1) = rect_side_corners(pos, size, dir);
                         let (c0, c1) = rect_side_corners(other_pos, other_size, dir.reverse());
                         for p in [p0, p1] {
-                            if let Some((int, t)) = point_vec_line_segment_intersect(p, dp, c0, c1)
+                            if let Some((int, t)) =
+                                point_vec_line_segment_intersect(p, delta_pos, c0, c1)
                             {
-                                ints.push((int, dir, t));
+                                intersections.push((int, dir, t));
                             }
                         }
                         for p in [c0, c1] {
                             if let Some((_int, t)) =
-                                point_vec_line_segment_intersect(p, dp.reverse(), p0, p1)
+                                point_vec_line_segment_intersect(p, delta_pos.reverse(), p0, p1)
                             {
-                                ints.push((p, dir, t));
+                                intersections.push((p, dir, t));
                             }
                         }
                     }
@@ -495,34 +563,99 @@ impl System for CollisionSystem {
                         for p in [p0, p1, p2] {
                             for (c0, c1, dir) in [(c0, c1, d0), (c1, c2, d1)] {
                                 if let Some((int, t)) =
-                                    point_vec_line_segment_intersect(p, dp, c0, c1)
+                                    point_vec_line_segment_intersect(p, delta_pos, c0, c1)
                                 {
-                                    ints.push((int, dir, t));
+                                    intersections.push((int, dir, t));
                                 }
                             }
                         }
                         for p in [c0, c1, c2] {
                             for (c0, c1, dir) in [(p0, p1, d0), (p1, p2, d1)] {
                                 if let Some((_int, t)) =
-                                    point_vec_line_segment_intersect(p, dp.reverse(), c0, c1)
+                                    point_vec_line_segment_intersect(p, delta_pos.reverse(), c0, c1)
                                 {
-                                    ints.push((p, dir, t));
+                                    intersections.push((p, dir, t));
                                 }
                             }
                         }
                     }
                 }
-                if let Some((p, dir, _)) = ints
+                if let Some((p, dir, _)) = intersections
                     .into_iter()
                     .min_by(|(.., t0), (.., t1)| t0.total_cmp(t1))
                 {
-                    let collider = ctx.select::<Collider>(id);
+                    let collider = ctx.select::<SolidCollider>(id);
                     collider.colliding = Some(dir);
                     let body = ctx.select::<RigidBody>(id);
                     resolve_collision(body, p, size, dir)
                 }
             }
+            // split up into to statements one for x axis and on for y axis. the one with the lowest t value should resolve first
+
+            let size = V2::from(body.size);
+            collisions.into_iter().for_each(|int| {
+                let collider = ctx.select::<SolidCollider>(id);
+                collider.colliding = Some(int.1);
+                let body = ctx.select::<RigidBody>(id);
+                resolve_collision(body, int.0, size, int.1)
+            });
         }
         Ok(())
     }
+}
+
+fn shallow_intersections(
+    ctx: &mut Context,
+    id: Id,
+    body: &RigidBody,
+    collider: SolidCollider,
+    delta: f64,
+) -> Vec<(V2, Direction, f64)> {
+    let mut intersections = Vec::<(V2, Direction, f64)>::new();
+    for other_id in query!(ctx, RigidBody, ShallowCollider) {
+        let other_body = ctx.select::<RigidBody>(other_id).clone();
+        let other_collider = ctx.select::<ShallowCollider>(other_id).clone();
+        if id == other_id {
+            continue;
+        }
+
+        let pos = V2::from(body.pos);
+        let size = V2::from(body.size);
+        let other_pos = V2::from(other_body.pos);
+        let other_size = V2::from(other_body.size);
+        let delta_pos = V2::from(body.vel).extend(delta);
+
+        if !rects_within_reach(
+            Rect::new(pos, size),
+            delta_pos,
+            Rect::new(other_pos, other_size),
+        ) {
+            continue;
+        }
+
+        for side in [
+            Direction::Top,
+            Direction::Right,
+            Direction::Bottom,
+            Direction::Left,
+        ] {
+            if other_collider.directions.is_set(side) {
+                let (p0, p1) = rect_side_corners(pos, size, side.reverse());
+                let (c0, c1) = rect_side_corners(other_pos, other_size, side);
+                for p in [p0, p1] {
+                    if let Some((int, t)) = point_vec_line_segment_intersect(p, delta_pos, c0, c1) {
+                        intersections.push((int, side.reverse(), t));
+                    }
+                }
+                for p in [c0, c1] {
+                    if let Some((_int, t)) =
+                        point_vec_line_segment_intersect(p, delta_pos.reverse(), p0, p1)
+                    {
+                        intersections.push((p, side.reverse(), t));
+                    }
+                }
+            }
+        }
+    }
+    intersections
 }
