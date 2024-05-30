@@ -1,7 +1,8 @@
 use engine::{
+    collision::{Direction, ShallowCollider},
     query,
     rigid_body::{DragSystem, GravitySystem, RigidBody, VelocitySystem},
-    spawn, Collider, CollisionSystem, Component, System, V2,
+    spawn, CollisionSystem, Component, SolidCollider, System, V2,
 };
 
 use crate::{
@@ -35,9 +36,7 @@ impl System for GameSystem {
         ctx.add_system(HudSystem);
         ctx.add_system(DebugDrawer);
 
-        // let background = ctx.load_texture("textures/literally_dprk.png").unwrap();
-        let background = ctx.load_texture("textures/xp_backwound.png").unwrap();
-        // let nope = ctx.load_texture("textures/nuh-uh.png").unwrap();
+        let background = ctx.load_texture("textures/map_1.png").unwrap();
 
         spawn!(
             ctx,
@@ -53,30 +52,40 @@ impl System for GameSystem {
             PlayerKind::Right,
         );
 
-        // spawn!(
-        //     ctx,
-        //     RigidBody::new()
-        //         .with_pos(V2::new(200.0, 400.0))
-        //         .with_size(V2::new(32.0, 32.0)),
-        //     Collider::new(),
-        //     Sprite::new(nope),
-        // );
-
-        // spawn!(
-        //     ctx,
-        //     RigidBody::new()
-        //         .with_pos(V2::new(1100.0, 400.0))
-        //         .with_size(V2::new(32.0, 32.0)),
-        //     Collider::new(),
-        //     Sprite::new(nope),
-        // );
-
         spawn!(
             ctx,
             RigidBody::new()
-                .with_pos(V2::new(184.0, 540.0))
-                .with_size(V2::new(960.0, 128.0)),
-            Collider::new(),
+                .with_pos(V2::new(350.0, 525.0))
+                .with_size(V2::new(676.0, 110.0)),
+            SolidCollider::new(),
+        );
+        spawn!(
+            ctx,
+            RigidBody::new()
+                .with_pos(V2::new(126.0, 162.0))
+                .with_size(V2::new(180.0, 204.0)),
+            SolidCollider::new(),
+        );
+        spawn!(
+            ctx,
+            RigidBody::new()
+                .with_pos(V2::new(720.0, 214.0))
+                .with_size(V2::new(248.0, 10.0)),
+            ShallowCollider::new().with_direction(Direction::Top),
+        );
+        spawn!(
+            ctx,
+            RigidBody::new()
+                .with_pos(V2::new(720.0, 214.0))
+                .with_size(V2::new(248.0, 10.0)),
+            ShallowCollider::new().with_direction(Direction::Top),
+        );
+        spawn!(
+            ctx,
+            RigidBody::new()
+                .with_pos(V2::new(924.0, 378.0))
+                .with_size(V2::new(280.0, 10.0)),
+            ShallowCollider::new().with_direction(Direction::Top),
         );
 
         Ok(())
@@ -112,7 +121,7 @@ impl GameSystem {
                 .with_size(V2::new(32.0 * factor, 32.0 * factor))
                 .with_gravity()
                 .with_drag(),
-            Collider::new().resolving(),
+            SolidCollider::new().resolving(),
             Player {
                 kind,
                 hero,
@@ -142,7 +151,11 @@ struct DebugDrawer(pub u64);
 
 impl System for DebugDrawer {
     fn on_update(&self, ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
-        for id in query!(ctx, RigidBody, Collider) {
+        for id in query!(ctx, RigidBody, SolidCollider) {
+            let body = ctx.select::<RigidBody>(id).clone();
+            self.draw_outline(ctx, body.pos, body.size, 2.0, (0, 125, 255))?;
+        }
+        for id in query!(ctx, RigidBody, ShallowCollider) {
             let body = ctx.select::<RigidBody>(id).clone();
             self.draw_outline(ctx, body.pos, body.size, 2.0, (0, 125, 255))?;
         }
