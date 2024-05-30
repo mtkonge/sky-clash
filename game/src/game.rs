@@ -44,10 +44,10 @@ impl System for GameSystem {
             RigidBody::new().with_size(V2::new(1280.0, 720.0)),
         );
 
-        self.spawn_player(ctx, V2::new(400.0, 200.0), Keyset::Wasd, PlayerKind::Left);
+        self.spawn_player(ctx, V2::new(400.0, 350.0), Keyset::Wasd, PlayerKind::Left);
         self.spawn_player(
             ctx,
-            V2::new(600.0, 200.0),
+            V2::new(600.0, 350.0),
             Keyset::ArrowKeys,
             PlayerKind::Right,
         );
