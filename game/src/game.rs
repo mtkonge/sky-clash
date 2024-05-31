@@ -121,7 +121,7 @@ impl GameSystem {
                 .with_size(V2::new(32.0 * factor, 32.0 * factor))
                 .with_gravity()
                 .with_drag(),
-            SolidCollider::new().resolving(),
+            SolidCollider::new().resolving().bouncing(),
             Player {
                 kind,
                 hero,

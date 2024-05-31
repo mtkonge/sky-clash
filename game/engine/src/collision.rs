@@ -426,6 +426,32 @@ fn resolve_collision(body: &mut RigidBody, p: V2, rect: V2, dir: Direction) {
     }
 }
 
+fn bounce_collision(body: &mut RigidBody, p: V2, rect: V2, dir: Direction) {
+    use Direction::*;
+    if body.vel.len() <= 1200.0 {
+        return resolve_collision(body, p, rect, dir);
+    }
+    match dir {
+        Top => {
+            body.pos.y = p.y + 1.0;
+            body.vel.y = -(body.vel.y / 2.0);
+        }
+        Bottom => {
+            body.pos.y = p.y - rect.y - 1.0;
+            body.vel.y = -(body.vel.y / 2.0);
+        }
+        Left => {
+            body.pos.x = p.x + 1.0;
+            body.vel.x = -(body.vel.x / 2.0);
+        }
+        Right => {
+            body.pos.x = p.x - rect.x - 1.0;
+            body.vel.x = -(body.vel.x / 2.0);
+        }
+        _ => unreachable!(),
+    }
+}
+
 #[derive(Component, Clone)]
 pub struct ShallowCollider {
     directions: Directions,
@@ -447,6 +473,7 @@ impl ShallowCollider {
 #[derive(Component, Clone)]
 pub struct SolidCollider {
     pub resolve: bool,
+    pub bounce: bool,
     pub colliding: Option<Direction>,
     pub size: Option<V2>,
     pub offset: V2,
@@ -456,9 +483,17 @@ impl SolidCollider {
     pub fn new() -> Self {
         Self {
             resolve: false,
+            bounce: false,
             colliding: None,
             size: None,
             offset: V2::new(0.0, 0.0),
+        }
+    }
+
+    pub fn bouncing(self) -> Self {
+        Self {
+            bounce: true,
+            ..self
         }
     }
 
@@ -528,14 +563,24 @@ impl System for CollisionSystem {
             if let Some(int) = horizontal_collisions.first() {
                 let collider = ctx.select::<SolidCollider>(id);
                 collider.colliding = Some(int.direction);
-                let body = ctx.select::<RigidBody>(id);
-                resolve_collision(body, int.pos, size, int.direction);
+                if collider.bounce {
+                    let body = ctx.select::<RigidBody>(id);
+                    bounce_collision(body, int.pos, size, int.direction)
+                } else {
+                    let body = ctx.select::<RigidBody>(id);
+                    resolve_collision(body, int.pos, size, int.direction);
+                }
             }
             if let Some(int) = vertical_collisions.first() {
                 let collider = ctx.select::<SolidCollider>(id);
                 collider.colliding = Some(int.direction);
-                let body = ctx.select::<RigidBody>(id);
-                resolve_collision(body, int.pos, size, int.direction);
+                if collider.bounce {
+                    let body = ctx.select::<RigidBody>(id);
+                    bounce_collision(body, int.pos, size, int.direction)
+                } else {
+                    let body = ctx.select::<RigidBody>(id);
+                    resolve_collision(body, int.pos, size, int.direction);
+                }
             }
         }
         Ok(())
