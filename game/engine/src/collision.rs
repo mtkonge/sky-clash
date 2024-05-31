@@ -502,19 +502,41 @@ impl System for CollisionSystem {
             let mut collisions = Vec::<Intersection>::new();
             shallow_intersections(&mut collisions, ctx, id, body.clone(), delta);
             solid_intersections(&mut collisions, ctx, id, body.clone(), collider, delta);
-            // resolve_collisions(collisions);
-
-            // handle_shallow_collisions(ctx, delta, id, &body);
-
-            // split up into to statements one for x axis and on for y axis. the one with the lowest t value should resolve first
 
             let size = V2::from(body.clone().size);
-            collisions.into_iter().for_each(|int| {
+
+            collisions.sort_by(|a, b| a.delta_pos_percentage.total_cmp(&b.delta_pos_percentage));
+
+            let horizontal_collisions = collisions
+                .iter()
+                .filter(|c| match c.direction {
+                    Direction::Left | Direction::Right => true,
+                    Direction::Top | Direction::Bottom => false,
+                    _ => unreachable!(),
+                })
+                .collect::<Vec<_>>();
+
+            let vertical_collisions = collisions
+                .iter()
+                .filter(|c| match c.direction {
+                    Direction::Left | Direction::Right => false,
+                    Direction::Top | Direction::Bottom => true,
+                    _ => unreachable!(),
+                })
+                .collect::<Vec<_>>();
+
+            if let Some(int) = horizontal_collisions.first() {
                 let collider = ctx.select::<SolidCollider>(id);
                 collider.colliding = Some(int.direction);
                 let body = ctx.select::<RigidBody>(id);
                 resolve_collision(body, int.pos, size, int.direction);
-            });
+            }
+            if let Some(int) = vertical_collisions.first() {
+                let collider = ctx.select::<SolidCollider>(id);
+                collider.colliding = Some(int.direction);
+                let body = ctx.select::<RigidBody>(id);
+                resolve_collision(body, int.pos, size, int.direction);
+            }
         }
         Ok(())
     }
@@ -586,10 +608,10 @@ fn solid_intersections(
 }
 
 fn correct_delta_pos(side: Direction, delta_pos: V2) -> bool {
-    side == Direction::Top && delta_pos.y > 0.0
-        || side == Direction::Bottom && delta_pos.y < 0.0
-        || side == Direction::Right && delta_pos.x < 0.0
-        || side == Direction::Left && delta_pos.x > 0.0
+    side == Direction::Top && delta_pos.y.is_sign_positive()
+        || side == Direction::Bottom && delta_pos.y.is_sign_negative()
+        || side == Direction::Right && delta_pos.x.is_sign_negative()
+        || side == Direction::Left && delta_pos.x.is_sign_positive()
 }
 
 fn shallow_intersections(
