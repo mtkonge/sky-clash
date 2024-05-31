@@ -513,14 +513,8 @@ impl System for CollisionSystem {
                 let collider = ctx.select::<SolidCollider>(id);
                 collider.colliding = Some(int.direction);
                 let body = ctx.select::<RigidBody>(id);
-                resolve_collision(body, int.pos, size, int.direction)
+                resolve_collision(body, int.pos, size, int.direction);
             });
-
-            let body = ctx.select::<RigidBody>(id).clone();
-            let collider = ctx.select::<SolidCollider>(id).clone();
-            if body.pos.y < 350.0 && !collider.colliding.is_none() {
-                println!("{:?}", collider.colliding);
-            }
         }
         Ok(())
     }
@@ -591,6 +585,13 @@ fn solid_intersections(
     }
 }
 
+fn correct_delta_pos(side: Direction, delta_pos: V2) -> bool {
+    side == Direction::Top && delta_pos.y > 0.0
+        || side == Direction::Bottom && delta_pos.y < 0.0
+        || side == Direction::Right && delta_pos.x < 0.0
+        || side == Direction::Left && delta_pos.x > 0.0
+}
+
 fn shallow_intersections(
     intersections: &mut Vec<Intersection>,
     ctx: &mut Context,
@@ -626,7 +627,7 @@ fn shallow_intersections(
             Direction::Bottom,
             Direction::Left,
         ] {
-            if other_collider.directions.is_set(side) {
+            if other_collider.directions.is_set(side) && correct_delta_pos(side, delta_pos) {
                 let (p0, p1) = rect_side_corners(pos, size, side.reverse());
                 let (c0, c1) = rect_side_corners(other_pos, other_size, side);
                 for p in [p0, p1] {
