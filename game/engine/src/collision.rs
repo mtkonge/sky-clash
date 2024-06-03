@@ -359,7 +359,7 @@ impl Directions {
     pub fn set(&mut self, dir: Direction) {
         self.flags |= 1 << dir as i32;
     }
-
+    #[allow(dead_code)]
     pub fn unset(&mut self, dir: Direction) {
         self.flags &= !(1 << dir as i32);
     }
@@ -388,17 +388,6 @@ fn rect_side_corners(pos: V2, rect: V2, dir: Direction) -> (V2, V2) {
         Right => (pos.add_x(rect.x), pos + rect),
         Bottom => (pos + rect, pos.add_y(rect.y)),
         Left => (pos.add_y(rect.y), pos),
-        _ => unreachable!(),
-    }
-}
-
-fn rect_diagonal_corners(pos: V2, rect: V2, dir: Direction) -> (V2, V2, V2) {
-    use Direction::*;
-    match dir {
-        TopLeft => (pos.add_y(rect.y), pos, pos.add_x(rect.x)),
-        TopRight => (pos, pos.add_x(rect.x), pos + rect),
-        BottomRight => (pos.add_x(rect.x), pos + rect, pos.add_y(rect.y)),
-        BottomLeft => (pos + rect, pos.add_y(rect.y), pos),
         _ => unreachable!(),
     }
 }

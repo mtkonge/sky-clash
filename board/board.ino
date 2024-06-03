@@ -192,7 +192,7 @@ void loop() {
   String hero_2_data = format_rfid(String("\"hero_2_rfid\":"), hero_2_rfid);
   String data = String("{") + hero_1_data + ',' + hero_2_data + '}';
   Serial.println(String("data: ") + data);
-  // response = wifi.post("/update_heroes_on_board", data);
+  response = wifi.post("/update_heroes_on_board", data);
   Serial.println(response);
 }
 

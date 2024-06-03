@@ -96,4 +96,8 @@ impl ServerStrategy for MockConnection {
             },
         }))
     }
+    #[allow(unused_variables)]
+    fn update_board_colors(&mut self, params: shared::UpdateBoardColorsParams) {
+        // nothing
+    }
 }

@@ -6,14 +6,29 @@ use engine::{
 };
 
 use crate::{
-    hud::HudSystem,
+    hud::{player_damage_color, HudSystem},
     hurtbox::{Hitbox, Hurtbox, HurtboxSystem, Victim},
     keyset::Keyset,
     knockoff::KnockoffSystem,
     player::{Player, PlayerKind},
     player_interaction::{PlayerInteraction, PlayerInteractionSystem},
+    server::Server,
     sprite_renderer::{Sprite, SpriteRenderer},
+    timer::Timer,
 };
+
+#[derive(Component, Clone)]
+pub struct Game {
+    pub update_board_colors_timer: Timer,
+}
+
+impl Game {
+    pub fn new() -> Self {
+        Self {
+            update_board_colors_timer: Timer::new(1.0),
+        }
+    }
+}
 
 pub struct GameSystem(pub u64);
 
@@ -37,6 +52,11 @@ impl System for GameSystem {
         ctx.add_system(DebugDrawer);
 
         let background = ctx.load_texture("textures/map_1.png").unwrap();
+
+        spawn!(ctx, Game::new());
+        let timer = &mut ctx.select_one::<Game>().update_board_colors_timer;
+        // add 1 second to update board colors on startup. This is very lean clode
+        timer.update(1.0);
 
         spawn!(
             ctx,
@@ -91,7 +111,28 @@ impl System for GameSystem {
         Ok(())
     }
 
-    fn on_update(&self, _ctx: &mut engine::Context, _delta: f64) -> Result<(), engine::Error> {
+    fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
+        let update_board_colors_timer = &mut ctx.select_one::<Game>().update_board_colors_timer;
+        update_board_colors_timer.update(delta);
+        if update_board_colors_timer.done() {
+            let mut hero_1_color = (255, 255, 255);
+            let mut hero_2_color = (255, 255, 255);
+            for player_id in query!(ctx, Player).clone() {
+                let player = ctx.select::<Player>(player_id).clone();
+                match player.kind {
+                    PlayerKind::Left => hero_1_color = player_damage_color(player.damage_taken),
+                    PlayerKind::Right => hero_2_color = player_damage_color(player.damage_taken),
+                }
+            }
+            let board_colors = shared::UpdateBoardColorsParams {
+                hero_1_color,
+                hero_2_color,
+            };
+            let server = ctx.select_one::<Server>();
+            server.update_board_colors(board_colors);
+            let update_board_colors_timer = &mut ctx.select_one::<Game>().update_board_colors_timer;
+            update_board_colors_timer.reset()
+        }
         Ok(())
     }
 

@@ -23,6 +23,7 @@ pub trait ServerStrategy {
     fn update_hero_stats(&mut self, params: shared::UpdateHeroStatsParams);
     fn create_hero(&mut self, params: shared::CreateHeroParams);
     fn board_status(&mut self) -> Box<dyn Res<Board>>;
+    fn update_board_colors(&mut self, params: shared::UpdateBoardColorsParams);
 }
 
 #[derive(Component, Clone)]
@@ -51,5 +52,9 @@ impl Server {
 
     pub fn board_status(&mut self) -> Box<dyn Res<Board>> {
         self.strategy.lock().unwrap().board_status()
+    }
+
+    pub fn update_board_colors(&mut self, params: shared::UpdateBoardColorsParams) {
+        self.strategy.lock().unwrap().update_board_colors(params)
     }
 }

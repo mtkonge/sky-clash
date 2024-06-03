@@ -84,7 +84,7 @@ fn merge_colors(
     )
 }
 
-fn player_damage_color(damage_taken: f64) -> (u8, u8, u8) {
+pub fn player_damage_color(damage_taken: f64) -> (u8, u8, u8) {
     let damage_taken_per_step = 75.0;
     let transition_alpha = damage_taken % damage_taken_per_step;
     let colors = [

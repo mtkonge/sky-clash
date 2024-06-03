@@ -10,6 +10,7 @@ enum Message {
     BoardStatus(Pipe<Board>),
     CreateHero(shared::CreateHeroParams),
     UpdateHeroStats(shared::UpdateHeroStatsParams),
+    UpdateBoardColors(shared::UpdateBoardColorsParams),
 }
 
 pub struct Pipe<T> {
@@ -73,10 +74,6 @@ impl BackendConnection {
                                 break;
                             }
                         };
-                    let board = shared::Board {
-                        hero_1_rfid: Some("123452sda3".to_string()),
-                        hero_2_rfid: Some("1234523".to_string()),
-                    };
 
                     let hero_1 = match board.hero_1_rfid {
                         Some(rfid) => hero_by_rfid(rfid).await,
@@ -86,7 +83,6 @@ impl BackendConnection {
                         Some(rfid) => hero_by_rfid(rfid).await,
                         None => None,
                     };
-
                     res_pipe.send(Board { hero_1, hero_2 });
                 }
                 Message::CreateHero(body) => {
@@ -149,6 +145,36 @@ impl BackendConnection {
                         }
                     };
                 }
+                Message::UpdateBoardColors(body) => {
+                    let client = reqwest::Client::new();
+                    let body = match serde_json::to_string(&body) {
+                        Ok(body) => body,
+                        Err(err) => {
+                            panic!("Failed to serialize UpdateBoardColorsParams Err: {err}")
+                        }
+                    };
+                    let mut headers = HeaderMap::new();
+                    headers.insert("Content-Type", "application/json".parse().unwrap());
+                    match client
+                        .post("http://65.108.91.32:8080/update_board_colors")
+                        .headers(headers)
+                        .body(body)
+                        .send()
+                        .await
+                    {
+                        Ok(response) => {
+                            println!(
+                                "update_board_colors response: {} '{}'",
+                                response.status().as_str(),
+                                response.text().await.unwrap()
+                            );
+                        }
+                        Err(err) => {
+                            println!("{err}");
+                            continue;
+                        }
+                    };
+                }
             }
         }
     }
@@ -182,6 +208,10 @@ impl ServerStrategy for BackendConnection {
         let res_pipe = Pipe::new();
         self.pipe.send(Message::BoardStatus(res_pipe.clone()));
         Box::new(BoardStatusRes { res_pipe })
+    }
+
+    fn update_board_colors(&mut self, params: shared::UpdateBoardColorsParams) {
+        self.pipe.send(Message::UpdateBoardColors(params))
     }
 }
 
