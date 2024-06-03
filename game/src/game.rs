@@ -1,5 +1,6 @@
 use engine::{
-    collision::{Direction, ShallowCollider},
+    collision::ShallowCollider,
+    physics::QuadDirection,
     query,
     rigid_body::{DragSystem, GravitySystem, RigidBody, VelocitySystem},
     spawn, CollisionSystem, Component, SharedPtr, SolidCollider, System, V2,
@@ -90,21 +91,21 @@ impl System for GameSystem {
             RigidBody::new()
                 .with_pos(V2::new(720.0, 214.0))
                 .with_size(V2::new(248.0, 10.0)),
-            ShallowCollider::new().with_direction(Direction::Top),
+            ShallowCollider::new().with_direction(QuadDirection::Top),
         );
         spawn!(
             ctx,
             RigidBody::new()
                 .with_pos(V2::new(720.0, 214.0))
                 .with_size(V2::new(248.0, 10.0)),
-            ShallowCollider::new().with_direction(Direction::Top),
+            ShallowCollider::new().with_direction(QuadDirection::Top),
         );
         spawn!(
             ctx,
             RigidBody::new()
                 .with_pos(V2::new(924.0, 378.0))
                 .with_size(V2::new(280.0, 10.0)),
-            ShallowCollider::new().with_direction(Direction::Top),
+            ShallowCollider::new().with_direction(QuadDirection::Top),
         );
 
         Ok(())

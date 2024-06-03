@@ -1,53 +1,16 @@
-use crate::{max, min, query, Id, V2};
-use crate::{rigid_body::RigidBody, Component, Context, Error, System};
+use std::collections::HashSet;
 
-struct Rect {
-    pub pos: V2,
-    pub size: V2,
-}
-
-impl Rect {
-    #![allow(dead_code)]
-
-    pub fn new(pos: V2, size: V2) -> Self {
-        Self { pos, size }
-    }
-
-    pub fn from_f64(x: f64, y: f64, w: f64, h: f64) -> Self {
-        Self {
-            pos: V2::new(x, y),
-            size: V2::new(w, h),
-        }
-    }
-
-    pub fn top_left(&self) -> V2 {
-        self.pos
-    }
-
-    pub fn top_right(&self) -> V2 {
-        self.pos.add_x(self.size.x)
-    }
-
-    pub fn bottom_right(&self) -> V2 {
-        self.pos + self.size
-    }
-
-    pub fn bottom_left(&self) -> V2 {
-        self.pos.add_y(self.size.y)
-    }
-
-    pub fn radius(&self) -> f64 {
-        self.size.div_comps(2.0).len()
-    }
-
-    pub fn distance_to_rect(&self, other: Rect) -> f64 {
-        (other.pos - self.pos).len() - (self.radius() + other.radius())
-    }
-}
+use crate::{
+    max, min,
+    physics::{Line, OctoDirection, QuadDirection, Rect},
+    query,
+    rigid_body::RigidBody,
+    Component, Context, Error, Id, System, V2,
+};
 
 fn rects_within_reach(rect: Rect, delta_pos: V2, other_rect: Rect) -> bool {
     let radii = rect.radius() + delta_pos.len() + other_rect.radius();
-    let length_between = rect.distance_to_rect(other_rect);
+    let length_between = rect.radii_distance_to_rect(other_rect);
     radii >= length_between
 }
 
@@ -65,13 +28,8 @@ fn test_rects_within_reach() {
     ),);
 }
 
-fn point_vec_line_intersect(
-    pos: V2,
-    delta_pos: V2,
-    line_point0: V2,
-    line_point1: V2,
-) -> Option<V2> {
-    let line_direction = line_point1 - line_point0;
+fn point_vec_line_intersect(pos: V2, delta_pos: V2, line: Line) -> Option<V2> {
+    let line_direction = line.direction();
     if delta_pos.x == 0.0 && line_direction.x == 0.0 {
         // parallel, do nothing
         None
@@ -79,11 +37,11 @@ fn point_vec_line_intersect(
         let x = pos.x;
         // y = ax + b
         let line_a = line_direction.y / line_direction.x;
-        let line_b = line_point0.y - line_a * line_point0.x;
+        let line_b = line.p0.y - line_a * line.p0.x;
         let y = line_a * x + line_b;
         Some(V2::new(x, y))
     } else if line_direction.x == 0.0 {
-        let x = line_point0.x;
+        let x = line.p0.x;
         // y = ax + b
         let delta_pos_a = delta_pos.y / delta_pos.x;
         let delta_pos_b = pos.y - delta_pos_a * pos.x;
@@ -98,20 +56,20 @@ fn point_vec_line_intersect(
             return None;
         }
         let delta_pos_b = pos.y - delta_pos_a * pos.x;
-        let line_b = line_point0.y - line_a * line_point0.x;
+        let line_b = line.p0.y - line_a * line.p0.x;
         let x = (line_b - delta_pos_b) / (delta_pos_a - line_a);
         let y = delta_pos_a * x + delta_pos_b;
         Some(V2::new(x, y))
     }
 }
 
-fn line_point_within_segment(line_point0: V2, line_point1: V2, intersection: V2) -> bool {
+fn line_point_within_segment(line: Line, intersection: V2) -> bool {
     // x = x0 + t * xr
     // y = y0 + t * yr
-    let t = if line_point1.x == line_point0.x {
-        (intersection.y - line_point0.y) / (line_point1.y - line_point0.y)
+    let t = if line.is_vertical() {
+        (intersection.y - line.p0.y) / (line.p1.y - line.p0.y)
     } else {
-        (intersection.x - line_point0.x) / (line_point1.x - line_point0.x)
+        (intersection.x - line.p0.x) / (line.p1.x - line.p0.x)
     };
     (0.0..=1.0).contains(&t)
 }
@@ -154,18 +112,13 @@ fn distance_factor_to_intersection(pos: V2, delta_pos: V2, intersection: V2) -> 
     }
 }
 
-fn point_vec_line_segment_intersect(
-    pos: V2,
-    delta_pos: V2,
-    line_point0: V2,
-    line_point1: V2,
-) -> Option<(V2, f64)> {
+fn point_vec_line_segment_intersect(pos: V2, delta_pos: V2, line: Line) -> Option<(V2, f64)> {
     if delta_pos.len() == 0.0 {
         // no movement, no collision
         return None;
     }
-    let intersection = point_vec_line_intersect(pos, delta_pos, line_point0, line_point1)?;
-    if !line_point_within_segment(line_point0, line_point1, intersection) {
+    let intersection = point_vec_line_intersect(pos, delta_pos, line)?;
+    if !line_point_within_segment(line, intersection) {
         return None;
     }
     if !point_vec_crosses_intersection(pos, delta_pos, intersection) {
@@ -240,7 +193,7 @@ fn test_point_vec_line_segment_intersect() {
                 expected_intersection,
             )| {
                 let intersection =
-                    point_vec_line_segment_intersect(pos, delta_pos, edge_p0, edge_p1)
+                    point_vec_line_segment_intersect(pos, delta_pos, Line::new(edge_p0, edge_p1))
                         .map(|(intersection, _score)| intersection);
 
                 assert!(
@@ -254,146 +207,8 @@ fn test_point_vec_line_segment_intersect() {
         );
 }
 
-#[derive(Clone, Copy, Debug)]
-enum Boyk {
-    Positive,
-    Zero,
-    Negative,
-}
-
-impl From<f64> for Boyk {
-    fn from(value: f64) -> Self {
-        use Boyk::*;
-        if value > 0.0 {
-            Positive
-        } else if value == 0.0 {
-            Zero
-        } else {
-            Negative
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[repr(i32)]
-pub enum Direction {
-    None = 0,
-    Top = 1,
-    Right = 2,
-    Bottom = 3,
-    Left = 4,
-    TopLeft = 5,
-    TopRight = 6,
-    BottomRight = 7,
-    BottomLeft = 8,
-}
-
-impl Direction {
-    pub fn reverse(&self) -> Self {
-        use Direction::*;
-        match self {
-            None => None,
-            Top => Bottom,
-            Right => Left,
-            Bottom => Top,
-            Left => Right,
-            TopLeft => BottomRight,
-            TopRight => BottomLeft,
-            BottomRight => TopLeft,
-            BottomLeft => TopRight,
-        }
-    }
-
-    pub fn clockwise(&self) -> (Self, Self) {
-        use Direction::*;
-        match self {
-            TopLeft => (Left, Top),
-            TopRight => (Top, Right),
-            BottomRight => (Right, Bottom),
-            BottomLeft => (Bottom, Left),
-            _ => unreachable!(),
-        }
-    }
-
-    pub fn facing(&self, direction: Direction) -> bool {
-        use Direction::*;
-        match (direction, self) {
-            (Top, Top | TopLeft | TopRight)
-            | (Right, Right | TopRight | BottomRight)
-            | (Bottom, Bottom | BottomLeft | BottomRight) => true,
-            (Left, Left | TopLeft | TopRight) => todo!(),
-            (Top | Right | Bottom | Left, _) => false,
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl From<V2> for Direction {
-    fn from(value: V2) -> Self {
-        use Boyk::*;
-        use Direction::*;
-        match (Boyk::from(value.x), Boyk::from(value.y)) {
-            (Zero, Zero) => None,
-            (Zero, Positive) => Bottom,
-            (Zero, Negative) => Top,
-            (Positive, Zero) => Right,
-            (Negative, Zero) => Left,
-            (Positive, Positive) => BottomRight,
-            (Positive, Negative) => TopRight,
-            (Negative, Positive) => BottomLeft,
-            (Negative, Negative) => TopLeft,
-        }
-    }
-}
-
-#[derive(Component, Clone)]
-struct Directions {
-    flags: i32,
-}
-
-impl Directions {
-    pub fn new() -> Self {
-        Self { flags: 0 }
-    }
-
-    pub fn set(&mut self, dir: Direction) {
-        self.flags |= 1 << dir as i32;
-    }
-    #[allow(dead_code)]
-    pub fn unset(&mut self, dir: Direction) {
-        self.flags &= !(1 << dir as i32);
-    }
-
-    pub fn is_set(&self, dir: Direction) -> bool {
-        (self.flags & 1 << dir as i32) != 0
-    }
-}
-
-#[test]
-fn test_directions() {
-    let mut dirs = Directions::new();
-
-    dirs.set(Direction::Top);
-    dirs.set(Direction::Left);
-
-    assert_eq!(dirs.is_set(Direction::Top), true);
-    assert_eq!(dirs.is_set(Direction::Left), true);
-    assert_eq!(dirs.is_set(Direction::Right), false);
-}
-
-fn rect_side_corners(pos: V2, rect: V2, dir: Direction) -> (V2, V2) {
-    use Direction::*;
-    match dir {
-        Top => (pos, pos.add_x(rect.x)),
-        Right => (pos.add_x(rect.x), pos + rect),
-        Bottom => (pos + rect, pos.add_y(rect.y)),
-        Left => (pos.add_y(rect.y), pos),
-        _ => unreachable!(),
-    }
-}
-
-fn resolve_collision(body: &mut RigidBody, p: V2, rect: V2, dir: Direction) {
-    use Direction::*;
+fn resolve_collision(body: &mut RigidBody, p: V2, rect: V2, dir: OctoDirection) {
+    use OctoDirection::*;
     match dir {
         Top => {
             body.pos.y = p.y + 1.0;
@@ -415,8 +230,8 @@ fn resolve_collision(body: &mut RigidBody, p: V2, rect: V2, dir: Direction) {
     }
 }
 
-fn bounce_collision(body: &mut RigidBody, p: V2, rect: V2, dir: Direction) {
-    use Direction::*;
+fn bounce_collision(body: &mut RigidBody, p: V2, rect: V2, dir: OctoDirection) {
+    use OctoDirection::*;
     if body.vel.len() <= 1200.0 {
         return resolve_collision(body, p, rect, dir);
     }
@@ -443,18 +258,18 @@ fn bounce_collision(body: &mut RigidBody, p: V2, rect: V2, dir: Direction) {
 
 #[derive(Component, Clone)]
 pub struct ShallowCollider {
-    directions: Directions,
+    directions: HashSet<QuadDirection>,
 }
 
 impl ShallowCollider {
     pub fn new() -> Self {
         Self {
-            directions: Directions::new(),
+            directions: HashSet::new(),
         }
     }
 
-    pub fn with_direction(mut self, dir: Direction) -> Self {
-        self.directions.set(dir);
+    pub fn with_direction(mut self, dir: QuadDirection) -> Self {
+        self.directions.insert(dir);
         self
     }
 }
@@ -463,7 +278,7 @@ impl ShallowCollider {
 pub struct SolidCollider {
     pub resolve: bool,
     pub bounce: bool,
-    pub colliding: Option<Direction>,
+    pub colliding: Option<OctoDirection>,
     pub size: Option<V2>,
     pub offset: V2,
 }
@@ -506,7 +321,7 @@ impl SolidCollider {
 
 struct Intersection {
     pos: V2,
-    direction: Direction,
+    direction: OctoDirection,
     delta_pos_percentage: f64,
 }
 
@@ -534,8 +349,8 @@ impl System for CollisionSystem {
             let horizontal_collisions = collisions
                 .iter()
                 .filter(|c| match c.direction {
-                    Direction::Left | Direction::Right => true,
-                    Direction::Top | Direction::Bottom => false,
+                    OctoDirection::Left | OctoDirection::Right => true,
+                    OctoDirection::Top | OctoDirection::Bottom => false,
                     _ => unreachable!(),
                 })
                 .collect::<Vec<_>>();
@@ -543,8 +358,8 @@ impl System for CollisionSystem {
             let vertical_collisions = collisions
                 .iter()
                 .filter(|c| match c.direction {
-                    Direction::Left | Direction::Right => false,
-                    Direction::Top | Direction::Bottom => true,
+                    OctoDirection::Left | OctoDirection::Right => false,
+                    OctoDirection::Top | OctoDirection::Bottom => true,
                     _ => unreachable!(),
                 })
                 .collect::<Vec<_>>();
@@ -610,28 +425,32 @@ fn solid_intersections(
         }
 
         for direction in [
-            Direction::Top,
-            Direction::Right,
-            Direction::Bottom,
-            Direction::Left,
+            QuadDirection::Top,
+            QuadDirection::Right,
+            QuadDirection::Bottom,
+            QuadDirection::Left,
         ] {
-            let (p0, p1) = rect_side_corners(pos, size, direction);
-            let (c0, c1) = rect_side_corners(other_pos, other_size, direction.reverse());
+            let (p0, p1) = Rect::new(pos, size).side_corners(direction);
+            let (c0, c1) = Rect::new(other_pos, other_size).side_corners(direction.reverse());
             for p in [p0, p1] {
-                if let Some((int, t)) = point_vec_line_segment_intersect(p, delta_pos, c0, c1) {
+                if let Some((int, t)) =
+                    point_vec_line_segment_intersect(p, delta_pos, Line::new(c0, c1))
+                {
                     intersections.push(Intersection {
                         pos: int,
-                        direction,
+                        direction: direction.into(),
                         delta_pos_percentage: t,
                     });
                     continue 'colliders_loop;
                 }
             }
             for p in [c0, c1] {
-                if let Some((_int, t)) = point_vec_line_segment_intersect(p, delta_pos, p0, p1) {
+                if let Some((_int, t)) =
+                    point_vec_line_segment_intersect(p, delta_pos, Line::new(p0, p1))
+                {
                     intersections.push(Intersection {
                         pos: p,
-                        direction,
+                        direction: direction.into(),
                         delta_pos_percentage: t,
                     });
                     continue 'colliders_loop;
@@ -641,11 +460,11 @@ fn solid_intersections(
     }
 }
 
-fn correct_delta_pos(side: Direction, delta_pos: V2) -> bool {
-    side == Direction::Top && delta_pos.y.is_sign_positive()
-        || side == Direction::Bottom && delta_pos.y.is_sign_negative()
-        || side == Direction::Right && delta_pos.x.is_sign_negative()
-        || side == Direction::Left && delta_pos.x.is_sign_positive()
+fn correct_delta_pos(side: OctoDirection, delta_pos: V2) -> bool {
+    side == OctoDirection::Top && delta_pos.y.is_sign_positive()
+        || side == OctoDirection::Bottom && delta_pos.y.is_sign_negative()
+        || side == OctoDirection::Right && delta_pos.x.is_sign_negative()
+        || side == OctoDirection::Left && delta_pos.x.is_sign_positive()
 }
 
 fn shallow_intersections(
@@ -678,19 +497,23 @@ fn shallow_intersections(
         let other_collider = ctx.select::<ShallowCollider>(other_id).clone();
 
         for side in [
-            Direction::Top,
-            Direction::Right,
-            Direction::Bottom,
-            Direction::Left,
+            QuadDirection::Top,
+            QuadDirection::Right,
+            QuadDirection::Bottom,
+            QuadDirection::Left,
         ] {
-            if other_collider.directions.is_set(side) && correct_delta_pos(side, delta_pos) {
-                let (p0, p1) = rect_side_corners(pos, size, side.reverse());
-                let (c0, c1) = rect_side_corners(other_pos, other_size, side);
+            if other_collider.directions.contains(&side.into())
+                && correct_delta_pos(side.into(), delta_pos)
+            {
+                let (p0, p1) = Rect::new(pos, size).side_corners(side.reverse());
+                let (c0, c1) = Rect::new(other_pos, other_size).side_corners(side);
                 for p in [p0, p1] {
-                    if let Some((int, t)) = point_vec_line_segment_intersect(p, delta_pos, c0, c1) {
+                    if let Some((int, t)) =
+                        point_vec_line_segment_intersect(p, delta_pos, Line::new(c0, c1))
+                    {
                         intersections.push(Intersection {
                             pos: int,
-                            direction: side.reverse(),
+                            direction: side.reverse().into(),
                             delta_pos_percentage: t,
                         });
                         continue 'colliders_loop;
@@ -698,11 +521,11 @@ fn shallow_intersections(
                 }
                 for p in [c0, c1] {
                     if let Some((_int, t)) =
-                        point_vec_line_segment_intersect(p, delta_pos.reverse(), p0, p1)
+                        point_vec_line_segment_intersect(p, delta_pos.reverse(), Line::new(p0, p1))
                     {
                         intersections.push(Intersection {
                             pos: p,
-                            direction: side.reverse(),
+                            direction: side.reverse().into(),
                             delta_pos_percentage: t,
                         });
                         continue 'colliders_loop;

@@ -290,7 +290,7 @@ impl PlayerInteractionSystem {
 
         if collider
             .colliding
-            .is_some_and(|dir| dir.facing(engine::collision::Direction::Bottom))
+            .is_some_and(|dir| dir.facing(engine::physics::OctoDirection::Bottom))
         {
             let player_movement = ctx.select::<PlayerInteraction>(id);
             player_movement.jump_state = JumpState::OnGround;
