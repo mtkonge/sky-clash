@@ -19,3 +19,5 @@ rand = "0.8.5"
 [dev-dependencies]
 pretty_assertions = "1.4.0"
 
+[features]
+static-link = ["engine/static-link"]
