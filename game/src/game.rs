@@ -2,7 +2,7 @@ use engine::{
     collision::{Direction, ShallowCollider},
     query,
     rigid_body::{DragSystem, GravitySystem, RigidBody, VelocitySystem},
-    spawn, CollisionSystem, Component, SolidCollider, System, V2,
+    spawn, CollisionSystem, Component, SharedPtr, SolidCollider, System, V2,
 };
 
 use crate::{
@@ -19,13 +19,13 @@ use crate::{
 
 #[derive(Component, Clone)]
 pub struct Game {
-    pub update_board_colors_timer: Timer,
+    pub board_colors_timer: SharedPtr<Timer>,
 }
 
 impl Game {
     pub fn new() -> Self {
         Self {
-            update_board_colors_timer: Timer::new(1.0),
+            board_colors_timer: Timer::new(1.0).into(),
         }
     }
 }
@@ -54,9 +54,8 @@ impl System for GameSystem {
         let background = ctx.load_texture("textures/map_1.png").unwrap();
 
         spawn!(ctx, Game::new());
-        let timer = &mut ctx.select_one::<Game>().update_board_colors_timer;
-        // add 1 second to update board colors on startup. This is very lean clode
-        timer.update(1.0);
+
+        notify_server_about_player_colors(ctx);
 
         spawn!(
             ctx,
@@ -112,26 +111,12 @@ impl System for GameSystem {
     }
 
     fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
-        let update_board_colors_timer = &mut ctx.select_one::<Game>().update_board_colors_timer;
-        update_board_colors_timer.update(delta);
-        if update_board_colors_timer.done() {
-            let mut hero_1_color = (255, 255, 255);
-            let mut hero_2_color = (255, 255, 255);
-            for player_id in query!(ctx, Player).clone() {
-                let player = ctx.select::<Player>(player_id).clone();
-                match player.kind {
-                    PlayerKind::Left => hero_1_color = player_damage_color(player.damage_taken),
-                    PlayerKind::Right => hero_2_color = player_damage_color(player.damage_taken),
-                }
-            }
-            let board_colors = shared::UpdateBoardColorsParams {
-                hero_1_color,
-                hero_2_color,
-            };
-            let server = ctx.select_one::<Server>();
-            server.update_board_colors(board_colors);
-            let update_board_colors_timer = &mut ctx.select_one::<Game>().update_board_colors_timer;
-            update_board_colors_timer.reset()
+        let game = ctx.clone_one::<Game>();
+
+        game.board_colors_timer.lock().update(delta);
+        if game.board_colors_timer.lock().done() {
+            notify_server_about_player_colors(ctx);
+            game.board_colors_timer.lock().reset()
         }
         Ok(())
     }
@@ -139,6 +124,24 @@ impl System for GameSystem {
     fn on_remove(&self, _ctx: &mut engine::Context) -> Result<(), engine::Error> {
         Ok(())
     }
+}
+
+fn notify_server_about_player_colors(ctx: &mut engine::Context) {
+    let mut hero_1_color = (255, 255, 255);
+    let mut hero_2_color = (255, 255, 255);
+    for player_id in query!(ctx, Player).clone() {
+        let player = ctx.select::<Player>(player_id).clone();
+        match player.kind {
+            PlayerKind::Left => hero_1_color = player_damage_color(player.damage_taken),
+            PlayerKind::Right => hero_2_color = player_damage_color(player.damage_taken),
+        }
+    }
+    let board_colors = shared::UpdateBoardColorsParams {
+        hero_1_color,
+        hero_2_color,
+    };
+    let server = ctx.select_one::<Server>();
+    server.update_board_colors(board_colors);
 }
 
 impl GameSystem {

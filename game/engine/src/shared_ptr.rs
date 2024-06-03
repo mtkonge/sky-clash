@@ -17,3 +17,9 @@ impl<T> SharedPtr<T> {
         self.0.lock().unwrap()
     }
 }
+
+impl<T> From<T> for SharedPtr<T> {
+    fn from(value: T) -> Self {
+        Self::new(value)
+    }
+}
