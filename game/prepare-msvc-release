@@ -1,0 +1,10 @@
+#!/bin/sh
+set +xe
+rm windows.*.zip
+set -xe
+
+cargo b
+7z a windows.debug.zip target/debug/sky-clash.exe textures vendored-deps/msvc/runtime/*
+
+cargo b --release
+7z a windows.release.zip target/release/sky-clash.exe textures vendored-deps/msvc/runtime/*
