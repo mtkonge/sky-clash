@@ -1,4 +1,131 @@
+use std::ops::Deref;
+
 use crate::V2;
+
+#[derive(Clone, Copy, Debug)]
+pub struct Moving<T> {
+    inner: T,
+    pub delta_pos: V2,
+}
+
+impl<T> Moving<T> {
+    pub fn new(inner: T, delta_pos: V2) -> Self {
+        Self { inner, delta_pos }
+    }
+}
+
+impl<T> Deref for Moving<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+pub trait Movable
+where
+    Self: Sized,
+{
+    fn moving(self, delta_pos: V2) -> Moving<Self>;
+}
+
+impl<T> Movable for T {
+    fn moving(self, delta_pos: V2) -> Moving<Self> {
+        Moving::new(self, delta_pos)
+    }
+}
+
+impl Moving<V2> {
+    pub fn line_intersect(&self, line: Line) -> Option<V2> {
+        let line_direction = line.direction();
+        if self.delta_pos.x == 0.0 && line_direction.x == 0.0 {
+            // parallel, do nothing
+            None
+        } else if self.delta_pos.x == 0.0 {
+            let x = self.x;
+            // y = ax + b
+            let line_a = line_direction.y / line_direction.x;
+            let line_b = line.p0.y - line_a * line.p0.x;
+            let y = line_a * x + line_b;
+            Some(V2::new(x, y))
+        } else if line_direction.x == 0.0 {
+            let x = line.p0.x;
+            // y = ax + b
+            let delta_pos_a = self.delta_pos.y / self.delta_pos.x;
+            let delta_pos_b = self.y - delta_pos_a * self.x;
+            let y = delta_pos_a * x + delta_pos_b;
+            Some(V2::new(x, y))
+        } else {
+            // y = ax + b
+            let delta_pos_a = self.delta_pos.y / self.delta_pos.x;
+            let line_a = line_direction.y / line_direction.x;
+            if delta_pos_a == line_a {
+                // parallel: either none or continous intersection
+                return None;
+            }
+            let delta_pos_b = self.y - delta_pos_a * self.x;
+            let line_b = line.p0.y - line_a * line.p0.x;
+            let x = (line_b - delta_pos_b) / (delta_pos_a - line_a);
+            let y = delta_pos_a * x + delta_pos_b;
+            Some(V2::new(x, y))
+        }
+    }
+
+    pub fn crosses_point(&self, p: V2) -> bool {
+        let p = p;
+        let pos_s = if self.delta_pos.x == 0.0 {
+            (p.y - self.y) / self.delta_pos.y
+        } else {
+            (p.x - self.x) / self.delta_pos.x
+        };
+        let delta_pos_s = if self.delta_pos.x == 0.0 {
+            (p.y - (self.y + self.delta_pos.y)) / self.delta_pos.y
+        } else {
+            (p.x - (self.x + self.delta_pos.x)) / self.delta_pos.x
+        };
+        if pos_s * delta_pos_s > 0.0 {
+            // wrong side
+            return false;
+        }
+        if delta_pos_s >= 0.0 {
+            // out of range
+            return false;
+        }
+        true
+    }
+
+    pub fn distance_factor_to_point(&self, p: V2) -> f64 {
+        // intersection = pos + delta_pos * score
+        // (intersection - pos) / delta_pos = score
+        if self.delta_pos.x != 0.0 {
+            (p.x - self.x) / self.delta_pos.x
+        } else if self.delta_pos.y != 0.0 {
+            (p.y - self.y) / self.delta_pos.y
+        } else {
+            unreachable!("already verified delta_pos != (0, 0)");
+        }
+    }
+
+    /// Calculates intersection between point and line if exists.
+    /// Returns position and distance factor.
+    /// The close intersection is to point, the closer factor is to zero,
+    /// factor is zero, when intersection is at point + delta_pos.
+    pub fn line_segment_intersect(&self, line: Line) -> Option<(V2, f64)> {
+        if self.delta_pos.len() == 0.0 {
+            // no movement, no collision
+            return None;
+        }
+        let intersection = self.line_intersect(line)?;
+        if !line.point_within_segment(intersection) {
+            return None;
+        }
+        if !self.crosses_point(intersection) {
+            return None;
+        }
+        let score = self.distance_factor_to_point(intersection);
+        Some((intersection, score))
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct Rect {
@@ -54,6 +181,14 @@ impl Rect {
     }
 }
 
+impl Moving<Rect> {
+    pub fn rect_within_reach(&self, other: Rect) -> bool {
+        let radii = self.radius() + self.delta_pos.len() + other.radius();
+        let length_between = self.radii_distance_to_rect(other);
+        radii >= length_between
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct Line {
     pub p0: V2,
@@ -71,6 +206,31 @@ impl Line {
 
     pub fn is_vertical(&self) -> bool {
         self.p1.x == self.p0.x
+    }
+
+    pub fn point_on_line(&self, p: V2) -> bool {
+        let r = self.p1 - self.p0;
+        if r.x == 0.0 && self.p0.x == p.x {
+            true
+        } else if r.y == 0.0 && self.p0.y == p.y {
+            true
+        } else {
+            let t_x = (p.x - self.p0.x) / r.x;
+            let t_y = (p.y - self.p0.y) / r.y;
+            t_x == t_y
+        }
+    }
+
+    pub fn point_within_segment(&self, p: V2) -> bool {
+        if !self.point_on_line(p) {
+            return false;
+        }
+        let t = if self.is_vertical() {
+            (p.y - self.p0.y) / (self.p1.y - self.p0.y)
+        } else {
+            (p.x - self.p0.x) / (self.p1.x - self.p0.x)
+        };
+        (0.0..=1.0).contains(&t)
     }
 }
 
@@ -186,4 +346,93 @@ impl From<QuadDirection> for OctoDirection {
             QuadDirection::Left => Left,
         }
     }
+}
+
+#[test]
+fn test_rects_within_reach() {
+    assert!(Rect::from_f64(0.0, 0.0, 10.0, 0.0)
+        .moving(V2::new(10.0, 10.0))
+        .rect_within_reach(Rect::from_f64(15.0, 0.0, 10.0, 10.0)));
+    assert!(!Rect::from_f64(0.0, 0.0, 10.0, 0.0)
+        .moving(V2::new(10.0, 10.0))
+        .rect_within_reach(Rect::from_f64(40.0, 0.0, 10.0, 10.0)));
+}
+
+#[test]
+fn test_point_vec_line_segment_intersect() {
+    macro_rules! named {
+        ($name: ident) => {
+            (stringify!($name), $name)
+        };
+    }
+    let check_a = {
+        let edge_a = (V2::new(10.0, 10.0), V2::new(40.0, 10.0));
+        let line_a = (V2::new(20.0, 0.0), V2::new(10.0, 20.0));
+        let line_b = (V2::new(25.0, 0.0), V2::new(0.0, 25.0));
+        let line_c = (V2::new(30.0, 0.0), V2::new(-10.0, 20.0));
+        let intersection = V2::new(25.0, 10.0);
+
+        [named!(line_a), named!(line_b), named!(line_c)]
+            .into_iter()
+            .map(|line| (line, named!(edge_a), intersection))
+            .collect::<Vec<_>>()
+    };
+    let check_b = {
+        let edge_b = (V2::new(40.0, 40.0), V2::new(40.0, 10.0));
+        let line_d = (V2::new(50.0, 20.0), V2::new(-20.0, 10.0));
+        let line_e = (V2::new(50.0, 25.0), V2::new(-25.0, 0.0));
+        let line_f = (V2::new(50.0, 30.0), V2::new(-20.0, -10.0));
+        let intersection = V2::new(40.0, 25.0);
+
+        [named!(line_d), named!(line_e), named!(line_f)]
+            .into_iter()
+            .map(|line| (line, named!(edge_b), intersection))
+            .collect::<Vec<_>>()
+    };
+    let check_c = {
+        let edge_c = (V2::new(40.0, 40.0), V2::new(10.0, 40.0));
+        let line_i = (V2::new(20.0, 50.0), V2::new(10.0, -20.0));
+        let line_h = (V2::new(25.0, 50.0), V2::new(0.0, -25.0));
+        let line_g = (V2::new(30.0, 50.0), V2::new(-10.0, -20.0));
+        let intersection = V2::new(25.0, 40.0);
+
+        [named!(line_i), named!(line_h), named!(line_g)]
+            .into_iter()
+            .map(|line| (line, named!(edge_c), intersection))
+            .collect::<Vec<_>>()
+    };
+    let check_d = {
+        let edge_d = (V2::new(10.0, 10.0), V2::new(10.0, 40.0));
+        let line_d = (V2::new(0.0, 20.0), V2::new(20.0, 10.0));
+        let line_e = (V2::new(0.0, 25.0), V2::new(25.0, 0.0));
+        let line_f = (V2::new(0.0, 30.0), V2::new(20.0, -10.0));
+        let intersection = V2::new(10.0, 25.0);
+
+        [named!(line_d), named!(line_e), named!(line_f)]
+            .into_iter()
+            .map(|line| (line, named!(edge_d), intersection))
+            .collect::<Vec<_>>()
+    };
+    [check_a, check_b, check_c, check_d]
+        .into_iter()
+        .flatten()
+        .for_each(
+            |(
+                (line_name, (pos, delta_pos)),
+                (edge_name, (edge_p0, edge_p1)),
+                expected_intersection,
+            )| {
+                let intersection =
+                    pos.moving(delta_pos).line_segment_intersect(Line::new(edge_p0, edge_p1))
+                        .map(|(intersection, _score)| intersection);
+
+                assert!(
+                    intersection.is_some(),
+                    "expected line {line_name} to intersect with edge {edge_name}, got None"
+                );
+
+                let intersection = intersection.expect("we asserted it to be Some");
+                assert_eq!(intersection, expected_intersection, "expected line {line_name} to intersect with edge {edge_name} at {expected_intersection:?}, got {intersection:?}")
+            },
+        );
 }
