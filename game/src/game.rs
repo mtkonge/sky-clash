@@ -90,21 +90,6 @@ impl System for GameSystem {
         spawn!(
             ctx,
             RigidBody::new()
-                .with_pos(V2::new(306.0, 300.0))
-                .with_size(V2::new(50.0, 50.0)),
-            SolidCollider::new(),
-        );
-
-        spawn!(
-            ctx,
-            RigidBody::new()
-                .with_pos(V2::new(200.0, 400.0))
-                .with_size(V2::new(50.0, 50.0)),
-            SolidCollider::new(),
-        );
-        spawn!(
-            ctx,
-            RigidBody::new()
                 .with_pos(V2::new(720.0, 214.0))
                 .with_size(V2::new(248.0, 10.0)),
             ShallowCollider::new().with_direction(QuadDirection::Top),
