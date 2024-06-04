@@ -26,11 +26,11 @@ impl CollisionResolver for DefaultResolver {
                 body.vel.y = min(0.0, body.vel.y);
             }
             Left => {
-                body.pos.x = pos.x;
+                body.pos.x = pos.x + 0.5;
                 body.vel.x = max(0.0, body.vel.x);
             }
             Right => {
-                body.pos.x = pos.x - size.x;
+                body.pos.x = pos.x - size.x - 0.5;
                 body.vel.x = min(0.0, body.vel.x);
             }
         }
