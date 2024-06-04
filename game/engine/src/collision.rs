@@ -18,19 +18,19 @@ impl CollisionResolver for DefaultResolver {
         use QuadDirection::*;
         match dir {
             Top => {
-                body.pos.y = pos.y + 1.0;
+                body.pos.y = pos.y;
                 body.vel.y = max(0.0, body.vel.y);
             }
             Bottom => {
-                body.pos.y = pos.y - size.y - 1.0;
+                body.pos.y = pos.y - size.y;
                 body.vel.y = min(0.0, body.vel.y);
             }
             Left => {
-                body.pos.x = pos.x + 1.0;
+                body.pos.x = pos.x;
                 body.vel.x = max(0.0, body.vel.x);
             }
             Right => {
-                body.pos.x = pos.x - size.x - 1.0;
+                body.pos.x = pos.x - size.x;
                 body.vel.x = min(0.0, body.vel.x);
             }
         }
@@ -104,7 +104,7 @@ impl System for CollisionSystem {
 
         for id in query!(ctx, RigidBody, SolidCollider) {
             let collider = ctx.select::<SolidCollider>(id).clone();
-            let Some(resolver) = collider.resolver  else {
+            let Some(resolver) = collider.resolver else {
                 continue;
             };
 
@@ -235,7 +235,7 @@ fn find_collisions<F: Fn(QuadDirection, V2) -> bool>(
             {
                 intersections.push(Collision {
                     pos,
-                    direction: side.reverse().into(),
+                    direction: side.reverse(),
                     distance_factor,
                 });
                 return;
@@ -251,7 +251,7 @@ fn find_collisions<F: Fn(QuadDirection, V2) -> bool>(
             {
                 intersections.push(Collision {
                     pos: p,
-                    direction: side.reverse().into(),
+                    direction: side.reverse(),
                     distance_factor,
                 });
                 return;

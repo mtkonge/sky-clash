@@ -86,6 +86,22 @@ impl System for GameSystem {
                 .with_size(V2::new(180.0, 204.0)),
             SolidCollider::new(),
         );
+
+        spawn!(
+            ctx,
+            RigidBody::new()
+                .with_pos(V2::new(306.0, 300.0))
+                .with_size(V2::new(50.0, 50.0)),
+            SolidCollider::new(),
+        );
+
+        spawn!(
+            ctx,
+            RigidBody::new()
+                .with_pos(V2::new(200.0, 400.0))
+                .with_size(V2::new(50.0, 50.0)),
+            SolidCollider::new(),
+        );
         spawn!(
             ctx,
             RigidBody::new()
@@ -162,11 +178,11 @@ impl CollisionResolver for BouncingCollider {
                 body.vel.y = -(body.vel.y / 2.0);
             }
             Left => {
-                body.pos.x = pos.x + 1.0;
+                body.pos.x = pos.x;
                 body.vel.x = -(body.vel.x / 2.0);
             }
             Right => {
-                body.pos.x = pos.x - size.x - 1.0;
+                body.pos.x = pos.x - size.x;
                 body.vel.x = -(body.vel.x / 2.0);
             }
         }
@@ -198,7 +214,7 @@ impl GameSystem {
             Player {
                 kind,
                 hero,
-                damage_taken: 0.0,
+                damage_taken: 300.0,
                 lives: 3,
             },
             PlayerInteraction::new(keyset, 0.0),

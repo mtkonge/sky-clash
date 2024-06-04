@@ -177,24 +177,71 @@ impl Moving<V2> {
         }
     }
 
-    pub fn crosses_point(&self, p: V2) -> bool {
-        let p = p;
-        let pos_s = if self.delta_pos.x == 0.0 {
-            (p.y - self.y) / self.delta_pos.y
-        } else {
-            (p.x - self.x) / self.delta_pos.x
-        };
-        let delta_pos_s = if self.delta_pos.x == 0.0 {
-            (p.y - (self.y + self.delta_pos.y)) / self.delta_pos.y
-        } else {
-            (p.x - (self.x + self.delta_pos.x)) / self.delta_pos.x
-        };
-        if pos_s * delta_pos_s > 0.0 {
-            // wrong side
+    /// Will a moving point (self) pass a static point (p), where p is on the same movement path?
+    pub fn crosses_point_debug(&self, p: V2) -> bool {
+        if self.delta_pos.x == 0.0 && self.delta_pos.y == 0.0 {
+            // no movement; it will never pass
             return false;
         }
-        if delta_pos_s >= 0.0 {
-            // out of range
+        // draw a line from the target position backwards to the point
+        // if the point is on the line, then it intends to pass the point
+
+        // intended_movement = origin->target = (target - origin)
+        // point_to_pass = intended_movement * distance_factor + origin
+        // distance_factor = (point_to_pass - origin) / intended_movement
+        let origin = self.inner;
+        let target = origin + self.delta_pos;
+        let point_to_pass = p;
+        let intended_movement = target - origin;
+        // prevent cringe division by 0
+        let distance_factor = if intended_movement.y == 0.0 {
+            (point_to_pass.x - origin.x) / intended_movement.x
+        } else {
+            (point_to_pass.y - origin.y) / intended_movement.y
+        };
+
+        if distance_factor < -0.01 {
+            // has not yet reached point
+            dbg!(origin, intended_movement, point_to_pass, distance_factor);
+            return false;
+        }
+        if distance_factor > 1.0 {
+            // has already passed point
+            println!("passed T~T");
+            return false;
+        }
+        true
+    }
+
+    /// Will a moving point (self) pass a static point (p), where p is on the same movement path?
+    pub fn crosses_point(&self, p: V2) -> bool {
+        if self.delta_pos.x == 0.0 && self.delta_pos.y == 0.0 {
+            // no movement; it will never pass
+            return false;
+        }
+        // draw a line from the target position backwards to the point
+        // if the point is on the line, then it intends to pass the point
+
+        // intended_movement = origin->target = (target - origin)
+        // point_to_pass = intended_movement * distance_factor + origin
+        // distance_factor = (point_to_pass - origin) / intended_movement
+        let origin = self.inner;
+        let target = origin + self.delta_pos;
+        let point_to_pass = p;
+        let intended_movement = target - origin;
+        // prevent cringe division by 0
+        let distance_factor = if intended_movement.y == 0.0 {
+            (point_to_pass.x - origin.x) / intended_movement.x
+        } else {
+            (point_to_pass.y - origin.y) / intended_movement.y
+        };
+
+        if distance_factor < 0.0 {
+            // has not yet reached point
+            return false;
+        }
+        if distance_factor > 1.0 {
+            // has already passed point
             return false;
         }
         true
@@ -217,20 +264,39 @@ impl Moving<V2> {
     /// The close intersection is to point, the closer factor is to zero,
     /// factor is zero, when intersection is at point + delta_pos.
     pub fn line_segment_intersect(&self, line: Line) -> Option<Intersection> {
+        // TODO: uhhhh keep debugging idk
+        let debug = false && line.p0.x == 306.0 && line.p0.y == 162.0 && self.inner.x < 600.0;
+        if debug {
+            println!("started new");
+            if self.inner.x < 306.0 {
+                // panic!();
+            }
+        }
         if self.delta_pos.len() == 0.0 {
             // no movement, no collision
             return None;
         }
-        let pos = self.line_intersect(line)?;
-        if !line.point_within_segment(pos) {
+        let intersection = self.line_intersect(line)?;
+        if !line.point_within_segment(intersection) {
             return None;
         }
-        if !self.crosses_point(pos) {
+
+        let cwosses = if debug {
+            self.crosses_point_debug(intersection)
+        } else {
+            self.crosses_point(intersection)
+        };
+
+        if !cwosses {
+            if debug {
+                println!("doth not cwoss point");
+                dbg!(intersection, self.inner.x, self.delta_pos.x);
+            }
             return None;
         }
-        let distance_factor = self.distance_factor_to_point(pos);
+        let distance_factor = self.distance_factor_to_point(intersection);
         Some(Intersection {
-            pos,
+            pos: intersection,
             distance_factor,
         })
     }
