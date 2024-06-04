@@ -10,7 +10,7 @@ use crate::{
     hud::{player_damage_color, HudSystem},
     hurtbox::{Hitbox, Hurtbox, HurtboxSystem, Victim},
     keyset::Keyset,
-    knockoff::KnockoffSystem,
+    knockoff::{DeathAnimationSystem, KnockoffSystem},
     player::{Player, PlayerKind},
     player_interaction::{PlayerInteraction, PlayerInteractionSystem},
     server::Server,
@@ -50,7 +50,8 @@ impl System for GameSystem {
         ctx.add_system(KnockoffSystem);
         ctx.add_system(PlayerInteractionSystem);
         ctx.add_system(HudSystem);
-        ctx.add_system(DebugDrawer);
+        ctx.add_system(DeathAnimationSystem);
+        // ctx.add_system(DebugDrawer);
 
         let background = ctx.load_texture("textures/map_1.png").unwrap();
 

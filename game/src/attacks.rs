@@ -4,7 +4,7 @@ use crate::{
     hurtbox::{HurtDirection, HurtboxProfile, Outcome},
     player::Player,
 };
-use engine::{clamp, max, rigid_body::RigidBody, V2};
+use engine::{max, rigid_body::RigidBody, V2};
 
 pub enum AttackKind {
     Up,
@@ -72,7 +72,7 @@ impl HurtboxProfile for SideAttackProfile {
 
                 let max_angle = consts::PI / 2.0;
 
-                let attack_angle = clamp(attack_angle, max_angle);
+                let attack_angle = max(attack_angle, max_angle);
 
                 let attack_angle_percentage = attack_angle / max_angle;
                 let y_vel = attack_angle_percentage * velocity;
@@ -94,7 +94,7 @@ impl HurtboxProfile for SideAttackProfile {
 
                 let max_angle = consts::PI / 2.0;
 
-                let attack_angle = clamp(attack_angle, max_angle);
+                let attack_angle = max(attack_angle, max_angle);
 
                 let attack_angle_percentage = attack_angle / max_angle;
                 let y_vel = attack_angle_percentage * velocity;
@@ -165,7 +165,7 @@ impl HurtboxProfile for UpAttackProfile {
 
         let max_angle = consts::PI / 2.0;
 
-        let attack_angle = clamp(attack_angle, max_angle);
+        let attack_angle = max(attack_angle, max_angle);
 
         let attack_angle_percentage = attack_angle / max_angle;
         let angle_factor = 0.5;

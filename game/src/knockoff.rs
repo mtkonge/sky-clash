@@ -1,6 +1,11 @@
-use engine::{query, rigid_body::RigidBody, spawn, Context, Error, System, V2};
+use engine::{
+    clamp, query, rigid_body::RigidBody, spawn, Component, Context, Error, System, Texture, V2,
+};
 
-use crate::{hud::TrashTalk, player::Player, player_interaction::PlayerInteraction};
+use crate::{
+    hud::TrashTalk, player::Player, player_interaction::PlayerInteraction, sprite_renderer::Sprite,
+    timer::Timer,
+};
 
 pub struct KnockoffSystem(pub u64);
 impl System for KnockoffSystem {
@@ -8,13 +13,16 @@ impl System for KnockoffSystem {
         let max_offset_from_screen = 200.0;
         for id in query!(ctx, PlayerInteraction, RigidBody, Player).clone() {
             let rigid_body = ctx.select::<RigidBody>(id).clone();
-            if body_outside_area(rigid_body, max_offset_from_screen) {
+            if body_outside_area(&rigid_body, max_offset_from_screen) {
                 let loser_id = id;
                 let player = ctx.select::<Player>(loser_id);
                 if player.is_alive() {
                     player.damage_taken = 0.0;
                     player.lives -= 1;
+                    let player_pos = rigid_body.pos + rigid_body.size.div_comps(2.0);
+                    spawn_death_animation(ctx, player_pos);
                 };
+                let player = ctx.select::<Player>(loser_id);
                 let player_is_dead = player.is_dead();
                 if player_is_dead {
                     let loser_hero_kind = player.hero.kind.clone();
@@ -32,9 +40,108 @@ impl System for KnockoffSystem {
     }
 }
 
-fn body_outside_area(rigid_body: RigidBody, max_offset_from_screen: f64) -> bool {
+fn body_outside_area(rigid_body: &RigidBody, max_offset_from_screen: f64) -> bool {
     rigid_body.pos.x + rigid_body.size.x < -max_offset_from_screen
         || rigid_body.pos.x > 1280.0 + max_offset_from_screen
         || rigid_body.pos.y + rigid_body.size.y < -max_offset_from_screen
         || rigid_body.pos.y > 720.0 + max_offset_from_screen
+}
+
+#[derive(Component)]
+pub struct DeathAnimation {
+    timer: Timer,
+    textures: Vec<Texture>,
+}
+
+impl DeathAnimation {
+    pub fn new(textures: Vec<Texture>) -> Self {
+        Self {
+            timer: Timer::new(0.5),
+            textures,
+        }
+    }
+}
+
+pub struct DeathAnimationSystem(pub u64);
+impl System for DeathAnimationSystem {
+    fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
+        for id in query!(ctx, Sprite, DeathAnimation) {
+            let animation = ctx.select::<DeathAnimation>(id);
+            animation.timer.update(delta);
+
+            if animation.timer.done() {
+                ctx.despawn(id);
+                continue;
+            }
+
+            let texture = animation.textures[std::cmp::min(
+                ((animation.timer.time_passed() / animation.timer.duration())
+                    * animation.textures.len() as f64)
+                    .floor() as usize,
+                animation.textures.len(),
+            )];
+            let sprite = ctx.select::<Sprite>(id);
+            sprite.texture = texture;
+        }
+        Ok(())
+    }
+}
+fn spawn_death_animation(ctx: &mut engine::Context, player_pos: V2) {
+    use engine::physics::QuadDirection::*;
+
+    let size = V2::new(30.0, 60.0).extend(8.0);
+
+    let textures = [
+        "textures/death_0.png".to_string(),
+        "textures/death_1.png".to_string(),
+        "textures/death_2.png".to_string(),
+        "textures/death_3.png".to_string(),
+        "textures/death_4.png".to_string(),
+        "textures/death_5.png".to_string(),
+        "textures/death_6.png".to_string(),
+    ]
+    .into_iter()
+    .map(|path| ctx.load_texture(path).unwrap())
+    .collect::<Vec<_>>();
+
+    let a = 720.0 / 1280.0;
+    let above_descending = player_pos.y > player_pos.x * a;
+    let above_ascending = player_pos.y > player_pos.x * -a + 720.0;
+
+    let dir = match (above_descending, above_ascending) {
+        (true, true) => Bottom,
+        (true, false) => Left,
+        (false, true) => Right,
+        (false, false) => Top,
+    };
+
+    let pos = match dir {
+        Top => V2::new(clamp(player_pos.x, 0.0, 1280.0 - size.x), 0.0),
+        Bottom => V2::new(
+            clamp(player_pos.x, 0.0, 1280.0 - size.x) - size.x / 2.0,
+            720.0 - size.y,
+        ),
+        Right => V2::new(
+            1280.0 - size.y + size.x,
+            clamp(player_pos.y, 0.0, 720.0 - size.x),
+        ),
+        Left => V2::new(
+            size.x / 2.0,
+            clamp(player_pos.y, 0.0, 720.0 - size.x) - size.x / 2.0,
+        ),
+    };
+
+    let angle = match dir {
+        Top => 180.0,
+        Right => 270.0,
+        Bottom => 0.0,
+        Left => 90.0,
+    };
+
+    spawn!(
+        ctx,
+        RigidBody::new().with_pos(pos).with_size(size),
+        Sprite::new(textures[0]).angle(angle),
+        DeathAnimation::new(textures),
+    );
 }

@@ -325,11 +325,23 @@ impl<'context, 'game> Context<'context, 'game> {
         } else {
             texture.set_alpha_mod(255);
         }
-        self.canvas.copy(
-            texture,
-            None,
-            Rect::new(pos.x as i32, pos.y as i32, size.x as u32, size.y as u32),
-        )?;
+        if let Some(angle) = opts.angle {
+            self.canvas.copy_ex(
+                texture,
+                None,
+                Rect::new(pos.x as i32, pos.y as i32, size.x as u32, size.y as u32),
+                angle,
+                None,
+                false,
+                false,
+            )?;
+        } else {
+            self.canvas.copy(
+                texture,
+                None,
+                Rect::new(pos.x as i32, pos.y as i32, size.x as u32, size.y as u32),
+            )?;
+        }
         Ok(())
     }
 
@@ -443,6 +455,7 @@ pub struct DrawTextureOpts {
     pub color_mod: Option<(u8, u8, u8)>,
     pub opacity: Option<f64>,
     pub size: Option<V2>,
+    pub angle: Option<f64>,
 }
 
 impl DrawTextureOpts {
@@ -451,6 +464,7 @@ impl DrawTextureOpts {
             color_mod: None,
             opacity: None,
             size: None,
+            angle: None,
         }
     }
     pub fn size(self, size: V2) -> Self {
@@ -470,5 +484,8 @@ impl DrawTextureOpts {
             opacity: Some(opacity),
             ..self
         }
+    }
+    pub fn angle(self, angle: Option<f64>) -> Self {
+        Self { angle, ..self }
     }
 }

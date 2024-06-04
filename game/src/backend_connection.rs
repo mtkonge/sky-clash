@@ -133,11 +133,7 @@ impl BackendConnection {
                         .await
                     {
                         Ok(response) => {
-                            println!(
-                                "update_hero_stats response: {} '{}'",
-                                response.status().as_str(),
-                                response.text().await.unwrap()
-                            );
+                            let _ = response;
                         }
                         Err(err) => {
                             println!("{err}");

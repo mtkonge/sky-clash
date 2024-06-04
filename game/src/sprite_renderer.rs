@@ -7,6 +7,7 @@ pub struct Sprite {
     pub texture: engine::Texture,
     pub layer: i32,
     pub opacity: Option<f64>,
+    pub angle: Option<f64>,
 }
 
 impl Sprite {
@@ -17,6 +18,7 @@ impl Sprite {
             offset: V2::new(0.0, 0.0),
             size: None,
             opacity: None,
+            angle: None,
         }
     }
 
@@ -33,6 +35,13 @@ impl Sprite {
 
     pub fn offset(self, offset: V2) -> Self {
         Self { offset, ..self }
+    }
+
+    pub fn angle(self, angle: f64) -> Self {
+        Self {
+            angle: Some(angle),
+            ..self
+        }
     }
 
     pub fn set_opacity(&mut self, opacity: f64) {
@@ -57,7 +66,10 @@ impl System for SpriteRenderer {
             ctx.draw_texture(
                 sprite.texture,
                 pos + sprite.offset,
-                DrawTextureOpts::new().size(size).opacity(opacity),
+                DrawTextureOpts::new()
+                    .size(size)
+                    .opacity(opacity)
+                    .angle(sprite.angle),
             )?;
         }
         Ok(())
