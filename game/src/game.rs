@@ -1,5 +1,5 @@
 use engine::{
-    collision::ShallowCollider,
+    collision::{CollisionResolver, DefaultResolver, ShallowCollider},
     physics::QuadDirection,
     query,
     rigid_body::{DragSystem, GravitySystem, RigidBody, VelocitySystem},
@@ -145,6 +145,34 @@ fn notify_server_about_player_colors(ctx: &mut engine::Context) {
     server.update_board_colors(board_colors);
 }
 
+struct BouncingCollider;
+impl CollisionResolver for BouncingCollider {
+    fn resolve(&self, body: &mut RigidBody, pos: V2, size: V2, dir: QuadDirection) {
+        use QuadDirection::*;
+        if body.vel.len() <= 1200.0 {
+            return DefaultResolver.resolve(body, pos, size, dir);
+        }
+        match dir {
+            Top => {
+                body.pos.y = pos.y + 1.0;
+                body.vel.y = -(body.vel.y / 2.0);
+            }
+            Bottom => {
+                body.pos.y = pos.y - size.y - 1.0;
+                body.vel.y = -(body.vel.y / 2.0);
+            }
+            Left => {
+                body.pos.x = pos.x + 1.0;
+                body.vel.x = -(body.vel.x / 2.0);
+            }
+            Right => {
+                body.pos.x = pos.x - size.x - 1.0;
+                body.vel.x = -(body.vel.x / 2.0);
+            }
+        }
+    }
+}
+
 impl GameSystem {
     fn spawn_player(&self, ctx: &mut engine::Context, pos: V2, keyset: Keyset, kind: PlayerKind) {
         let scale = 1.0;
@@ -166,7 +194,7 @@ impl GameSystem {
                 .with_size(V2::new(32.0 * factor, 32.0 * factor))
                 .with_gravity()
                 .with_drag(),
-            SolidCollider::new().resolving().bouncing(),
+            SolidCollider::new().resolving(BouncingCollider),
             Player {
                 kind,
                 hero,

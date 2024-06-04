@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, rc::Rc};
 
 use crate::{
     max, min,
@@ -8,52 +8,32 @@ use crate::{
     Component, Context, Error, Id, System, V2,
 };
 
-fn resolve_collision(body: &mut RigidBody, p: V2, rect: V2, dir: OctoDirection) {
-    use OctoDirection::*;
-    match dir {
-        Top => {
-            body.pos.y = p.y + 1.0;
-            body.vel.y = max(0.0, body.vel.y);
-        }
-        Bottom => {
-            body.pos.y = p.y - rect.y - 1.0;
-            body.vel.y = min(0.0, body.vel.y);
-        }
-        Left => {
-            body.pos.x = p.x + 1.0;
-            body.vel.x = max(0.0, body.vel.x);
-        }
-        Right => {
-            body.pos.x = p.x - rect.x - 1.0;
-            body.vel.x = min(0.0, body.vel.x);
-        }
-        _ => unreachable!(),
-    }
+pub trait CollisionResolver {
+    fn resolve(&self, body: &mut RigidBody, pos: V2, size: V2, dir: QuadDirection);
 }
 
-fn bounce_collision(body: &mut RigidBody, p: V2, rect: V2, dir: OctoDirection) {
-    use OctoDirection::*;
-    if body.vel.len() <= 1200.0 {
-        return resolve_collision(body, p, rect, dir);
-    }
-    match dir {
-        Top => {
-            body.pos.y = p.y + 1.0;
-            body.vel.y = -(body.vel.y / 2.0);
+pub struct DefaultResolver;
+impl CollisionResolver for DefaultResolver {
+    fn resolve(&self, body: &mut RigidBody, pos: V2, size: V2, dir: QuadDirection) {
+        use QuadDirection::*;
+        match dir {
+            Top => {
+                body.pos.y = pos.y + 1.0;
+                body.vel.y = max(0.0, body.vel.y);
+            }
+            Bottom => {
+                body.pos.y = pos.y - size.y - 1.0;
+                body.vel.y = min(0.0, body.vel.y);
+            }
+            Left => {
+                body.pos.x = pos.x + 1.0;
+                body.vel.x = max(0.0, body.vel.x);
+            }
+            Right => {
+                body.pos.x = pos.x - size.x - 1.0;
+                body.vel.x = min(0.0, body.vel.x);
+            }
         }
-        Bottom => {
-            body.pos.y = p.y - rect.y - 1.0;
-            body.vel.y = -(body.vel.y / 2.0);
-        }
-        Left => {
-            body.pos.x = p.x + 1.0;
-            body.vel.x = -(body.vel.x / 2.0);
-        }
-        Right => {
-            body.pos.x = p.x - rect.x - 1.0;
-            body.vel.x = -(body.vel.x / 2.0);
-        }
-        _ => unreachable!(),
     }
 }
 
@@ -77,8 +57,7 @@ impl ShallowCollider {
 
 #[derive(Component, Clone)]
 pub struct SolidCollider {
-    pub resolve: bool,
-    pub bounce: bool,
+    pub resolver: Option<Rc<dyn CollisionResolver>>,
     pub colliding: Option<OctoDirection>,
     pub size: Option<V2>,
     pub offset: V2,
@@ -87,24 +66,16 @@ pub struct SolidCollider {
 impl SolidCollider {
     pub fn new() -> Self {
         Self {
-            resolve: false,
-            bounce: false,
+            resolver: None,
             colliding: None,
             size: None,
             offset: V2::new(0.0, 0.0),
         }
     }
 
-    pub fn bouncing(self) -> Self {
+    pub fn resolving<R: CollisionResolver + 'static>(self, resolver: R) -> Self {
         Self {
-            bounce: true,
-            ..self
-        }
-    }
-
-    pub fn resolving(self) -> Self {
-        Self {
-            resolve: true,
+            resolver: Some(Rc::new(resolver)),
             ..self
         }
     }
@@ -122,7 +93,7 @@ impl SolidCollider {
 
 struct Intersection {
     pos: V2,
-    direction: OctoDirection,
+    direction: QuadDirection,
     delta_pos_percentage: f64,
 }
 
@@ -131,9 +102,10 @@ impl System for CollisionSystem {
     fn on_update(&self, ctx: &mut Context, delta: f64) -> Result<(), Error> {
         for id in query!(ctx, RigidBody, SolidCollider) {
             let collider = ctx.select::<SolidCollider>(id).clone();
-            if !collider.resolve {
+            let Some(resolver) = collider.resolver  else {
                 continue;
-            }
+            };
+
             let collider = ctx.select::<SolidCollider>(id);
             collider.colliding = None;
             let body = ctx.select::<RigidBody>(id).clone();
@@ -147,45 +119,35 @@ impl System for CollisionSystem {
 
             collisions.sort_by(|a, b| a.delta_pos_percentage.total_cmp(&b.delta_pos_percentage));
 
+            use QuadDirection::*;
+
             let horizontal_collisions = collisions
                 .iter()
                 .filter(|c| match c.direction {
-                    OctoDirection::Left | OctoDirection::Right => true,
-                    OctoDirection::Top | OctoDirection::Bottom => false,
-                    _ => unreachable!(),
+                    Left | Right => true,
+                    Top | Bottom => false,
                 })
                 .collect::<Vec<_>>();
 
             let vertical_collisions = collisions
                 .iter()
                 .filter(|c| match c.direction {
-                    OctoDirection::Left | OctoDirection::Right => false,
-                    OctoDirection::Top | OctoDirection::Bottom => true,
-                    _ => unreachable!(),
+                    Left | Right => false,
+                    Top | Bottom => true,
                 })
                 .collect::<Vec<_>>();
 
             if let Some(int) = horizontal_collisions.first() {
                 let collider = ctx.select::<SolidCollider>(id);
-                collider.colliding = Some(int.direction);
-                if collider.bounce {
-                    let body = ctx.select::<RigidBody>(id);
-                    bounce_collision(body, int.pos, size, int.direction)
-                } else {
-                    let body = ctx.select::<RigidBody>(id);
-                    resolve_collision(body, int.pos, size, int.direction);
-                }
+                collider.colliding = Some(int.direction.into());
+                let body = ctx.select::<RigidBody>(id);
+                resolver.resolve(body, int.pos, size, int.direction)
             }
             if let Some(int) = vertical_collisions.first() {
                 let collider = ctx.select::<SolidCollider>(id);
-                collider.colliding = Some(int.direction);
-                if collider.bounce {
-                    let body = ctx.select::<RigidBody>(id);
-                    bounce_collision(body, int.pos, size, int.direction)
-                } else {
-                    let body = ctx.select::<RigidBody>(id);
-                    resolve_collision(body, int.pos, size, int.direction);
-                }
+                collider.colliding = Some(int.direction.into());
+                let body = ctx.select::<RigidBody>(id);
+                resolver.resolve(body, int.pos, size, int.direction)
             }
         }
         Ok(())
@@ -206,7 +168,7 @@ fn solid_intersections(
         }
 
         let other_collider = ctx.select::<SolidCollider>(other_id).clone();
-        if other_collider.resolve && collider.resolve {
+        if other_collider.resolver.is_some() && collider.resolver.is_some() {
             continue;
         }
 
