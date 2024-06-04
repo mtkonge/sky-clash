@@ -136,6 +136,11 @@ impl Default for V2 {
     }
 }
 
+pub struct Intersection {
+    pub pos: V2,
+    pub distance_factor: f64,
+}
+
 impl Moving<V2> {
     pub fn line_intersect(&self, line: Line) -> Option<V2> {
         let line_direction = line.direction();
@@ -211,20 +216,23 @@ impl Moving<V2> {
     /// Returns position and distance factor.
     /// The close intersection is to point, the closer factor is to zero,
     /// factor is zero, when intersection is at point + delta_pos.
-    pub fn line_segment_intersect(&self, line: Line) -> Option<(V2, f64)> {
+    pub fn line_segment_intersect(&self, line: Line) -> Option<Intersection> {
         if self.delta_pos.len() == 0.0 {
             // no movement, no collision
             return None;
         }
-        let intersection = self.line_intersect(line)?;
-        if !line.point_within_segment(intersection) {
+        let pos = self.line_intersect(line)?;
+        if !line.point_within_segment(pos) {
             return None;
         }
-        if !self.crosses_point(intersection) {
+        if !self.crosses_point(pos) {
             return None;
         }
-        let score = self.distance_factor_to_point(intersection);
-        Some((intersection, score))
+        let distance_factor = self.distance_factor_to_point(pos);
+        Some(Intersection {
+            pos,
+            distance_factor,
+        })
     }
 }
 
