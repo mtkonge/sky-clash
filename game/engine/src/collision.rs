@@ -168,7 +168,7 @@ fn find_solid_collisions(
 
         let other_body = ctx.select::<RigidBody>(other_id).clone();
 
-        find_collisions(collisions, body, &other_body, delta, |_| true);
+        find_collisions(collisions, body, &other_body, delta, |_, _| true);
     }
 }
 
@@ -195,13 +195,13 @@ fn find_shallow_collisions(
         let other_body = ctx.select::<RigidBody>(other_id).clone();
         let other_collider = ctx.select::<ShallowCollider>(other_id).clone();
 
-        find_collisions(collisions, body, &other_body, delta, |side| {
-            other_collider.directions.contains(&side)
+        find_collisions(collisions, body, &other_body, delta, |side, delta_pos| {
+            other_collider.directions.contains(&side) && correct_delta_pos(side.into(), delta_pos)
         });
     }
 }
 
-fn find_collisions<F: Fn(QuadDirection) -> bool>(
+fn find_collisions<F: Fn(QuadDirection, V2) -> bool>(
     intersections: &mut Vec<Collision>,
     body: &RigidBody,
     other_body: &RigidBody,
@@ -220,7 +220,7 @@ fn find_collisions<F: Fn(QuadDirection) -> bool>(
     }
 
     for side in [Top, Right, Bottom, Left] {
-        if !direction_checked(side.into()) || !correct_delta_pos(side.into(), delta_pos) {
+        if !direction_checked(side.into(), delta_pos) {
             continue;
         }
         let (p0, p1) = rect.side_corners(side.reverse());
