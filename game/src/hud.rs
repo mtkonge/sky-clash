@@ -1,7 +1,10 @@
 use engine::{query, Component, Context, DrawTextureOpts, Error, System, V2};
 use shared::HeroKind;
 
-use crate::player::{Player, PlayerKind};
+use crate::{
+    game::Game,
+    player::{Player, PlayerKind},
+};
 
 pub struct HudSystem(pub u64);
 
@@ -17,7 +20,48 @@ impl System for HudSystem {
             let trash_talk = ctx.select::<TrashTalk>(id).clone();
             trash_talk.draw(ctx);
         }
+        for id in query!(ctx, ReturnToMenu).clone() {
+            let ret = ctx.select::<ReturnToMenu>(id).clone();
+            ret.draw(ctx);
+            if ret.should_return(ctx) {
+                let system_id = ctx.select_one::<Game>().system_id;
+                ctx.remove_system(system_id);
+            }
+        }
         Ok(())
+    }
+
+    fn on_remove(&self, ctx: &mut Context) -> Result<(), Error> {
+        for id in query!(ctx, TrashTalk).clone() {
+            ctx.despawn(id);
+        }
+        for id in query!(ctx, ReturnToMenu).clone() {
+            ctx.despawn(id);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Component)]
+pub struct ReturnToMenu(engine::Keycode);
+
+impl ReturnToMenu {
+    pub fn new() -> Self {
+        Self(engine::Keycode::Space)
+    }
+    fn should_return(&self, ctx: &mut Context) -> bool {
+        ctx.key_just_pressed(self.0)
+    }
+    fn draw(&self, ctx: &mut Context) {
+        let font = ctx.load_font("textures/ttf/OpenSans.ttf", 36).unwrap();
+        let text = format!("Press [{}] to return to menu!", self.0);
+        let text = ctx.render_text(font, text, (255, 255, 255)).unwrap();
+        ctx.draw_texture(
+            text.texture,
+            (V2::new(1280.0, 720.0) - text.size).div_comps(2.0),
+            DrawTextureOpts::new(),
+        )
+        .unwrap();
     }
 }
 

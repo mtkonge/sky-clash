@@ -4,8 +4,12 @@ use engine::{
 use shared::Hero;
 
 use crate::{
-    hud::TrashTalk, player::Player, player_interaction::PlayerInteraction, server::Server,
-    sprite_renderer::Sprite, timer::Timer,
+    hud::{ReturnToMenu, TrashTalk},
+    player::Player,
+    player_interaction::PlayerInteraction,
+    server::Server,
+    sprite_renderer::Sprite,
+    timer::Timer,
 };
 
 pub struct KnockoffSystem(pub u64);
@@ -33,6 +37,7 @@ impl System for KnockoffSystem {
                     let winner = ctx.select_one::<Player>().clone();
                     let winner_hero_kind = winner.hero.kind.clone();
                     spawn!(ctx, TrashTalk::new(winner_hero_kind, loser_hero_kind));
+                    spawn!(ctx, ReturnToMenu::new());
                     send_match_result(ctx, &winner.hero, &loser_hero);
                     continue;
                 }

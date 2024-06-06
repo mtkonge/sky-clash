@@ -252,6 +252,10 @@ impl System for StartGameSystem {
             }
         }
 
+        for id in query!(ctx, MaybeHeroesOnBoard) {
+            ctx.despawn(id);
+        }
+
         Ok(())
     }
 }

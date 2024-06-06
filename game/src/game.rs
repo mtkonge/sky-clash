@@ -1,9 +1,9 @@
 use engine::{
     collision::{CollisionResolver, DefaultResolver, ShallowCollider},
     physics::QuadDirection,
-    query,
+    query, query_one,
     rigid_body::{DragSystem, GravitySystem, RigidBody, VelocitySystem},
-    spawn, CollisionSystem, Component, SharedPtr, SolidCollider, System, V2,
+    spawn, CollisionSystem, Component, IdAccumulator, SharedPtr, SolidCollider, System, V2,
 };
 
 use crate::{
@@ -21,12 +21,22 @@ use crate::{
 #[derive(Component, Clone)]
 pub struct Game {
     pub board_colors_timer: SharedPtr<Timer>,
+    pub system_id: engine::Id,
+    pub child_systems: Vec<engine::Id>,
+    pub child_components: Vec<engine::Id>,
 }
 
 impl Game {
-    pub fn new() -> Self {
+    pub fn new(
+        system_id: engine::Id,
+        child_systems: Vec<engine::Id>,
+        child_components: Vec<engine::Id>,
+    ) -> Self {
         Self {
             board_colors_timer: Timer::new(1.0).into(),
+            system_id,
+            child_systems,
+            child_components,
         }
     }
 }
@@ -41,46 +51,46 @@ pub struct HeroesOnBoard {
 
 impl System for GameSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
-        ctx.add_system(CollisionSystem);
-        ctx.add_system(VelocitySystem);
-        ctx.add_system(SpriteRenderer);
-        ctx.add_system(GravitySystem);
-        ctx.add_system(DragSystem);
-        ctx.add_system(HurtboxSystem);
-        ctx.add_system(KnockoffSystem);
-        ctx.add_system(PlayerInteractionSystem);
-        ctx.add_system(HudSystem);
-        ctx.add_system(DeathAnimationSystem);
+        let mut systems = IdAccumulator::new();
+        systems += ctx.add_system(CollisionSystem);
+        systems += ctx.add_system(VelocitySystem);
+        systems += ctx.add_system(SpriteRenderer);
+        systems += ctx.add_system(GravitySystem);
+        systems += ctx.add_system(DragSystem);
+        systems += ctx.add_system(HurtboxSystem);
+        systems += ctx.add_system(KnockoffSystem);
+        systems += ctx.add_system(PlayerInteractionSystem);
+        systems += ctx.add_system(HudSystem);
+        systems += ctx.add_system(DeathAnimationSystem);
         // ctx.add_system(DebugDrawer);
 
         let background = ctx.load_texture("textures/map_1.png").unwrap();
 
-        spawn!(ctx, Game::new());
-
         notify_server_about_player_colors(ctx);
 
-        spawn!(
+        let mut children = IdAccumulator::new();
+        children += spawn!(
             ctx,
             Sprite::new(background).layer(2),
             RigidBody::new().with_size(V2::new(1280.0, 720.0)),
         );
-
-        self.spawn_player(ctx, V2::new(400.0, 350.0), Keyset::Wasd, PlayerKind::Left);
-        self.spawn_player(
+        children += self.spawn_player(ctx, V2::new(400.0, 350.0), Keyset::Wasd, PlayerKind::Left);
+        children += self.spawn_player(
             ctx,
             V2::new(600.0, 350.0),
             Keyset::ArrowKeys,
             PlayerKind::Right,
         );
 
-        spawn!(
+        children += spawn!(
             ctx,
             RigidBody::new()
                 .with_pos(V2::new(350.0, 525.0))
                 .with_size(V2::new(676.0, 110.0)),
             SolidCollider::new(),
         );
-        spawn!(
+
+        children += spawn!(
             ctx,
             RigidBody::new()
                 .with_pos(V2::new(126.0, 162.0))
@@ -88,27 +98,31 @@ impl System for GameSystem {
             SolidCollider::new(),
         );
 
-        spawn!(
+        children += spawn!(
             ctx,
             RigidBody::new()
                 .with_pos(V2::new(720.0, 214.0))
                 .with_size(V2::new(248.0, 10.0)),
             ShallowCollider::new().with_direction(QuadDirection::Top),
         );
-        spawn!(
+
+        children += spawn!(
             ctx,
             RigidBody::new()
                 .with_pos(V2::new(720.0, 214.0))
                 .with_size(V2::new(248.0, 10.0)),
             ShallowCollider::new().with_direction(QuadDirection::Top),
         );
-        spawn!(
+
+        children += spawn!(
             ctx,
             RigidBody::new()
                 .with_pos(V2::new(924.0, 378.0))
                 .with_size(V2::new(280.0, 10.0)),
             ShallowCollider::new().with_direction(QuadDirection::Top),
         );
+
+        spawn!(ctx, Game::new(self.0, systems.finish(), children.finish()));
 
         Ok(())
     }
@@ -124,7 +138,19 @@ impl System for GameSystem {
         Ok(())
     }
 
-    fn on_remove(&self, _ctx: &mut engine::Context) -> Result<(), engine::Error> {
+    fn on_remove(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
+        let game_id = query_one!(ctx, Game);
+        let game = ctx.clone_one::<Game>();
+        ctx.despawn(game_id);
+        for id in game.child_systems {
+            ctx.remove_system(id);
+        }
+        for id in game.child_components {
+            ctx.despawn(id);
+        }
+        let heroes_on_board = query_one!(ctx, HeroesOnBoard);
+        ctx.despawn(heroes_on_board);
+        ctx.add_system(crate::main_menu::MainMenuSystem);
         Ok(())
     }
 }
@@ -176,7 +202,13 @@ impl CollisionResolver for BouncingCollider {
 }
 
 impl GameSystem {
-    fn spawn_player(&self, ctx: &mut engine::Context, pos: V2, keyset: Keyset, kind: PlayerKind) {
+    fn spawn_player(
+        &self,
+        ctx: &mut engine::Context,
+        pos: V2,
+        keyset: Keyset,
+        kind: PlayerKind,
+    ) -> engine::Id {
         let scale = 1.0;
         let pixel_ratio = 4.0;
 
@@ -205,7 +237,7 @@ impl GameSystem {
             },
             PlayerInteraction::new(keyset, 0.0),
             Victim::default()
-        );
+        )
     }
 
     fn player_hero(&self, ctx: &mut engine::Context, kind: &PlayerKind) -> shared::Hero {

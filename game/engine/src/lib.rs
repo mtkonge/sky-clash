@@ -19,10 +19,24 @@ pub mod shared_ptr;
 pub mod ui;
 
 pub use self::{
-    collision::CollisionSystem, collision::SolidCollider, component::Component,
-    context::ComponentQuery, context::Context, context::DrawTextureOpts, error::Error, game::Game,
-    id::Id, physics::clamp, physics::max, physics::min, physics::V2, query_runner::QueryRunner,
-    shared_ptr::SharedPtr, system::System, text::Text, texture::Texture,
+    collision::CollisionSystem,
+    collision::SolidCollider,
+    component::Component,
+    context::ComponentQuery,
+    context::Context,
+    context::DrawTextureOpts,
+    error::Error,
+    game::Game,
+    id::{Id, IdAccumulator},
+    physics::clamp,
+    physics::max,
+    physics::min,
+    physics::V2,
+    query_runner::QueryRunner,
+    shared_ptr::SharedPtr,
+    system::System,
+    text::Text,
+    texture::Texture,
 };
 pub use component_macro::Component;
 pub use sdl2::controller::Button as ControllerButton;
