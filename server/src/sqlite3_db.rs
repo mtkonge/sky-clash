@@ -34,6 +34,16 @@ impl Database for Sqlite3Db {
         Ok(())
     }
 
+    async fn hero_by_id(&mut self, id: i64) -> Result<Option<shared::Hero>, eyre::Report> {
+        let result = sqlx::query_as!(shared::Hero, "SELECT * FROM heroes WHERE id=?", id)
+            .fetch_optional(&self.pool)
+            .await;
+        match result {
+            Ok(result) => Ok(result),
+            Err(_) => Err(eyre!("Server error")),
+        }
+    }
+
     async fn hero_by_rfid(&mut self, rfid: &str) -> Result<Option<shared::Hero>, eyre::Report> {
         let result = sqlx::query_as!(shared::Hero, "SELECT * FROM heroes WHERE rfid=?", rfid)
             .fetch_optional(&self.pool)
@@ -52,6 +62,29 @@ impl Database for Sqlite3Db {
             "UPDATE heroes SET strength_points=?, agility_points=?, defence_points=? WHERE rfid = ?",
             params.stats.strength, params.stats.agility, params.stats.defence, params.rfid
         ).execute(&self.pool).await.with_context(|| "could not update hero stats")?;
+        Ok(())
+    }
+
+    async fn update_hero_level(&mut self, id: i64, level: i64) -> Result<(), eyre::Report> {
+        sqlx::query!("UPDATE heroes SET level=? WHERE id=?", level, id,)
+            .execute(&self.pool)
+            .await
+            .with_context(|| "could not update hero level")?;
+        Ok(())
+    }
+
+    async fn create_match(
+        &mut self,
+        params: shared::CreateMatchParams,
+    ) -> Result<(), eyre::Report> {
+        sqlx::query!(
+            "INSERT INTO matches (loser, winner) VALUES (?, ?);",
+            params.loser_hero_id,
+            params.winner_hero_id,
+        )
+        .execute(&self.pool)
+        .await
+        .with_context(|| "could not create match in database")?;
         Ok(())
     }
 }

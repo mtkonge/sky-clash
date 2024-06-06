@@ -1,13 +1,11 @@
 use engine::{
     clamp, query, rigid_body::RigidBody, spawn, Component, Context, Error, System, Texture, V2,
 };
+use shared::Hero;
 
 use crate::{
-    hud::TrashTalk,
-    player::{self, Player},
-    player_interaction::PlayerInteraction,
-    sprite_renderer::Sprite,
-    timer::Timer,
+    hud::TrashTalk, player::Player, player_interaction::PlayerInteraction, server::Server,
+    sprite_renderer::Sprite, timer::Timer,
 };
 
 pub struct KnockoffSystem(pub u64);
@@ -29,10 +27,13 @@ impl System for KnockoffSystem {
                 let player = ctx.select::<Player>(loser_id);
                 let player_is_dead = player.is_dead();
                 if player_is_dead {
-                    let loser_hero_kind = player.hero.kind.clone();
+                    let loser_hero = player.hero.clone();
+                    let loser_hero_kind = loser_hero.kind.clone();
                     ctx.despawn(loser_id);
-                    let winner_hero_kind = ctx.select_one::<Player>().hero.kind.clone();
+                    let winner = ctx.select_one::<Player>().clone();
+                    let winner_hero_kind = winner.hero.kind.clone();
                     spawn!(ctx, TrashTalk::new(winner_hero_kind, loser_hero_kind));
+                    send_match_result(ctx, &winner.hero, &loser_hero);
                     continue;
                 }
                 let rigid_body = ctx.select::<RigidBody>(loser_id);
@@ -49,6 +50,14 @@ fn body_outside_area(rigid_body: &RigidBody, max_offset_from_screen: f64) -> boo
         || rigid_body.pos.x > 1280.0 + max_offset_from_screen
         || rigid_body.pos.y + rigid_body.size.y < -max_offset_from_screen
         || rigid_body.pos.y > 720.0 + max_offset_from_screen
+}
+
+fn send_match_result(ctx: &mut Context, winner: &Hero, loser: &Hero) {
+    let server = ctx.select_one::<Server>();
+    server.create_match(shared::CreateMatchParams {
+        winner_hero_id: winner.id,
+        loser_hero_id: loser.id,
+    });
 }
 
 #[derive(Component)]

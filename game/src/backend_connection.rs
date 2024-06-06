@@ -11,6 +11,7 @@ enum Message {
     CreateHero(shared::CreateHeroParams),
     UpdateHeroStats(shared::UpdateHeroStatsParams),
     UpdateBoardColors(shared::UpdateBoardColorsParams),
+    CreateMatch(shared::CreateMatchParams),
 }
 
 pub struct Pipe<T> {
@@ -170,6 +171,32 @@ impl BackendConnection {
                         }
                     };
                 }
+                Message::CreateMatch(body) => {
+                    let client = reqwest::Client::new();
+                    let body = match serde_json::to_string(&body) {
+                        Ok(body) => body,
+                        Err(err) => {
+                            panic!("Failed to serialize CreateMatchParams Err: {err}")
+                        }
+                    };
+                    let mut headers = HeaderMap::new();
+                    headers.insert("Content-Type", "application/json".parse().unwrap());
+                    match client
+                        .post("http://65.108.91.32:8080/create_match")
+                        .headers(headers)
+                        .body(body)
+                        .send()
+                        .await
+                    {
+                        Ok(response) => {
+                            let _ = response;
+                        }
+                        Err(err) => {
+                            println!("{err}");
+                            continue;
+                        }
+                    };
+                }
             }
         }
     }
@@ -207,6 +234,10 @@ impl ServerStrategy for BackendConnection {
 
     fn update_board_colors(&mut self, params: shared::UpdateBoardColorsParams) {
         self.pipe.send(Message::UpdateBoardColors(params))
+    }
+
+    fn create_match(&mut self, params: shared::CreateMatchParams) {
+        self.pipe.send(Message::CreateMatch(params))
     }
 }
 

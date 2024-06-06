@@ -118,6 +118,15 @@ impl Hero {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Match {
+    pub id: i64,
+    /// hero id
+    pub loser: i64,
+    // hero id
+    pub winner: i64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CreateHeroParams {
     pub rfid: String,
     pub hero_type: HeroKind,
@@ -134,6 +143,12 @@ pub struct UpdateHeroStatsParams {
 pub struct UpdateBoardColorsParams {
     pub hero_1_color: (u8, u8, u8),
     pub hero_2_color: (u8, u8, u8),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateMatchParams {
+    pub winner_hero_id: i64,
+    pub loser_hero_id: i64,
 }
 
 #[derive(Clone, Debug)]

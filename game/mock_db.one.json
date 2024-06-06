@@ -1,6 +1,8 @@
 {
     "id_counter": 2,
     "heroes": {},
+    "match_id_counter": 0,
+    "matches": [],
     "rfid_1": "123452sda3",
     "rfid_2": null
 }

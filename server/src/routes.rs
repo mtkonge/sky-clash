@@ -2,7 +2,7 @@ use crate::{database::Database, BoardColors, BoardState, DbParam};
 use actix_web::{
     get, post,
     web::{Data, Json, Path},
-    HttpResponse, Responder,
+    HttpResponse, HttpResponseBuilder, Responder,
 };
 
 #[post("/create_hero")]
@@ -77,4 +77,52 @@ pub async fn update_board_colors(
 #[get("board_colors")]
 pub async fn get_board_colors(board_colors: Data<BoardColors>) -> impl Responder {
     HttpResponse::Ok().json(board_colors.lock().await.0)
+}
+
+#[post("create_match")]
+pub async fn add_match(
+    db: Data<DbParam>,
+    req_json: Json<shared::CreateMatchParams>,
+) -> impl Responder {
+    let shared::CreateMatchParams {
+        loser_hero_id,
+        winner_hero_id,
+    } = req_json.0;
+    let _loser = match find_hero(db.clone(), loser_hero_id).await {
+        Ok(player) => player,
+        Err(res) => return res,
+    };
+    let winner = match find_hero(db.clone(), winner_hero_id).await {
+        Ok(player) => player,
+        Err(res) => return res,
+    };
+    match db
+        .lock()
+        .await
+        .update_hero_level(winner.id, winner.level + 1)
+        .await
+    {
+        Ok(_) => {}
+        Err(_) => return HttpResponse::InternalServerError(),
+    }
+    match db
+        .lock()
+        .await
+        .create_match(shared::CreateMatchParams {
+            winner_hero_id,
+            loser_hero_id,
+        })
+        .await
+    {
+        Ok(()) => HttpResponse::Created(),
+        Err(_) => HttpResponse::InternalServerError(),
+    }
+}
+
+async fn find_hero(db: Data<DbParam>, id: i64) -> Result<shared::Hero, HttpResponseBuilder> {
+    match db.lock().await.hero_by_id(id).await {
+        Ok(Some(hero)) => Ok(hero),
+        Ok(None) => Err(HttpResponse::BadRequest()),
+        Err(_) => Err(HttpResponse::InternalServerError()),
+    }
 }

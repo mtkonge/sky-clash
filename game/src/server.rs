@@ -24,6 +24,7 @@ pub trait ServerStrategy {
     fn create_hero(&mut self, params: shared::CreateHeroParams);
     fn board_status(&mut self) -> Box<dyn Res<Board>>;
     fn update_board_colors(&mut self, params: shared::UpdateBoardColorsParams);
+    fn create_match(&mut self, params: shared::CreateMatchParams);
 }
 
 #[derive(Component, Clone)]
@@ -56,5 +57,9 @@ impl Server {
 
     pub fn update_board_colors(&mut self, params: shared::UpdateBoardColorsParams) {
         self.strategy.lock().unwrap().update_board_colors(params)
+    }
+
+    pub fn create_match(&mut self, params: shared::CreateMatchParams) {
+        self.strategy.lock().unwrap().create_match(params)
     }
 }

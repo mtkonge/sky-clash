@@ -20,6 +20,8 @@
             "defence_points": 4
         }
     },
+    "match_id_counter": 0,
+    "matches": [],
     "rfid_1": "123452sda3",
     "rfid_2": "1234523"
 }

@@ -6,8 +6,10 @@ use crate::server::{Board, HeroResult, Res, ServerStrategy};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MockConnection {
-    id_counter: i64,
+    hero_id_counter: i64,
     heroes: HashMap<String, shared::Hero>,
+    match_id_counter: i64,
+    matches: Vec<shared::Match>,
     rfid_1: Option<String>,
     rfid_2: Option<String>,
 }
@@ -15,8 +17,10 @@ pub struct MockConnection {
 impl MockConnection {
     pub fn new() -> Self {
         Self {
-            id_counter: 0,
+            hero_id_counter: 0,
             heroes: HashMap::new(),
+            match_id_counter: 0,
+            matches: Vec::new(),
             rfid_1: None,
             rfid_2: None,
         }
@@ -60,8 +64,8 @@ impl ServerStrategy for MockConnection {
 
     fn create_hero(&mut self, params: shared::CreateHeroParams) {
         self.load();
-        let id = self.id_counter;
-        self.id_counter += 1;
+        let id = self.hero_id_counter;
+        self.hero_id_counter += 1;
         self.heroes.insert(
             params.rfid.clone(),
             shared::Hero {
@@ -99,5 +103,23 @@ impl ServerStrategy for MockConnection {
     #[allow(unused_variables)]
     fn update_board_colors(&mut self, params: shared::UpdateBoardColorsParams) {
         // nothing
+    }
+
+    fn create_match(&mut self, params: shared::CreateMatchParams) {
+        self.load();
+        let loser = self
+            .heroes
+            .values_mut()
+            .find(|hero| hero.id == params.loser_hero_id)
+            .unwrap();
+        loser.level += 1;
+        let id = self.match_id_counter;
+        self.match_id_counter += 1;
+        self.matches.push(shared::Match {
+            id,
+            winner: params.winner_hero_id,
+            loser: params.loser_hero_id,
+        });
+        self.save();
     }
 }
