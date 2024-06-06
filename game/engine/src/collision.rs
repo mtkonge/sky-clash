@@ -16,23 +16,39 @@ pub struct DefaultResolver;
 impl CollisionResolver for DefaultResolver {
     fn resolve(&self, body: &mut RigidBody, pos: V2, size: V2, dir: QuadDirection) {
         use QuadDirection::*;
+
+        resolve_position_default(body, pos, size, dir);
         match dir {
             Top => {
-                body.pos.y = pos.y;
                 body.vel.y = max(0.0, body.vel.y);
             }
             Bottom => {
-                body.pos.y = pos.y - size.y;
                 body.vel.y = min(0.0, body.vel.y);
             }
             Left => {
-                body.pos.x = pos.x + 0.5;
                 body.vel.x = max(0.0, body.vel.x);
             }
             Right => {
-                body.pos.x = pos.x - size.x - 0.5;
                 body.vel.x = min(0.0, body.vel.x);
             }
+        }
+    }
+}
+
+pub fn resolve_position_default(body: &mut RigidBody, pos: V2, size: V2, dir: QuadDirection) {
+    use QuadDirection::*;
+    match dir {
+        Top => {
+            body.pos.y = pos.y;
+        }
+        Bottom => {
+            body.pos.y = pos.y - size.y;
+        }
+        Left => {
+            body.pos.x = pos.x + 0.5;
+        }
+        Right => {
+            body.pos.x = pos.x - size.x - 0.5;
         }
     }
 }

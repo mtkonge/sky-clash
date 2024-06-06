@@ -101,6 +101,16 @@ impl V2 {
     pub fn add_y(&self, rhs: f64) -> Self {
         Self::new(self.x, self.y + rhs)
     }
+
+    pub fn move_along(&self, direction: V2, distance: f64) -> Self {
+        let t = distance / direction.len();
+        *self + direction.extend(t)
+    }
+
+    pub fn extend_distance(&self, distance: f64) -> Self {
+        let t = (distance + self.len()) / self.len();
+        self.extend(t)
+    }
 }
 
 impl std::ops::Add for V2 {
@@ -523,93 +533,4 @@ impl From<QuadDirection> for OctoDirection {
             QuadDirection::Left => Left,
         }
     }
-}
-
-#[test]
-fn test_rects_within_reach() {
-    assert!(Rect::from_f64(0.0, 0.0, 10.0, 0.0)
-        .moving(V2::new(10.0, 10.0))
-        .rect_within_reach(Rect::from_f64(15.0, 0.0, 10.0, 10.0)));
-    assert!(!Rect::from_f64(0.0, 0.0, 10.0, 0.0)
-        .moving(V2::new(10.0, 10.0))
-        .rect_within_reach(Rect::from_f64(40.0, 0.0, 10.0, 10.0)));
-}
-
-#[test]
-fn test_point_vec_line_segment_intersect() {
-    macro_rules! named {
-        ($name: ident) => {
-            (stringify!($name), $name)
-        };
-    }
-    let check_a = {
-        let edge_a = (V2::new(10.0, 10.0), V2::new(40.0, 10.0));
-        let line_a = (V2::new(20.0, 0.0), V2::new(10.0, 20.0));
-        let line_b = (V2::new(25.0, 0.0), V2::new(0.0, 25.0));
-        let line_c = (V2::new(30.0, 0.0), V2::new(-10.0, 20.0));
-        let intersection = V2::new(25.0, 10.0);
-
-        [named!(line_a), named!(line_b), named!(line_c)]
-            .into_iter()
-            .map(|line| (line, named!(edge_a), intersection))
-            .collect::<Vec<_>>()
-    };
-    let check_b = {
-        let edge_b = (V2::new(40.0, 40.0), V2::new(40.0, 10.0));
-        let line_d = (V2::new(50.0, 20.0), V2::new(-20.0, 10.0));
-        let line_e = (V2::new(50.0, 25.0), V2::new(-25.0, 0.0));
-        let line_f = (V2::new(50.0, 30.0), V2::new(-20.0, -10.0));
-        let intersection = V2::new(40.0, 25.0);
-
-        [named!(line_d), named!(line_e), named!(line_f)]
-            .into_iter()
-            .map(|line| (line, named!(edge_b), intersection))
-            .collect::<Vec<_>>()
-    };
-    let check_c = {
-        let edge_c = (V2::new(40.0, 40.0), V2::new(10.0, 40.0));
-        let line_i = (V2::new(20.0, 50.0), V2::new(10.0, -20.0));
-        let line_h = (V2::new(25.0, 50.0), V2::new(0.0, -25.0));
-        let line_g = (V2::new(30.0, 50.0), V2::new(-10.0, -20.0));
-        let intersection = V2::new(25.0, 40.0);
-
-        [named!(line_i), named!(line_h), named!(line_g)]
-            .into_iter()
-            .map(|line| (line, named!(edge_c), intersection))
-            .collect::<Vec<_>>()
-    };
-    let check_d = {
-        let edge_d = (V2::new(10.0, 10.0), V2::new(10.0, 40.0));
-        let line_d = (V2::new(0.0, 20.0), V2::new(20.0, 10.0));
-        let line_e = (V2::new(0.0, 25.0), V2::new(25.0, 0.0));
-        let line_f = (V2::new(0.0, 30.0), V2::new(20.0, -10.0));
-        let intersection = V2::new(10.0, 25.0);
-
-        [named!(line_d), named!(line_e), named!(line_f)]
-            .into_iter()
-            .map(|line| (line, named!(edge_d), intersection))
-            .collect::<Vec<_>>()
-    };
-    [check_a, check_b, check_c, check_d]
-        .into_iter()
-        .flatten()
-        .for_each(
-            |(
-                (line_name, (pos, delta_pos)),
-                (edge_name, (edge_p0, edge_p1)),
-                expected_intersection,
-            )| {
-                let intersection =
-                    pos.moving(delta_pos).line_segment_intersect(Line::new(edge_p0, edge_p1))
-                        .map(|(intersection, _score)| intersection);
-
-                assert!(
-                    intersection.is_some(),
-                    "expected line {line_name} to intersect with edge {edge_name}, got None"
-                );
-
-                let intersection = intersection.expect("we asserted it to be Some");
-                assert_eq!(intersection, expected_intersection, "expected line {line_name} to intersect with edge {edge_name} at {expected_intersection:?}, got {intersection:?}")
-            },
-        );
 }

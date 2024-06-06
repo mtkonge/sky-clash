@@ -1,5 +1,5 @@
 use engine::{
-    collision::{CollisionResolver, DefaultResolver, ShallowCollider},
+    collision::{resolve_position_default, CollisionResolver, DefaultResolver, ShallowCollider},
     physics::QuadDirection,
     query, query_one,
     rigid_body::{DragSystem, GravitySystem, RigidBody, VelocitySystem},
@@ -176,26 +176,25 @@ fn notify_server_about_player_colors(ctx: &mut engine::Context) {
 struct BouncingCollider;
 impl CollisionResolver for BouncingCollider {
     fn resolve(&self, body: &mut RigidBody, pos: V2, size: V2, dir: QuadDirection) {
+        use engine::{max, min};
         use QuadDirection::*;
+
         if body.vel.len() <= 1200.0 {
             return DefaultResolver.resolve(body, pos, size, dir);
         }
+        resolve_position_default(body, pos, size, dir);
         match dir {
             Top => {
-                body.pos.y = pos.y + 1.0;
-                body.vel.y = -(body.vel.y / 2.0);
+                body.vel.y = max(0.0, -(body.vel.y / 2.0));
             }
             Bottom => {
-                body.pos.y = pos.y - size.y - 1.0;
-                body.vel.y = -(body.vel.y / 2.0);
+                body.vel.y = min(0.0, -(body.vel.y / 2.0));
             }
             Left => {
-                body.pos.x = pos.x;
-                body.vel.x = -(body.vel.x / 2.0);
+                body.vel.x = max(0.0, -(body.vel.x / 2.0));
             }
             Right => {
-                body.pos.x = pos.x - size.x;
-                body.vel.x = -(body.vel.x / 2.0);
+                body.vel.x = min(0.0, -(body.vel.x / 2.0));
             }
         }
     }
@@ -229,10 +228,11 @@ impl GameSystem {
                 .with_gravity()
                 .with_drag(),
             SolidCollider::new().resolving(BouncingCollider),
+            //.resolving(DefaultResolver),
             Player {
                 kind,
                 hero,
-                damage_taken: 0.0,
+                damage_taken: 200.0,
                 lives: 3,
             },
             PlayerInteraction::new(keyset, 0.0),
