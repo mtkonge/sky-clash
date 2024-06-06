@@ -10,8 +10,10 @@ void Color::set_value_at_index(uint8_t color, int index) {
     blue = color;
     break;
   default:
-    Serial.print("Color::set_value_at_index: unrecognized color index ");
-    Serial.println(index);
+    if (debug) {
+      Serial.print("Color::set_value_at_index: unrecognized color index ");
+      Serial.println(index);
+    }
     break;
   }
 }
@@ -38,10 +40,12 @@ void Leds::parse_board_colors_response(String& response, Color& left, Color& rig
     }
   }
   if (content_start == response.length()) {
-    Serial.println("unable to parse board colors: body was not received");
-    Serial.println("--- response body begin");
-    Serial.println(response);
-    Serial.println("--- response body end");
+    if (debug) {
+      Serial.println("unable to parse board colors: body was not received");
+      Serial.println("--- response body begin");
+      Serial.println(response);
+      Serial.println("--- response body end");
+    }
     return;
   }
   uint8_t color = 0;
@@ -79,9 +83,11 @@ void Leds::parse_board_colors_response(String& response, Color& left, Color& rig
           continue;
         }
     }
-    Serial.print("unhandled char when parsing: '");
-    Serial.print(current);
-    Serial.println("'");
+    if (debug) {
+      Serial.print("unhandled char when parsing: '");
+      Serial.print(current);
+      Serial.println("'");
+    }
   }
 }
 

@@ -5,42 +5,58 @@
 void Wifi::connect() {
   int status = WL_IDLE_STATUS;
   while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to network: ");
-    Serial.println(ssid);
+    if (debug) {
+      Serial.print("Attempting to connect to network: ");
+      Serial.println(ssid);
+    }
     status = WiFi.begin(ssid, pass);
     delay(5000);
   }
-  Serial.print(String("Connected to ") + ssid + "!");
+  if (debug) {
+    Serial.print(String("Connected to ") + ssid + "!");
+  }
 }
 
 void Wifi::ping() {
   int pingResult;
-  Serial.print("Pinging ");
-  Serial.println(this->ip);
+  if (debug) {
+    Serial.print("Pinging ");
+    Serial.println(this->ip);
+  }
   pingResult = WiFi.ping(this->ip);
 
   if (pingResult >= 0) {
-    Serial.print("SUCCESS! RTT = ");
-    Serial.print(pingResult);
-    Serial.println(" ms");
+    if (debug) {
+      Serial.print("SUCCESS! RTT = ");
+      Serial.print(pingResult);
+      Serial.println(" ms");
+    }
   } else {
-    Serial.print("FAILED! Error code: ");
-    Serial.println(pingResult);
+    if (debug) {
+      Serial.print("FAILED! Error code: ");
+      Serial.println(pingResult);
+    }
   }
 }
 
 void Wifi::print_info() {
-  Serial.print("SSID: ");
-  Serial.println(WiFi.SSID());
+  if (debug) {
+    Serial.print("SSID: ");
+    Serial.println(WiFi.SSID());
+  }
 
   IPAddress ip = WiFi.localIP();
-  Serial.print("IP Address: ");
-  Serial.println(ip);
+  if (debug) {
+    Serial.print("IP Address: ");
+    Serial.println(ip);
+  }
 
   long rssi = WiFi.RSSI();
-  Serial.print("signal strength (RSSI):");
-  Serial.print(rssi);
-  Serial.println(" dBm");
+  if (debug) {
+    Serial.print("signal strength (RSSI):");
+    Serial.print(rssi);
+    Serial.println(" dBm");
+  }
 
 }
 
@@ -63,7 +79,9 @@ String Wifi::get(const String& path) {
     }
     return response;
   } else {
-    Serial.println(String("Could not get ") + this->ip + ":" + this->port + ", unresolved hostname" );
+    if (debug) {
+      Serial.println(String("Could not get ") + this->ip + ":" + this->port + ", unresolved hostname" );
+    }
     return "Unresolved hostname";
   }
 }
@@ -91,7 +109,9 @@ String Wifi::post(const String& path, const String& data) {
     }
     return response;
   } else {
-    Serial.println(String("Could not post to ") + this->ip + ":" + this->port + ", unresolved hostname" );
+    if (debug) {
+      Serial.println(String("Could not post to ") + this->ip + ":" + this->port + ", unresolved hostname" );
+    }
     return "Unresolved hostname";
   }
 }

@@ -1,35 +1,57 @@
 void RfidScanner::begin() {
-  Serial.println(String("Loading ") + this->pins.to_string());
+  if (debug) {
+    Serial.println(String("Loading ") + this->pins.to_string());
+  }
   int attempts = 0;
-  Serial.println(String("attempt ") + attempts);
-  Serial.println("RFID begin()...");
+  if (debug) {
+    Serial.println(String("attempt ") + attempts);
+    Serial.println("RFID begin()...");
+  }
   bool success = this->rfid.begin();
   if (!success) {
-    Serial.println("RFID begin() failed");
-  }
-  Serial.println("RFID begin() ok");
-  Serial.println("RFID getFirmwareVersion()...");
-  uint32_t version = this->rfid.getFirmwareVersion();
-  Serial.println("RFID getFirmwareVersion() yielded");
-  while (version == 0) {
-    Serial.println("version == 0");
-    delay(500);
-    Serial.println("RFID begin()...");
-    bool success = this->rfid.begin();
-    if (!success) {
+    if (debug) {
       Serial.println("RFID begin() failed");
     }
+  }
+  if (debug) {
     Serial.println("RFID begin() ok");
     Serial.println("RFID getFirmwareVersion()...");
-    version = this->rfid.getFirmwareVersion();
+  }
+  uint32_t version = this->rfid.getFirmwareVersion();
+  if (debug) {
     Serial.println("RFID getFirmwareVersion() yielded");
-    Serial.println(String("attempt ") + attempts);
+  }
+  while (version == 0) {
+    if (debug) {
+      Serial.println("version == 0");
+    }
+    delay(500);
+    if (debug) {
+      Serial.println("RFID begin()...");
+    }
+    bool success = this->rfid.begin();
+    if (!success) {
+      if (debug) {
+        Serial.println("RFID begin() failed");
+      }
+    }
+    if (debug) {
+      Serial.println("RFID begin() ok");
+      Serial.println("RFID getFirmwareVersion()...");
+    }
+    version = this->rfid.getFirmwareVersion();
+    if (debug) {
+      Serial.println("RFID getFirmwareVersion() yielded");
+      Serial.println(String("attempt ") + attempts);
+    }
     attempts++;
     if (attempts > 20) {
       while (1) {}
     }
   }
-  Serial.println(String("version = ") + version);
+  if (debug) {
+    Serial.println(String("version = ") + version);
+  }
 
 }
 
@@ -45,7 +67,9 @@ uint32_t RfidScanner::read(uint16_t timeout_ms) {
     return 0;
   }
   if (uid_length > 4) {
-    Serial.println("RfidScanner: Invalid RFID, >4 bytes");
+    if (debug) {
+      Serial.println("RfidScanner: Invalid RFID, >4 bytes");
+    }
     return 0;
   }
   auto rfid = byte_array_to_int(uid, uid_length);

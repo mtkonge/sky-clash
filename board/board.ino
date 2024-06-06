@@ -2,6 +2,7 @@
 #include "rfid_scanner.h"
 #include <wiring_private.h>
 #include "led.h"
+#include "debug.h"
 
 RfidPins rfid1Pins = { /*sda=*/11, /*scl=*/12, /*irq=*/5, /*rsto*/4 };
 
@@ -32,7 +33,9 @@ void setup() {
   pinMode(switchPin, INPUT);
 
   otherWire.begin(2);
-  Serial.println(availableMemory());
+  if (debug) {
+    Serial.println(availableMemory());
+  }
   while (!Serial) {
     delay(100);
   }
@@ -41,12 +44,17 @@ void setup() {
   // delay(500);
   // wifi.ping();
   // delay(1000);
-
-  Serial.println("rfid 1 begin");
+  if (debug) {
+    Serial.println("rfid 1 begin");
+  }
   rfid1.begin();
-  Serial.println("rfid 2 begin");
+  if (debug) {
+    Serial.println("rfid 2 begin");
+  }
   rfid2.begin();
-  Serial.println("rfid loaded");
+  if (debug) {
+    Serial.println("rfid loaded");
+  }
 }
 
 extern "C" {
@@ -95,15 +103,20 @@ void loop() {
   }
   last_hero_1_rfid = hero_1_rfid;
   last_hero_2_rfid = hero_2_rfid;
-
-  Serial.println(hero_1_rfid);
-  Serial.println(hero_2_rfid);
+  if (debug) {
+    Serial.println(hero_1_rfid);
+    Serial.println(hero_2_rfid);
+  }
   String hero_1_data = format_rfid(String("\"hero_1_rfid\":"), hero_1_rfid);
   String hero_2_data = format_rfid(String("\"hero_2_rfid\":"), hero_2_rfid);
   String data = String("{") + hero_1_data + ',' + hero_2_data + '}';
-  Serial.println(String("data: ") + data);
+  if (debug) {
+    Serial.println(String("data: ") + data);
+  }
   response = wifi.post("/update_heroes_on_board", data);
-  Serial.println(response);
+  if (debug) {
+    Serial.println(response);
+  }
 }
 
 
