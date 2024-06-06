@@ -3,7 +3,10 @@ use engine::{
 };
 
 use crate::{
-    hud::TrashTalk, player::Player, player_interaction::PlayerInteraction, sprite_renderer::Sprite,
+    hud::TrashTalk,
+    player::{self, Player},
+    player_interaction::PlayerInteraction,
+    sprite_renderer::Sprite,
     timer::Timer,
 };
 
@@ -19,8 +22,9 @@ impl System for KnockoffSystem {
                 if player.is_alive() {
                     player.damage_taken = 0.0;
                     player.lives -= 1;
-                    let player_pos = rigid_body.pos + rigid_body.size.div_comps(2.0);
-                    spawn_death_animation(ctx, player_pos);
+                    let player_pos = rigid_body.pos;
+                    let player_size = rigid_body.size;
+                    spawn_death_animation(ctx, player_pos, player_size);
                 };
                 let player = ctx.select::<Player>(loser_id);
                 let player_is_dead = player.is_dead();
@@ -86,7 +90,8 @@ impl System for DeathAnimationSystem {
         Ok(())
     }
 }
-fn spawn_death_animation(ctx: &mut engine::Context, player_pos: V2) {
+
+fn spawn_death_animation(ctx: &mut engine::Context, player_pos: V2, player_size: V2) {
     use engine::physics::QuadDirection::*;
 
     let size = V2::new(30.0, 60.0).extend(8.0);
@@ -115,20 +120,23 @@ fn spawn_death_animation(ctx: &mut engine::Context, player_pos: V2) {
         (false, false) => Top,
     };
 
+    let comp_x = size.x / 2.0 - player_size.x / 2.0;
+    let comp_y = size.x / 2.0 - player_size.y / 2.0;
+
     let pos = match dir {
-        Top => V2::new(clamp(player_pos.x, 0.0, 1280.0 - size.x), 0.0),
+        Top => V2::new(
+            clamp(player_pos.x, 0.0, 1280.0 - player_size.x) + size.x - comp_x,
+            size.y,
+        ),
         Bottom => V2::new(
-            clamp(player_pos.x, 0.0, 1280.0 - size.x) - size.x / 2.0,
+            clamp(player_pos.x, 0.0, 1280.0 - player_size.x) - comp_x,
             720.0 - size.y,
         ),
         Right => V2::new(
-            1280.0 - size.y + size.x,
-            clamp(player_pos.y, 0.0, 720.0 - size.x),
+            1280.0 - size.y,
+            clamp(player_pos.y, 0.0, 720.0 - size.x) + size.x - comp_y,
         ),
-        Left => V2::new(
-            size.x / 2.0,
-            clamp(player_pos.y, 0.0, 720.0 - size.x) - size.x / 2.0,
-        ),
+        Left => V2::new(size.y, clamp(player_pos.y, 0.0, 720.0 - size.x) - comp_y),
     };
 
     let angle = match dir {

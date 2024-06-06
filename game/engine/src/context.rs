@@ -6,13 +6,12 @@ use std::{
 };
 
 use sdl2::{
-    controller::Button as ControllerButton,
-    controller::GameController as SdlGameController,
+    controller::{Button as ControllerButton, GameController as SdlGameController},
     image::LoadTexture,
     keyboard::Keycode,
     mouse::MouseButton,
     pixels::Color,
-    rect::Rect,
+    rect::{Point, Rect},
     render::{Canvas, Texture as SdlTexture, TextureCreator},
     ttf::Sdl2TtfContext,
     video::{Window, WindowContext},
@@ -331,7 +330,7 @@ impl<'context, 'game> Context<'context, 'game> {
                 None,
                 Rect::new(pos.x as i32, pos.y as i32, size.x as u32, size.y as u32),
                 angle,
-                None,
+                Point::new(0, 0),
                 false,
                 false,
             )?;
