@@ -164,12 +164,12 @@ fn draw_player_background(
     border_pos: V2,
 ) {
     let border_path = match player.kind {
-        PlayerKind::Left => "textures/stats_left.png",
-        PlayerKind::Right => "textures/stats_right.png",
+        PlayerKind::Left => "assets/stats_left.png",
+        PlayerKind::Right => "assets/stats_right.png",
     };
     let border_outline_path = match player.kind {
-        PlayerKind::Left => "textures/stats_left_outline.png",
-        PlayerKind::Right => "textures/stats_right_outline.png",
+        PlayerKind::Left => "assets/stats_left_outline.png",
+        PlayerKind::Right => "assets/stats_right_outline.png",
     };
     let border = ctx.load_texture(border_path).unwrap();
     let border_outline = ctx.load_texture(border_outline_path).unwrap();

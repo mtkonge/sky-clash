@@ -159,8 +159,8 @@ impl Node {
             }
             Kind::Text(v) => super::Kind::Text {
                 text: v.clone(),
-                // font: PathBuf::from("textures/ttf/OpenSans.ttf"),
-                font: PathBuf::from("textures/ttf/Jaro-Regular.ttf"),
+                // font: PathBuf::from("assets/ttf/OpenSans.ttf"),
+                font: PathBuf::from("assets/ttf/Jaro-Regular.ttf"),
             },
             Kind::Image(src) => super::Kind::Image(src.clone()),
         };

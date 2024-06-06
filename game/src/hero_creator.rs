@@ -221,7 +221,7 @@ impl HeroCreatorSystem {
                 Hori([
                     Vert([
                         Vert([
-                            Image("./textures/placeholder.png")
+                            Image("./assets/placeholder.png")
                                 .id(Node::HeroImage)
                                 .width(128)
                                 .height(128),

@@ -64,7 +64,7 @@ impl System for GameSystem {
         systems += ctx.add_system(DeathAnimationSystem);
         // ctx.add_system(DebugDrawer);
 
-        let background = ctx.load_texture("textures/map_1.png").unwrap();
+        let background = ctx.load_texture("assets/map_1.png").unwrap();
 
         notify_server_about_player_colors(ctx);
 

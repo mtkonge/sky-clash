@@ -100,7 +100,7 @@ impl System for StartGameSystem {
                         .width(200)
                         .visible(false)
                         .id(Node::LeftBars),
-                        Image("./textures/placeholder.png")
+                        Image("./assets/placeholder.png")
                             .id(Node::LeftImage)
                             .width(200)
                             .height(200)
@@ -128,7 +128,7 @@ impl System for StartGameSystem {
                         .width(200)
                         .visible(false)
                         .id(Node::RightBars),
-                        Image("./textures/placeholder.png")
+                        Image("./assets/placeholder.png")
                             .id(Node::RightImage)
                             .width(200)
                             .height(200)

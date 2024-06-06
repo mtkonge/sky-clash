@@ -111,13 +111,13 @@ fn spawn_death_animation(ctx: &mut engine::Context, player_pos: V2, player_size:
     let size = V2::new(30.0, 60.0).extend(8.0);
 
     let textures = [
-        "textures/death_0.png".to_string(),
-        "textures/death_1.png".to_string(),
-        "textures/death_2.png".to_string(),
-        "textures/death_3.png".to_string(),
-        "textures/death_4.png".to_string(),
-        "textures/death_5.png".to_string(),
-        "textures/death_6.png".to_string(),
+        "assets/death_0.png".to_string(),
+        "assets/death_1.png".to_string(),
+        "assets/death_2.png".to_string(),
+        "assets/death_3.png".to_string(),
+        "assets/death_4.png".to_string(),
+        "assets/death_5.png".to_string(),
+        "assets/death_6.png".to_string(),
     ]
     .into_iter()
     .map(|path| ctx.load_texture(path).unwrap())

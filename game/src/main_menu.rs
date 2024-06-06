@@ -49,7 +49,7 @@ impl System for MainMenuSystem {
 
         let mut dom = ui::Dom::new(
             Stack([
-                Image("textures/main_menu.png").width(1280).height(720),
+                Image("assets/main_menu.png").width(1280).height(720),
                 Vert([
                     Stack([
                         Vert([
