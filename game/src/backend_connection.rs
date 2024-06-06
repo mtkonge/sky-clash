@@ -65,7 +65,6 @@ impl BackendConnection {
             match message {
                 Message::Quit => break,
                 Message::BoardStatus(mut res_pipe) => {
-                    #[allow(unused_variables)]
                     let board: shared::Board =
                         match reqwest::get("http://65.108.91.32:8080/heroes_on_board").await {
                             Ok(body) => body.json().await.unwrap(),
