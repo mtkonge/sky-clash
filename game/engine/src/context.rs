@@ -17,36 +17,12 @@ use sdl2::{
     video::{Window, WindowContext},
 };
 
-use crate::{game::ControllerPosition, texture::TextTextureKey, V2};
+use crate::{game::ControllerPosition, texture::TextTextureKey, Game, V2};
 
 use super::{
     entity::Entity, font::Font, id::Id, system::System, text::Text, texture::Texture, Component,
     Error,
 };
-
-pub struct Context<'context, 'game>
-where
-    'game: 'context,
-{
-    pub(super) canvas: &'context mut Canvas<Window>,
-    pub(super) ttf_context: *const Sdl2TtfContext,
-    pub(super) texture_creator: *const TextureCreator<WindowContext>,
-    pub(super) entity_id_counter: &'context mut Id,
-    pub(super) entities: &'context mut Vec<Option<Entity>>,
-    pub(super) system_id_counter: &'context mut Id,
-    pub(super) systems: &'context mut Vec<(u64, Rc<dyn System>)>,
-    pub(super) systems_to_remove: &'context mut Vec<Id>,
-    pub(super) textures: &'context mut Vec<(Id, SdlTexture<'game>)>,
-    pub(super) texture_path_to_id_map: &'context mut HashMap<PathBuf, Id>,
-    pub(super) text_textures: &'context mut HashMap<TextTextureKey, Text>,
-    pub(super) fonts: &'context mut Vec<(Id, u16, PathBuf, Font<'game>)>,
-    pub(super) currently_pressed_keys: &'context HashMap<Keycode, bool>,
-    pub(super) currently_pressed_mouse_buttons: &'context HashMap<MouseButton, bool>,
-    pub(super) currently_pressed_controller_buttons:
-        &'context HashMap<(Id, ControllerButton), bool>,
-    pub(super) controllers: &'context Vec<(Id, SdlGameController, ControllerPosition)>,
-    pub(super) mouse_position: (i32, i32),
-}
 
 pub struct ComponentQuery<T>(std::marker::PhantomData<T>);
 
@@ -108,10 +84,30 @@ macro_rules! spawn {
     };
 }
 
+pub struct Context<'context, 'game>
+where
+    'game: 'context,
+{
+    game: &'context mut Game<'game>,
+    ttf_context: *const Sdl2TtfContext,
+    texture_creator: *const TextureCreator<WindowContext>,
+}
+
 impl<'context, 'game> Context<'context, 'game> {
+    pub fn new(game: &'context mut Game<'game>) -> Self {
+        let sdl2_ttf_context: *const Sdl2TtfContext = &game.ttf_context;
+        let texture_creator: *const TextureCreator<WindowContext> = &game.texture_creator;
+        Self {
+            game,
+            ttf_context: sdl2_ttf_context,
+            texture_creator,
+        }
+    }
+
     pub fn entities_with_component<T: 'static + Component>(&self) -> Vec<u64> {
         let entity_type_id = TypeId::of::<T>();
-        self.entities
+        self.game
+            .entities
             .iter()
             .filter_map(|opt| {
                 opt.as_ref().and_then(|Entity(id, components)| {
@@ -130,7 +126,7 @@ impl<'context, 'game> Context<'context, 'game> {
 
     pub fn select<T: 'static + Component>(&mut self, entity_id: u64) -> &mut T {
         let entity_type_id = TypeId::of::<T>();
-        let Entity(_id, components) = self
+        let Entity(_id, components) = self.game
             .entities
             .iter_mut()
             .find(|opt| opt.as_ref().is_some_and(|Entity(id, _)| *id == entity_id))
@@ -154,7 +150,7 @@ impl<'context, 'game> Context<'context, 'game> {
     pub fn select_one<T: 'static + Component>(&mut self) -> &mut T {
         let entity_id = query_one!(self, T);
         let entity_type_id = TypeId::of::<T>();
-        let Entity(_id, components) = self
+        let Entity(_id, components) = self.game
             .entities
             .iter_mut()
             .find(|opt| opt.as_ref().is_some_and(|Entity(id, _)| *id == entity_id))
@@ -178,7 +174,7 @@ impl<'context, 'game> Context<'context, 'game> {
     pub fn clone_one<T: 'static + Component + Clone>(&mut self) -> T {
         let entity_id = query_one!(self, T);
         let entity_type_id = TypeId::of::<T>();
-        let Entity(_id, components) = self
+        let Entity(_id, components) = self.game
             .entities
             .iter_mut()
             .find(|opt| opt.as_ref().is_some_and(|Entity(id, _)| *id == entity_id))
@@ -204,7 +200,7 @@ impl<'context, 'game> Context<'context, 'game> {
         P: AsRef<std::path::Path>,
     {
         let path = path.as_ref();
-        let existing_id = self.fonts.iter().find_map(|(id, s, p, _)| {
+        let existing_id = self.game.fonts.iter().find_map(|(id, s, p, _)| {
             if path == p && size == *s {
                 Some(*id)
             } else {
@@ -215,9 +211,9 @@ impl<'context, 'game> Context<'context, 'game> {
             Ok(id)
         } else {
             let font = Font(unsafe { (*self.ttf_context).load_font(path, size)? });
-            let id = *self.entity_id_counter;
-            *self.entity_id_counter += 1;
-            self.fonts.push((id, size, path.to_path_buf(), font));
+            let id = self.game.entity_id_counter;
+            self.game.entity_id_counter += 1;
+            self.game.fonts.push((id, size, path.to_path_buf(), font));
             Ok(id)
         }
     }
@@ -226,15 +222,17 @@ impl<'context, 'game> Context<'context, 'game> {
     where
         P: AsRef<std::path::Path>,
     {
-        if let Some(id) = self.texture_path_to_id_map.get(path.as_ref()) {
+        if let Some(id) = self.game.texture_path_to_id_map.get(path.as_ref()) {
             return Ok(Texture(*id));
         }
         let texture: SdlTexture<'game> =
             unsafe { (*self.texture_creator).load_texture(path.as_ref())? };
-        let id = *self.entity_id_counter;
-        *self.entity_id_counter += 1;
-        self.textures.push((id, texture));
-        self.texture_path_to_id_map.insert(path.as_ref().into(), id);
+        let id = self.game.entity_id_counter;
+        self.game.entity_id_counter += 1;
+        self.game.textures.push((id, texture));
+        self.game
+            .texture_path_to_id_map
+            .insert(path.as_ref().into(), id);
         Ok(Texture(id))
     }
 
@@ -246,10 +244,11 @@ impl<'context, 'game> Context<'context, 'game> {
     ) -> Result<Text, Error> {
         let text = text.into();
         let key = TextTextureKey(font_id, text.clone(), rgb);
-        if let Some(existing) = self.text_textures.get(&key) {
+        if let Some(existing) = self.game.text_textures.get(&key) {
             return Ok(existing.clone());
         };
         let Font(font) = self
+            .game
             .fonts
             .iter()
             .find_map(|(id, _, _, font)| if *id == font_id { Some(font) } else { None })
@@ -259,8 +258,8 @@ impl<'context, 'game> Context<'context, 'game> {
         let texture = unsafe {
             surface.as_texture(&*self.texture_creator as &TextureCreator<WindowContext>)
         }?;
-        let id = *self.entity_id_counter;
-        *self.entity_id_counter += 1;
+        let id = self.game.entity_id_counter;
+        self.game.entity_id_counter += 1;
 
         let texture_size = (texture.query().width, texture.query().height);
         let text = Text {
@@ -270,13 +269,14 @@ impl<'context, 'game> Context<'context, 'game> {
                 texture_size.1.try_into().unwrap(),
             ),
         };
-        self.text_textures.insert(key, text.clone());
-        self.textures.push((id, texture));
+        self.game.text_textures.insert(key, text.clone());
+        self.game.textures.push((id, texture));
         Ok(text)
     }
 
     pub fn text_size<S: AsRef<str>>(&mut self, font_id: Id, text: S) -> Result<(u32, u32), Error> {
         let Font(font) = self
+            .game
             .fonts
             .iter()
             .find_map(|(id, _, _, font)| if *id == font_id { Some(font) } else { None })
@@ -286,6 +286,7 @@ impl<'context, 'game> Context<'context, 'game> {
 
     pub fn texture_size(&mut self, texture: Texture) -> Result<(u32, u32), Error> {
         let texture = self
+            .game
             .textures
             .iter()
             .find_map(|v| if v.0 == texture.0 { Some(&v.1) } else { None })
@@ -300,6 +301,7 @@ impl<'context, 'game> Context<'context, 'game> {
         opts: DrawTextureOpts,
     ) -> Result<(), Error> {
         let texture = self
+            .game
             .textures
             .iter_mut()
             .find_map(|v| {
@@ -325,7 +327,7 @@ impl<'context, 'game> Context<'context, 'game> {
             texture.set_alpha_mod(255);
         }
         if let Some(angle) = opts.angle {
-            self.canvas.copy_ex(
+            self.game.canvas.copy_ex(
                 texture,
                 None,
                 Rect::new(pos.x as i32, pos.y as i32, size.x as u32, size.y as u32),
@@ -335,7 +337,7 @@ impl<'context, 'game> Context<'context, 'game> {
                 false,
             )?;
         } else {
-            self.canvas.copy(
+            self.game.canvas.copy(
                 texture,
                 None,
                 Rect::new(pos.x as i32, pos.y as i32, size.x as u32, size.y as u32),
@@ -353,8 +355,8 @@ impl<'context, 'game> Context<'context, 'game> {
         h: u32,
     ) -> Result<(), Error> {
         let (r, g, b) = rgb;
-        self.canvas.set_draw_color(Color { r, g, b, a: 255 });
-        self.canvas.fill_rect(Rect::new(x, y, w, h))?;
+        self.game.canvas.set_draw_color(Color { r, g, b, a: 255 });
+        self.game.canvas.fill_rect(Rect::new(x, y, w, h))?;
         Ok(())
     }
 
@@ -368,27 +370,30 @@ impl<'context, 'game> Context<'context, 'game> {
         alpha: u8,
     ) -> Result<(), Error> {
         let (r, g, b) = rgb;
-        self.canvas.set_draw_color(Color { r, g, b, a: alpha });
-        self.canvas.set_blend_mode(sdl2::render::BlendMode::Blend);
-        self.canvas.fill_rect(Rect::new(x, y, w, h))?;
+        self.game.canvas.set_draw_color(Color { r, g, b, a: alpha });
+        self.game
+            .canvas
+            .set_blend_mode(sdl2::render::BlendMode::Blend);
+        self.game.canvas.fill_rect(Rect::new(x, y, w, h))?;
         Ok(())
     }
 
     pub fn spawn(&mut self, components: Vec<Box<dyn Component>>) -> Id {
-        let id = *self.entity_id_counter;
-        *self.entity_id_counter += 1;
+        let id = self.game.entity_id_counter;
+        self.game.entity_id_counter += 1;
         let mut entity = Some(Entity(id, components));
-        let first_none = self.entities.iter().position(Option::is_none);
+        let first_none = self.game.entities.iter().position(Option::is_none);
         let Some(index) = first_none else {
-            self.entities.push(entity);
+            self.game.entities.push(entity);
             return id;
         };
-        std::mem::swap(&mut self.entities[index], &mut entity);
+        std::mem::swap(&mut self.game.entities[index], &mut entity);
         id
     }
 
     pub fn despawn(&mut self, entity_id: Id) {
         let Some(index) = self
+            .game
             .entities
             .iter()
             .position(|v| v.as_ref().is_some_and(|v| v.0 == entity_id))
@@ -397,7 +402,7 @@ impl<'context, 'game> Context<'context, 'game> {
             return;
         };
 
-        self.entities[index].take();
+        self.game.entities[index].take();
     }
 
     pub fn add_system<S, CTor>(&mut self, system_ctor: CTor) -> Id
@@ -405,39 +410,45 @@ impl<'context, 'game> Context<'context, 'game> {
         S: System + 'static,
         CTor: Fn(Id) -> S,
     {
-        let id = *self.system_id_counter;
-        *self.system_id_counter += 1;
+        let id = self.game.system_id_counter;
+        self.game.system_id_counter += 1;
         let system = Rc::new(system_ctor(id));
-        self.systems.push((id, system.clone()));
+        self.game.systems.push((id, system.clone()));
         system.on_add(self).unwrap();
         id
     }
 
     pub fn remove_system(&mut self, system_id: Id) {
-        self.systems_to_remove.push(system_id);
+        self.game.systems_to_remove.push(system_id);
     }
 
     pub fn key_just_pressed(&self, keycode: Keycode) -> bool {
-        *self.currently_pressed_keys.get(&keycode).unwrap_or(&false)
+        *self
+            .game
+            .currently_pressed_keys
+            .get(&keycode)
+            .unwrap_or(&false)
     }
 
     pub fn key_pressed(&self, keycode: Keycode) -> bool {
-        self.currently_pressed_keys.contains_key(&keycode)
+        self.game.currently_pressed_keys.contains_key(&keycode)
     }
 
     pub fn mouse_button_just_pressed(&self, button: MouseButton) -> bool {
         *self
+            .game
             .currently_pressed_mouse_buttons
             .get(&button)
             .unwrap_or(&false)
     }
 
     pub fn mouse_position(&self) -> (i32, i32) {
-        self.mouse_position
+        self.game.mouse_position
     }
 
     pub fn joystick_position(&self, id: Id) -> &ControllerPosition {
         &self
+            .game
             .controllers
             .iter()
             .find(|v| v.0 == id)
@@ -446,19 +457,22 @@ impl<'context, 'game> Context<'context, 'game> {
     }
 
     pub fn controller_button_pressed(&self, id: Id, button: ControllerButton) -> bool {
-        self.currently_pressed_controller_buttons
+        self.game
+            .currently_pressed_controller_buttons
             .contains_key(&(id, button))
     }
 
     pub fn controller_button_just_pressed(&self, id: Id, button: ControllerButton) -> bool {
         *self
+            .game
             .currently_pressed_controller_buttons
             .get(&(id, button))
             .unwrap_or(&false)
     }
 
     pub fn active_controllers(&self) -> impl Iterator<Item = Id> {
-        self.controllers
+        self.game
+            .controllers
             .iter()
             .map(|v| v.0)
             .collect::<Vec<_>>()

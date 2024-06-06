@@ -27,31 +27,31 @@ use super::{Component, Error};
 
 pub struct Game<'game> {
     #[allow(dead_code)]
-    sdl_context: Sdl,
+    pub(crate) sdl_context: Sdl,
     #[allow(dead_code)]
-    video_subsystem: VideoSubsystem,
+    pub(crate) video_subsystem: VideoSubsystem,
     #[allow(dead_code)]
-    controller_subsystem: GameControllerSubsystem,
+    pub(crate) controller_subsystem: GameControllerSubsystem,
     #[allow(dead_code)]
-    image_context: Sdl2ImageContext,
-    ttf_context: Sdl2TtfContext,
-    canvas: Canvas<Window>,
-    texture_creator: TextureCreator<WindowContext>,
-    event_pump: sdl2::EventPump,
-    entity_id_counter: Id,
-    entities: Vec<Option<Entity>>,
-    system_id_counter: Id,
-    systems: Vec<(Id, Rc<dyn System>)>,
-    systems_to_remove: Vec<Id>,
-    textures: Vec<(Id, Texture<'game>)>,
-    texture_path_to_id_map: HashMap<PathBuf, Id>,
-    text_textures: HashMap<TextTextureKey, Text>,
-    fonts: Vec<(Id, u16, PathBuf, Font<'game>)>,
-    currently_pressed_keys: HashMap<Keycode, bool>,
-    currently_pressed_mouse_buttons: HashMap<MouseButton, bool>,
-    currently_pressed_controller_buttons: HashMap<(Id, ControllerButton), bool>,
-    controllers: Vec<(Id, SdlGameController, ControllerPosition)>,
-    mouse_position: (i32, i32),
+    pub(crate) image_context: Sdl2ImageContext,
+    pub(crate) ttf_context: Sdl2TtfContext,
+    pub(crate) canvas: Canvas<Window>,
+    pub(crate) texture_creator: TextureCreator<WindowContext>,
+    pub(crate) event_pump: sdl2::EventPump,
+    pub(crate) entity_id_counter: Id,
+    pub(crate) entities: Vec<Option<Entity>>,
+    pub(crate) system_id_counter: Id,
+    pub(crate) systems: Vec<(Id, Rc<dyn System>)>,
+    pub(crate) systems_to_remove: Vec<Id>,
+    pub(crate) textures: Vec<(Id, Texture<'game>)>,
+    pub(crate) texture_path_to_id_map: HashMap<PathBuf, Id>,
+    pub(crate) text_textures: HashMap<TextTextureKey, Text>,
+    pub(crate) fonts: Vec<(Id, u16, PathBuf, Font<'game>)>,
+    pub(crate) currently_pressed_keys: HashMap<Keycode, bool>,
+    pub(crate) currently_pressed_mouse_buttons: HashMap<MouseButton, bool>,
+    pub(crate) currently_pressed_controller_buttons: HashMap<(Id, ControllerButton), bool>,
+    pub(crate) controllers: Vec<(Id, SdlGameController, ControllerPosition)>,
+    pub(crate) mouse_position: (i32, i32),
 }
 
 #[derive(Default)]
@@ -237,24 +237,6 @@ impl<'game> Game<'game> {
     where
         'game: 'context,
     {
-        Context {
-            canvas: &mut self.canvas,
-            texture_creator: &self.texture_creator,
-            ttf_context: &self.ttf_context,
-            entity_id_counter: &mut self.entity_id_counter,
-            entities: &mut self.entities,
-            system_id_counter: &mut self.system_id_counter,
-            systems: &mut self.systems,
-            systems_to_remove: &mut self.systems_to_remove,
-            textures: &mut self.textures,
-            texture_path_to_id_map: &mut self.texture_path_to_id_map,
-            text_textures: &mut self.text_textures,
-            fonts: &mut self.fonts,
-            currently_pressed_keys: &mut self.currently_pressed_keys,
-            currently_pressed_mouse_buttons: &mut self.currently_pressed_mouse_buttons,
-            currently_pressed_controller_buttons: &mut self.currently_pressed_controller_buttons,
-            controllers: &mut self.controllers,
-            mouse_position: self.mouse_position,
-        }
+        Context::new(self)
     }
 }
