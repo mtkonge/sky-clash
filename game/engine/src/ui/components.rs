@@ -105,10 +105,10 @@ impl ProgressBar {
                     (127, 127, 127)
                 };
 
-                Text("|").color(color).id(self.id(i as u64 + 1))
+                Text("|").padding(1).color(color).id(self.id(i as u64 + 1))
             })
             .collect();
-        children.insert(middle, Vert([Text(self.text()).id(self.id(0))]).width(130));
+        children.insert(middle, Vert([Text(self.text()).id(self.id(0))]).width(140));
         if self.mutable {
             Hori([
                 Text("-").on_click(self.id(0)).padding(8),

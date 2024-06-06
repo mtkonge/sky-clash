@@ -358,6 +358,22 @@ impl<'context, 'game> Context<'context, 'game> {
         Ok(())
     }
 
+    pub fn draw_rect_transparent(
+        &mut self,
+        rgb: (u8, u8, u8),
+        x: i32,
+        y: i32,
+        w: u32,
+        h: u32,
+        alpha: u8,
+    ) -> Result<(), Error> {
+        let (r, g, b) = rgb;
+        self.canvas.set_draw_color(Color { r, g, b, a: alpha });
+        self.canvas.set_blend_mode(sdl2::render::BlendMode::Blend);
+        self.canvas.fill_rect(Rect::new(x, y, w, h))?;
+        Ok(())
+    }
+
     pub fn spawn(&mut self, components: Vec<Box<dyn Component>>) -> Id {
         let id = *self.entity_id_counter;
         *self.entity_id_counter += 1;

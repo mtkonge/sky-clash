@@ -245,7 +245,8 @@ impl HeroCreatorSystem {
                             ui::components::Button("Back")
                                 .on_click(Event::Back)
                                 .id(Node::Back),
-                        ]),
+                        ])
+                        .gap(4),
                         Rect().height(720 / 2 - 100),
                     ]),
                 ]),
@@ -298,6 +299,7 @@ impl HeroCreatorSystem {
                     .background_color((50, 50, 50))
                     .id(Node::Loading),
             ])
+            .font_size(20)
             .width(1280)
             .height(720)
             .background_color((50, 50, 50)),
@@ -342,11 +344,11 @@ impl HeroCreatorSystem {
             Board {
                 hero_1: None,
                 hero_2: None,
-            } => Err("please put 1 hero on board"),
+            } => Err("Please put a Hero on the Sky Board"),
             Board {
                 hero_1: Some(_),
                 hero_2: Some(_),
-            } => Err("please put only 1 hero on board"),
+            } => Err("Please put *one* Hero on the Sky Board"),
         };
 
         let hero = match hero {

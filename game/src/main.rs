@@ -21,6 +21,9 @@ mod sprite_renderer;
 mod start_game;
 mod timer;
 
+// pub const FONT: &str = "textures/ttf/OpenSans.ttf";
+pub const FONT: &str = "textures/ttf/Jaro-Regular.ttf";
+
 fn main() {
     // let mut connection = backend_connection::BackendConnection::new();
     let connection = mock_connection::MockConnection::new();

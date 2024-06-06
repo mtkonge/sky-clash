@@ -4,6 +4,7 @@ use shared::HeroKind;
 use crate::{
     game::Game,
     player::{Player, PlayerKind},
+    FONT,
 };
 
 pub struct HudSystem(pub u64);
@@ -53,7 +54,7 @@ impl ReturnToMenu {
         ctx.key_just_pressed(self.0)
     }
     fn draw(&self, ctx: &mut Context) {
-        let font = ctx.load_font("textures/ttf/OpenSans.ttf", 36).unwrap();
+        let font = ctx.load_font(FONT, 36).unwrap();
         let text = format!("Press [{}] to return to menu!", self.0);
         let text = ctx.render_text(font, text, (255, 255, 255)).unwrap();
         ctx.draw_texture(
@@ -83,8 +84,17 @@ impl TrashTalk {
 
     fn draw(&self, ctx: &mut Context) {
         let trash_talk = self.loser_text();
-        let font = ctx.load_font("textures/ttf/OpenSans.ttf", 48).unwrap();
+        let font = ctx.load_font(FONT, 48).unwrap();
         let text = ctx.render_text(font, &trash_talk, (255, 255, 255)).unwrap();
+        ctx.draw_rect_transparent(
+            (0, 0, 0),
+            ((1280.0 - text.size.x) / 2.0 - 10.0) as i32,
+            (100.0 - 5.0) as i32,
+            (text.size.x + 20.0) as u32,
+            (text.size.y + 10.0) as u32,
+            100,
+        )
+        .unwrap();
         ctx.draw_texture(
             text.texture,
             V2::new((1280.0 - text.size.x) / 2.0, 100.0),
@@ -186,7 +196,7 @@ fn draw_player_stats(
         ctx.load_texture(path).unwrap()
     };
 
-    let font = ctx.load_font("textures/ttf/OpenSans.ttf", 24).unwrap();
+    let font = ctx.load_font(FONT, 24).unwrap();
     let lives = player.lives.to_string();
     let lives = ctx.render_text(font, lives, (255, 255, 255)).unwrap();
 

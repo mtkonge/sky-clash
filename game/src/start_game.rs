@@ -148,6 +148,7 @@ impl System for StartGameSystem {
                 .visible(false)
                 .id(Node::ErrorPopup),
             ])
+            .font_size(20)
             .background_color((50, 50, 50))
             .width(1280)
             .height(720),

@@ -43,34 +43,54 @@ impl From<Event> for ui::EventId {
 pub struct MainMenuSystem(pub u64);
 impl System for MainMenuSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
-        use ui::constructors::{Stack, Text, Vert};
+        use ui::constructors::{Hori, Image, Rect, Stack, Text, Vert};
 
         let system_id = self.0;
 
         let mut dom = ui::Dom::new(
-            Stack([Vert([
-                Text("Sky Clash").font_size(48),
-                Button("Start Game")
-                    .color((255, 255, 255))
-                    .padding(15)
-                    .border_thickness(2)
-                    .id(Node::StartGame)
-                    .on_click(Event::StartGame),
-                Button("Hero Creator")
-                    .color((255, 255, 255))
-                    .padding(15)
-                    .border_thickness(2)
-                    .id(Node::HeroCreator)
-                    .on_click(Event::HeroCreator),
-                Button("Exit")
-                    .color((255, 255, 255))
-                    .padding(15)
-                    .border_thickness(2)
-                    .id(Node::Exit)
-                    .on_click(Event::Exit),
+            Stack([
+                Image("textures/main_menu.png").width(1280).height(720),
+                Vert([
+                    Stack([
+                        Vert([
+                            Rect().height(20),
+                            Hori([
+                                Rect().width(20),
+                                Text("Sky Clash").color((0, 0, 0)).font_size(100),
+                            ]),
+                        ]),
+                        Text("Sky Clash").font_size(100),
+                    ]),
+                    Rect().height(100),
+                    Button("Start Game")
+                        .width(200)
+                        .color((255, 255, 255))
+                        .background_color((50, 50, 50))
+                        .padding(15)
+                        .border_thickness(2)
+                        .id(Node::StartGame)
+                        .on_click(Event::StartGame),
+                    Button("Hero Creator")
+                        .width(200)
+                        .color((255, 255, 255))
+                        .background_color((50, 50, 50))
+                        .padding(15)
+                        .border_thickness(2)
+                        .id(Node::HeroCreator)
+                        .on_click(Event::HeroCreator),
+                    Button("Exit")
+                        .width(200)
+                        .color((255, 255, 255))
+                        .background_color((50, 50, 50))
+                        .padding(15)
+                        .border_thickness(2)
+                        .id(Node::Exit)
+                        .on_click(Event::Exit),
+                ])
+                .gap(8),
             ])
-            .gap(4)])
             .background_color((50, 50, 50))
+            .font_size(20)
             .width(1280)
             .height(720),
         );

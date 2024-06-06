@@ -66,11 +66,15 @@ pub mod constructors {
 #[derive(Clone)]
 pub struct DerivedProps {
     color: Option<(u8, u8, u8)>,
+    font_size: Option<u16>,
 }
 
 impl DerivedProps {
     pub fn new() -> Self {
-        Self { color: None }
+        Self {
+            color: None,
+            font_size: None,
+        }
     }
 }
 
@@ -126,6 +130,7 @@ impl Node {
         derived_props: DerivedProps,
     ) -> super::InternalNodeId {
         let derived_props = DerivedProps {
+            font_size: derived_props.font_size.or(self.font_size),
             color: derived_props.color.or(self.color),
         };
 
@@ -154,7 +159,8 @@ impl Node {
             }
             Kind::Text(v) => super::Kind::Text {
                 text: v.clone(),
-                font: PathBuf::from("textures/ttf/OpenSans.ttf"),
+                // font: PathBuf::from("textures/ttf/OpenSans.ttf"),
+                font: PathBuf::from("textures/ttf/Jaro-Regular.ttf"),
             },
             Kind::Image(src) => super::Kind::Image(src.clone()),
         };
@@ -168,16 +174,16 @@ impl Node {
                 height: self.height.map(f64::from),
                 on_click: self.on_click,
                 background_color: self.background_color,
-                color: self.color,
+                color: self.color.or(derived_props.color),
                 gap: self.gap.map(f64::from),
                 border_color: self.border_color,
                 border_thickness: self.border_thickness.map(f64::from),
                 padding: self.padding.map(f64::from),
-                font_size: self.font_size,
+                font_size: self.font_size.or(derived_props.font_size),
                 visible: self.visible,
                 focused: false,
-                focus_color: (53, 73, 136),
-                focus_thickness: 4.0,
+                focus_color: (50, 160, 190),
+                focus_thickness: 6.0,
             },
         ));
         id
