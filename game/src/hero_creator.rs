@@ -221,11 +221,11 @@ impl HeroCreatorSystem {
                 Hori([
                     Vert([
                         Vert([
-                            Image("./textures/player.png")
+                            Image("./textures/placeholder.png")
                                 .id(Node::HeroImage)
                                 .width(128)
                                 .height(128),
-                            Text("Boykisser").id(Node::HeroTypeText).padding(30),
+                            Text("? ? ?").id(Node::HeroTypeText).padding(30),
                             Rect().height(720 / 16),
                         ])
                         .padding(50)
