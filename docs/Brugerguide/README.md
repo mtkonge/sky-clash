@@ -1,5 +1,9 @@
 # Sky Clash Brugerguide
 
+##
+
+
+
 ## Terminologi og fysiske komponenter
 
 ### Heltespiller
@@ -18,13 +22,14 @@ En heltespiller er bundet til en fysisk heltespillerfigur.
 
 Heltespillerfigurerne er figurer, der bruges sammen med dit Sky Board for at kunne spille Sky Clash. De representerer én af de 4 heltespillertyper, og bruges til at gemme information om dine kampe vundet, og de valgt du har truffet i Sky Clash’ Hero Creator.
 
-<TODO: billede mangler: billede af alle heltespiller figurerne>
+<img src="./images/heroes.jpg" alt="heroes" height="300"/>
 
 ### Sky Board
 
 Dit Sky Board bruges sammen med heltespillerfigurer for at kunne spille Sky Clash. Man bruger det ved at placere en eller flere heltespillerfigur på en eller begge af to markerede pladser.
 
-<TODO: billede mangler: billede af Sky Boardet>
+<img src="./images/sky_board.jpg" alt="skyboard" height="300"/>
+
 
 ## Programmet
 
@@ -34,7 +39,7 @@ Det kræver mindst 2 heltespillerfigure og et Sky Board for at kunne spille.
 
 Det første du kommer til at møde når du starter Sky Clash er startmenuen.
 
-<TODO: billed mangler: main menu>
+<img src="./images/main_menu.png" alt="main menu" height="300"/>
 
 Her mødes du af 3 knapper, “start game”, “hero creator” og “exit”. Du kan bruge musen eller Tab knappen til at navigere, og venstre klik eller enter for at vælge en mulighed.
 
@@ -48,21 +53,19 @@ For at opnå dette, skal du med dit Sky Board have præcist en heltespillerfigur
 
 Før du kan gå ind på hero creator'en skal du sikre dig at du har sat én helt på Sky Board'et
 
-<TODO: billed mangler: en helt på Sky Board>
+<img src="./images/sky_board_with_hero.jpg" alt="skyboard with hero" height="300"/>
 
 Hvis helten ikke er oprettet endnu, bliver du mødt af et valg af hvilken slags heltespillertype du har at gøre med.
 
-<TODO: billed mangler: select hero popup>
+<img src="./images/select_hero.png" alt="select hero" height="300"/>
 
 Her vælger du et af 4 muligheder der matcher til din heltespiller.
 
 Til at starte med har du ingen ekstra point at uddele, men efter du har vundet et par kampe får du muligheden til at komme tilbage for at uddele flere point. Du uddeler eller fjerner de point ved at klikke på "+" eller "-" ved siden af den kategori du vil uddele eller fjerne point fra. Du kan ikke fjerne point igen efter du har uddelt og gemt dem, så vær sikker på, at du har taget de rigtige valg!
 
-<TODO: billed mangler: hero creator med helt>
-
 Når du er færdig, kan du så trykke på "Confirm" knappen for at gemme, og derefter "Back" knappen for at komme til startmenuen.
 
-<TODO: billed mangler: billede af hero create med rød cirkel omkring confirm og back>
+<img src="./images/hero_creator.png" alt="hero creator" height="300"/>
 
 Derefter kan du bytte din heltespillerfigur på brættet ud med en anden heltespillerfigur og gøre det samme.
 
@@ -70,13 +73,17 @@ Nu hvor du har 2 heltespillerfigure forberedt kan du så placere begge heltespil
 
 ### Start Game
 
-Før du kan gå ind på "Start Game" skal du sikre dig at du har sat to helte på Sky Board'et
+Før du kan gå ind på "Start Game" skal du sikre dig, at du har sat to helte på Sky Board'et
 
-<TODO: billed mangler: to helte på Sky Board>
+<img src="./images/sky_board_with_heroes.jpg" alt="skyboard with heroes" height="300"/>
 
 Det første du ser er en menu, hvor du kan se hvilke heltespillerfigure du har på brættet, og hvordan deres point er uddelt. Når du har 2 spillere på brættet, kan du trykke "Start Game" igen for at spille en kamp.
 
-<TODO: billed mangler: start game menu>
+<img src="./images/start_game.png" alt="start game" height="300"/>
+
+Når du har 2 spillere på brættet, kan du trykke "Start Game" igen for at spille en kamp.
+
+<img src="./images/game.png" alt="game" height="300"/>
 
 Spiller 1 bevæger med WASD, angreber med J og undviger med K.
 
@@ -88,16 +95,13 @@ Hvis du holder din "Bevægelse Ned" knap nede mens du angreber, angreber du ved 
 
 Hvis du holder din "Bevægelse til Højre" eller "Bevægelse til Venstre" knap nede angreber du hhv. til højre eller venstre.
 
-<TODO: billed mangler: af de startede spil>
-
+<img src="./images/hero_information_left.png" alt="hero information left" height="300"/>
+<img src="./images/hero_information_right.png" alt="hero information right" height="300"/>
 
 helteinformationsboks viser informationer for spillets gang og kan ses i de to øverste hjørner. helteinformationsboksen viser spillernes liv, deres skade og hvilken figur de spiller.
 
 Hvert angreb giver skade der rammer den anden spiller skader den anden spiller. Omridset af spillerne i helteinfomrtionsboksen skifter fra hvid til gul til orange til rød og til sort. Jo tættere på rød/sort jo mere skade har spilleren taget dvs. spilleren bliver skubbet mere når spilleren bliver ramt af et angreb.  
 
 Når spilleren falder ud af banen mister spilleren et liv og placeres tilbage på banen. 
-
-<TODO: billed mangler: helteinformationsbokse>
-
 
 Målet er at få den anden spiller ud af skærmen indtil han ikke har flere liv tilbage, hvor derefter er kampen vundet.
