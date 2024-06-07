@@ -4,15 +4,16 @@
 #include "led.h"
 #include "debug.h"
 
-RfidPins rfid1Pins = { /*sda=*/11, /*scl=*/12, /*irq=*/5, /*rsto*/4 };
 
-TwoWire* rfid1Wire = &Wire;
+RfidPins rfid1Pins = { /*sda=*/0, /*scl=*/1, /*irq=*/6, /*rsto*/7 };
+
+TwoWire otherWire(&sercom3, rfid1Pins.sda, rfid1Pins.scl);
+TwoWire* rfid1Wire = &otherWire;
 RfidScanner rfid1(RfidI2C(rfid1Pins.irq, rfid1Pins.rsto, rfid1Wire), rfid1Pins);
 
-RfidPins rfid2Pins = { /*sda=*/0, /*scl=*/1, /*irq=*/6, /*rsto*/7 };
+RfidPins rfid2Pins = { /*sda=*/11, /*scl=*/12, /*irq=*/5, /*rsto*/4 };
 
-TwoWire otherWire(&sercom3, rfid2Pins.sda, rfid2Pins.scl);
-TwoWire* rfid2Wire = &otherWire;
+TwoWire* rfid2Wire = &Wire;
 RfidScanner rfid2(RfidI2C(rfid2Pins.irq, rfid2Pins.rsto, rfid2Wire), rfid2Pins);
 
 Wifi wifi(IPAddress(65, 108, 91, 32), 8080);
@@ -27,8 +28,8 @@ int switchPin = 13;
 void setup() {
   Serial.begin(9600);
 
-  pinPeripheral(rfid2Pins.sda, PIO_SERCOM);
-  pinPeripheral(rfid2Pins.scl, PIO_SERCOM);
+  pinPeripheral(rfid1Pins.sda, PIO_SERCOM);
+  pinPeripheral(rfid1Pins.scl, PIO_SERCOM);
 
   pinMode(switchPin, INPUT);
 
