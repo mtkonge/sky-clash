@@ -85,6 +85,7 @@ impl PlayerInteractionSystem {
         body: &RigidBody,
     ) {
         let sound_player = ctx.select_one::<SoundPlayer>();
+        sound_player.set_effect_volume(0.2);
         sound_player.play_effect("assets/sounds/swoosh.ogg");
 
         let attack_size = self.attack_size(&attack_kind);

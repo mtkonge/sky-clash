@@ -29,6 +29,7 @@ impl System for KnockoffSystem {
                     let player_size = rigid_body.size;
                     spawn_death_animation(ctx, player_pos, player_size);
                     let sound_player = ctx.select_one::<SoundPlayer>();
+                    sound_player.set_effect_volume(0.5);
                     sound_player.play_effect("assets/sounds/explosion.ogg");
                 };
                 let player = ctx.select::<Player>(loser_id);

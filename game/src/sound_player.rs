@@ -76,7 +76,7 @@ pub fn sound_player() -> (SoundPlayer, JoinHandle<()>) {
                     music_sink.set_volume(volume as f32);
                 }
                 Message::SetEffectVolume(volume) => {
-                    music_sink.set_volume(volume as f32);
+                    effect_sink.set_volume(volume as f32);
                 }
                 Message::StopMusic => {
                     music_sink.clear();
