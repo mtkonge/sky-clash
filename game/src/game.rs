@@ -236,7 +236,7 @@ impl GameSystem {
             Player {
                 kind,
                 hero,
-                damage_taken: 200.0,
+                damage_taken: 0.0,
                 lives: 3,
             },
             PlayerInteraction::new(keyset, 0.0),
