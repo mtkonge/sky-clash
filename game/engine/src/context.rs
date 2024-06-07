@@ -1,7 +1,7 @@
 use std::{
     any::TypeId,
     collections::{HashMap, HashSet},
-    path::PathBuf,
+    path::{Path, PathBuf},
     rc::Rc,
 };
 
@@ -9,6 +9,7 @@ use sdl2::{
     controller::{Button as ControllerButton, GameController as SdlGameController},
     image::LoadTexture,
     keyboard::Keycode,
+    mixer::Music,
     mouse::MouseButton,
     pixels::Color,
     rect::{Point, Rect},
@@ -477,6 +478,35 @@ impl<'context, 'game> Context<'context, 'game> {
             .map(|v| v.0)
             .collect::<Vec<_>>()
             .into_iter()
+    }
+
+    pub fn play_sound<P: AsRef<Path>>(&mut self, path: P) -> Result<Id, Error> {
+        let sound = Music::from_file(path)?;
+        let id = self.game.sound_id_counter;
+        self.game.sound_id_counter += 1;
+        self.game.sounds.push((id, sound));
+        let audio = &self.game.sounds.last().unwrap().1;
+        audio.play(1)?;
+        Ok(id)
+    }
+
+    pub fn set_sound_volume(&mut self, volume: f64) {
+        Music::set_volume((volume * 128.0).round() as i32);
+    }
+
+    pub fn play_sound_looped<P: AsRef<Path>>(&mut self, path: P) -> Result<Id, Error> {
+        let sound = Music::from_file(path)?;
+        let id = self.game.sound_id_counter;
+        self.game.sound_id_counter += 1;
+        self.game.sounds.push((id, sound));
+        let audio = &self.game.sounds.last().unwrap().1;
+        audio.play(-1)?;
+        Ok(id)
+    }
+
+    pub fn stop_all_sound(&mut self) {
+        self.game.sounds.clear();
+        Music::halt();
     }
 }
 

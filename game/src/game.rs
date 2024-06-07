@@ -122,6 +122,9 @@ impl System for GameSystem {
             ShallowCollider::new().with_direction(QuadDirection::Top),
         );
 
+        ctx.stop_all_sound();
+        ctx.play_sound_looped("assets/sounds/theme_2.ogg")?;
+
         spawn!(ctx, Game::new(self.0, systems.finish(), children.finish()));
 
         Ok(())

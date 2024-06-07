@@ -139,6 +139,9 @@ impl System for HeroCreatorSystem {
             });
         }
 
+        ctx.stop_all_sound();
+        ctx.play_sound_looped("assets/sounds/theme_3.ogg")?;
+
         spawn!(
             ctx,
             HeroCreator {

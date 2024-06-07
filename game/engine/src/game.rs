@@ -5,9 +5,9 @@ use std::time::{Duration, Instant};
 
 use sdl2::controller::GameController as SdlGameController;
 use sdl2::keyboard::Keycode;
+use sdl2::mixer::{Music, Sdl2MixerContext};
 use sdl2::mouse::MouseButton;
 use sdl2::ttf::{self, Sdl2TtfContext};
-use sdl2::GameControllerSubsystem;
 use sdl2::{
     event::Event,
     image::{self, Sdl2ImageContext},
@@ -16,6 +16,7 @@ use sdl2::{
     video::{Window, WindowContext},
     Sdl, VideoSubsystem,
 };
+use sdl2::{mixer, GameControllerSubsystem};
 
 use crate::texture::TextTextureKey;
 use crate::Text;
@@ -35,6 +36,8 @@ pub struct Game<'game> {
     #[allow(dead_code)]
     pub(crate) image_context: Sdl2ImageContext,
     pub(crate) ttf_context: Sdl2TtfContext,
+    #[allow(dead_code)]
+    pub(crate) mixer_context: Sdl2MixerContext,
     pub(crate) canvas: Canvas<Window>,
     pub(crate) texture_creator: TextureCreator<WindowContext>,
     pub(crate) event_pump: sdl2::EventPump,
@@ -47,6 +50,8 @@ pub struct Game<'game> {
     pub(crate) texture_path_to_id_map: HashMap<PathBuf, Id>,
     pub(crate) text_textures: HashMap<TextTextureKey, Text>,
     pub(crate) fonts: Vec<(Id, u16, PathBuf, Font<'game>)>,
+    pub(crate) sound_id_counter: Id,
+    pub(crate) sounds: Vec<(Id, Music<'game>)>,
     pub(crate) currently_pressed_keys: HashMap<Keycode, bool>,
     pub(crate) currently_pressed_mouse_buttons: HashMap<MouseButton, bool>,
     pub(crate) currently_pressed_controller_buttons: HashMap<(Id, ControllerButton), bool>,
@@ -69,6 +74,8 @@ impl<'game> Game<'game> {
         let controller_subsystem = sdl_context.game_controller()?;
         let image_context = image::init(image::InitFlag::PNG)?;
         let ttf_context = ttf::init().map_err(|e| e.to_string())?;
+        let mixer_context = mixer::init(mixer::InitFlag::OGG).map_err(|e| e.to_string())?;
+
         let window = video_subsystem
             .window("Sky Clash", 1280, 720)
             .position_centered()
@@ -77,6 +84,8 @@ impl<'game> Game<'game> {
 
         let mut canvas = window.into_canvas().build()?;
         let texture_creator = canvas.texture_creator();
+
+        mixer::open_audio(48000, mixer::AUDIO_S16, 2, 4096)?;
 
         canvas.set_draw_color(Color::BLACK);
         canvas.clear();
@@ -88,10 +97,11 @@ impl<'game> Game<'game> {
             video_subsystem,
             controller_subsystem,
             image_context,
+            ttf_context,
+            mixer_context,
             canvas,
             texture_creator,
             event_pump,
-            ttf_context,
             entity_id_counter: 0,
             entities: Default::default(),
             system_id_counter: 0,
@@ -101,6 +111,8 @@ impl<'game> Game<'game> {
             texture_path_to_id_map: Default::default(),
             text_textures: Default::default(),
             fonts: Default::default(),
+            sound_id_counter: 0,
+            sounds: Vec::new(),
             currently_pressed_keys: Default::default(),
             currently_pressed_mouse_buttons: Default::default(),
             currently_pressed_controller_buttons: Default::default(),
@@ -240,3 +252,10 @@ impl<'game> Game<'game> {
         Context::new(self)
     }
 }
+
+// impl Drop for Game<'_> {
+//     fn drop(&mut self) {
+//         mixer::Music::halt();
+//         mixer::close_audio();
+//     }
+// }

@@ -168,6 +168,9 @@ impl System for StartGameSystem {
             dom.select_mut(Node::ErrorPopup).unwrap().set_visible(false);
         });
 
+        ctx.stop_all_sound();
+        ctx.play_sound_looped("assets/sounds/theme_3.ogg")?;
+
         spawn!(
             ctx,
             StartGame {

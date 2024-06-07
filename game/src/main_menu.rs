@@ -109,6 +109,9 @@ impl System for MainMenuSystem {
             panic!("exit");
         });
 
+        ctx.stop_all_sound();
+        ctx.play_sound_looped("assets/sounds/theme_1.ogg")?;
+
         spawn!(
             ctx,
             MainMenu {

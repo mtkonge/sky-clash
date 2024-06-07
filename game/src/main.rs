@@ -33,6 +33,7 @@ fn main() {
         let mut game = engine::Game::new().unwrap();
 
         let mut ctx = game.context();
+        ctx.set_sound_volume(0.3);
         ctx.add_system(main_menu::MainMenuSystem);
         spawn!(&mut ctx, server.clone());
 
