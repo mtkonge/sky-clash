@@ -1,9 +1,178 @@
-<mxfile host="app.diagrams.net" modified="2024-06-07T06:25:35.223Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0" version="24.4.15" etag="Mm_zl4w1lGt6AOBCX-Th" type="github">
+<mxfile host="app.diagrams.net" modified="2024-06-07T06:49:36.894Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0" etag="GrdNT5fykpeNosN_r6Uu" version="24.4.15" type="github">
   <diagram name="Page-1" id="cS0eeF5j1m5D2ZwRGN6W">
-    <mxGraphModel>
+    <mxGraphModel dx="1674" dy="784" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="pVbLdyNFASvoCkagPVm7-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-11" target="pVbLdyNFASvoCkagPVm7-12">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-10" value="&lt;div&gt;Program startes&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="pVbLdyNFASvoCkagPVm7-9">
+          <mxGeometry x="-0.375" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-11" value="" style="ellipse;html=1;shape=startState;fillColor=#000000;strokeColor=#ff0000;" vertex="1" parent="1">
+          <mxGeometry x="560" y="100" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-12" target="pVbLdyNFASvoCkagPVm7-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-12" value="Vis main menu" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.start_2;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="525" y="200" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-13" value="Brugeren trykker &quot;hero creator&quot;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="525" y="370" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-16" value="Kun en helt på skyboardet?" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="280" y="360" width="140" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-13" target="pVbLdyNFASvoCkagPVm7-16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-19" value="" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-16" target="pVbLdyNFASvoCkagPVm7-21">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="270" y="409.5" as="sourcePoint" />
+            <mxPoint x="140" y="410" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-20" value="Nej" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="pVbLdyNFASvoCkagPVm7-19">
+          <mxGeometry x="-0.0526" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-21" target="pVbLdyNFASvoCkagPVm7-22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-21" value="Vis popup &quot;Placer kun en helt på sky boardet&quot;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.start_2;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="50" y="360" width="160" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-22" value="Brugeren trykker på &quot;Ok&quot;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="80" y="170" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-24" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-22" target="pVbLdyNFASvoCkagPVm7-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-25" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-16" target="pVbLdyNFASvoCkagPVm7-27">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="400" y="430" as="sourcePoint" />
+            <mxPoint x="350" y="570" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-26" value="Ja" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="pVbLdyNFASvoCkagPVm7-25">
+          <mxGeometry x="-0.0105" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-27" value="Helt oprettet?" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="280" y="540" width="140" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-28" value="" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-27" target="pVbLdyNFASvoCkagPVm7-30">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="400" y="430" as="sourcePoint" />
+            <mxPoint x="180" y="590" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-29" value="&lt;div&gt;Nej&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="pVbLdyNFASvoCkagPVm7-28">
+          <mxGeometry x="0.0364" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-32" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-30" target="pVbLdyNFASvoCkagPVm7-31">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-30" value="Vis popup &quot;Vælg helt&quot;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.start_2;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="20" y="540" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-31" value="Brugeren trykker på en af de forskellige helte" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="690" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-33" value="Helt oprettet i database" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.database;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="170" y="695" width="80" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-34" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-31" target="pVbLdyNFASvoCkagPVm7-33">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-36" value="Vis den valgt helt i hero creator" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.start_2;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="295" y="690" width="130" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-37" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-27" target="pVbLdyNFASvoCkagPVm7-36">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="400" y="560" as="sourcePoint" />
+            <mxPoint x="450" y="510" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-38" value="&lt;div&gt;Ja&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="pVbLdyNFASvoCkagPVm7-37">
+          <mxGeometry x="0.02" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-39" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-33" target="pVbLdyNFASvoCkagPVm7-36">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-43" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-40" target="pVbLdyNFASvoCkagPVm7-42">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-40" value="Brugeren allokerer &#39;skillpoints&#39; i de forskellige muligheder" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="470" y="500" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-42" value="Brugeren trykker på knappen &#39;Save&#39;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="660" y="500" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-55" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-44" target="pVbLdyNFASvoCkagPVm7-50">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-44" value="&#39;skillpoints&#39; opdateret i databasen" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.database;whiteSpace=wrap;rotation=0;" vertex="1" parent="1">
+          <mxGeometry x="660" y="740" width="80" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-45" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-42" target="pVbLdyNFASvoCkagPVm7-44">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-46" value="Helten har point at allokere?" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="460" y="690" width="140" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-47" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-36" target="pVbLdyNFASvoCkagPVm7-46">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-48" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-46" target="pVbLdyNFASvoCkagPVm7-40">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="450" y="680" as="sourcePoint" />
+            <mxPoint x="500" y="630" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-49" value="&lt;div&gt;Ja&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="pVbLdyNFASvoCkagPVm7-48">
+          <mxGeometry x="-0.0024" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-50" value="Brugeren trykker på knappen back" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="480" y="860" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-53" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-46" target="pVbLdyNFASvoCkagPVm7-50">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="400" y="770" as="sourcePoint" />
+            <mxPoint x="450" y="720" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-54" value="Nej" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="pVbLdyNFASvoCkagPVm7-53">
+          <mxGeometry x="-0.0857" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-59" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-56" target="pVbLdyNFASvoCkagPVm7-58">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-56" value="Vis main menu" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.start_2;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="300" y="870" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-57" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="pVbLdyNFASvoCkagPVm7-50" target="pVbLdyNFASvoCkagPVm7-56">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pVbLdyNFASvoCkagPVm7-58" value="" style="ellipse;html=1;shape=endState;fillColor=#000000;strokeColor=#ff0000;" vertex="1" parent="1">
+          <mxGeometry x="160" y="920" width="30" height="30" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
