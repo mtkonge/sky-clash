@@ -243,7 +243,7 @@ impl HeroCreatorSystem {
                         agility_bar.build(),
                         defence_bar.build(),
                         Hori([
-                            Button("Confirm")
+                            Button("Save")
                                 .on_click(Event::UpdateHero)
                                 .id(Node::UpdateHero),
                             Button("Back").on_click(Event::Back).id(Node::Back),
