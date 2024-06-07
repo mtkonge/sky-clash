@@ -1,8 +1,27 @@
 # Sky Clash Brugerguide
 
-##
+## Opsætning
+
+SkyClash er et spil-system for 2 spillere. Systemet består af selve spillet og *SkyBoard* til ens *SkyHero*-figurer.
+
+Du skal bruge:
+- En computer
+- *SkyBoard*
+- Mindst 2 *SkyHero*-figurer
 
 
+Sæt *SkyBoard* til strøm. Dette gøres med USB-ledningen, som følger med. *SkyBoard* vil derefter oprette forbindelse til *SkyServer* via. Wifi\*. LED-indikatorne vil herefter lyse.
+
+Hent spillet ned på din computer. Spillet hentes fra [udgivelsessiden](https://github.com/Mercantec-GHC/h3-projektv2-24q2h3-skyclash/releases/latest). Hent pakken til dit operativsystem. 
+Hvis du bruger Windows, hent `skyclash-windows.zip`. Udpak Zip-filen i en seperat mappe. Åben spillet ved at køre filen `sky-clash.exe`. Hvis du bruger Linux, hent `skyclash-linux.tar.gz`. Udpak filer (`tar xvf <file>`) og åben spillet, ved at køre den eksekverbare fil `sky-clash`.
+
+Initialiser dine *SkyHero*-figurer\*\*. Start spillet med én enkelt *SkyHero*-figur på *SkyBoard*. Åben spillet. Naviger til *Hero Creator*-menuen. Her vil der blive vist en Pop-up-menu, med hver slags *SkyHero*. På billedet nedenunder ses alle figurer i rækkefølgen: `Tankie`, `Strong`, `Speed` og `Centrist`, Vælg den rigtige helt.
+
+<img src="/docs/images/heroes.jpg" height="300"/>
+
+\* Nuværende er Wifi opsat til at bruge netværket `TP-Link_1912`.
+
+\*\* Dette er kun relevant, hvis figurene ikke allerede er oprettet i serveren.
 
 ## Terminologi og fysiske komponenter
 
