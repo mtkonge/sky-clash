@@ -8,6 +8,7 @@ use crate::{
     player::Player,
     player_interaction::PlayerInteraction,
     server::Server,
+    sound_player::SoundPlayer,
     sprite_renderer::Sprite,
     timer::Timer,
 };
@@ -27,6 +28,8 @@ impl System for KnockoffSystem {
                     let player_pos = rigid_body.pos;
                     let player_size = rigid_body.size;
                     spawn_death_animation(ctx, player_pos, player_size);
+                    let sound_player = ctx.select_one::<SoundPlayer>();
+                    sound_player.play_effect("assets/sounds/explosion.ogg");
                 };
                 let player = ctx.select::<Player>(loser_id);
                 let player_is_dead = player.is_dead();

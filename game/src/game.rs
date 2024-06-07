@@ -14,6 +14,7 @@ use crate::{
     player::{Player, PlayerKind},
     player_interaction::{PlayerInteraction, PlayerInteractionSystem},
     server::Server,
+    sound_player::SoundPlayer,
     sprite_renderer::{Sprite, SpriteRenderer},
     timer::Timer,
 };
@@ -122,8 +123,8 @@ impl System for GameSystem {
             ShallowCollider::new().with_direction(QuadDirection::Top),
         );
 
-        ctx.stop_all_sound();
-        ctx.play_sound_looped("assets/sounds/theme_2.ogg")?;
+        let sound_player = ctx.select_one::<SoundPlayer>();
+        sound_player.play_music("assets/sounds/theme_2.ogg");
 
         spawn!(ctx, Game::new(self.0, systems.finish(), children.finish()));
 

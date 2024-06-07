@@ -2,6 +2,7 @@
 
 use engine::spawn;
 use server::Server;
+use sound_player::sound_player;
 
 mod attacks;
 mod backend_connection;
@@ -17,6 +18,7 @@ mod mock_connection;
 mod player;
 mod player_interaction;
 mod server;
+mod sound_player;
 mod sprite_renderer;
 mod start_game;
 mod timer;
@@ -29,23 +31,28 @@ fn main() {
     let connection = mock_connection::MockConnection::new();
     let mut server = Server::new(connection.clone());
 
+    let (mut sound_player, sound_player_join_handle) = sound_player();
+    sound_player.set_music_volume(0.3);
+
     let game_thread = std::thread::spawn(move || {
         let mut game = engine::Game::new().unwrap();
 
         let mut ctx = game.context();
-        ctx.set_sound_volume(0.3);
-        ctx.add_system(main_menu::MainMenuSystem);
+        spawn!(&mut ctx, sound_player.clone());
         spawn!(&mut ctx, server.clone());
+        ctx.add_system(main_menu::MainMenuSystem);
 
         game.run();
         server.quit();
+        sound_player.quit();
     });
 
     // tokio::runtime::Runtime::new().unwrap().block_on(async {
     //     connection.run().await;
     // });
 
-    game_thread.join().unwrap();
+    let _ = game_thread.join();
+    let _ = sound_player_join_handle.join();
 }
 
 #[test]

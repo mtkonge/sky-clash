@@ -16,6 +16,7 @@ use crate::{
     hero_info::HeroInfo,
     main_menu::MainMenuSystem,
     server::{Board, HeroResult, Res, Server},
+    sound_player::SoundPlayer,
 };
 
 #[derive(Component, Clone)]
@@ -168,8 +169,8 @@ impl System for StartGameSystem {
             dom.select_mut(Node::ErrorPopup).unwrap().set_visible(false);
         });
 
-        ctx.stop_all_sound();
-        ctx.play_sound_looped("assets/sounds/theme_3.ogg")?;
+        let sound_player = ctx.select_one::<SoundPlayer>();
+        sound_player.play_music("assets/sounds/theme_3.ogg");
 
         spawn!(
             ctx,

@@ -4,6 +4,7 @@ use crate::server::Board;
 use crate::server::HeroResult;
 use crate::server::Res;
 use crate::server::Server;
+use crate::sound_player::SoundPlayer;
 use engine::query_one;
 use engine::spawn;
 use engine::ui::{
@@ -139,8 +140,8 @@ impl System for HeroCreatorSystem {
             });
         }
 
-        ctx.stop_all_sound();
-        ctx.play_sound_looped("assets/sounds/theme_3.ogg")?;
+        let sound_player = ctx.select_one::<SoundPlayer>();
+        sound_player.play_music("assets/sounds/theme_3.ogg");
 
         spawn!(
             ctx,

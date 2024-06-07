@@ -5,6 +5,7 @@ use crate::{
     hurtbox::{HurtDirection, Hurtbox, HurtboxProfile, Victim},
     keyset::Keyset,
     player::Player,
+    sound_player::SoundPlayer,
     sprite_renderer::Sprite,
     timer::Timer,
 };
@@ -83,6 +84,9 @@ impl PlayerInteractionSystem {
         id: u64,
         body: &RigidBody,
     ) {
+        let sound_player = ctx.select_one::<SoundPlayer>();
+        sound_player.play_effect("assets/sounds/swoosh.ogg");
+
         let attack_size = self.attack_size(&attack_kind);
         let pos = self.attack_pos(&attack_kind, body, attack_size);
         let vel = self.attack_vel(&attack_kind, body.vel);

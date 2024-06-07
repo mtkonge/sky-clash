@@ -1,4 +1,5 @@
 use crate::hero_creator::HeroCreatorSystem;
+use crate::sound_player::SoundPlayer;
 use crate::start_game::StartGameSystem;
 use engine::ui;
 use engine::ui::components::Button;
@@ -105,12 +106,12 @@ impl System for MainMenuSystem {
             ctx.add_system(HeroCreatorSystem);
         });
 
-        dom.add_event_handler(Event::Exit, |_dom, _ctx, _node_id| {
-            panic!("exit");
+        dom.add_event_handler(Event::Exit, |_dom, ctx, _node_id| {
+            ctx.quit();
         });
 
-        ctx.stop_all_sound();
-        ctx.play_sound_looped("assets/sounds/theme_1.ogg")?;
+        let sound_player = ctx.select_one::<SoundPlayer>();
+        sound_player.play_music("assets/sounds/theme_1.ogg");
 
         spawn!(
             ctx,
