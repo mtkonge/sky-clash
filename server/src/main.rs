@@ -4,7 +4,7 @@ mod sqlite3_db;
 
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use routes::{
-    create_hero, get_board_colors, get_hero, heroes_on_board, update_board_colors,
+    create_hero, create_match, get_board_colors, get_hero, heroes_on_board, update_board_colors,
     update_hero_stats, update_heroes_on_board,
 };
 use sqlite3_db::Sqlite3Db;
@@ -38,6 +38,7 @@ async fn main() -> std::io::Result<()> {
             .service(get_hero)
             .service(update_board_colors)
             .service(get_board_colors)
+            .service(create_match)
             .wrap(Logger::new(""))
     })
     .bind(("0.0.0.0", 8080))?

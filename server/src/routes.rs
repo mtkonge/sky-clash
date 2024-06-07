@@ -37,7 +37,7 @@ pub async fn update_hero_stats(
     }
 }
 
-#[get("hero/{rfid}")]
+#[get("/hero/{rfid}")]
 pub async fn get_hero(db: Data<DbParam>, rfid: Path<String>) -> impl Responder {
     match db.lock().await.hero_by_rfid(rfid.clone().as_str()).await {
         Ok(Some(hero)) => HttpResponse::Ok().json(Some(hero)),
@@ -56,12 +56,12 @@ pub async fn update_heroes_on_board(
     HttpResponse::Ok()
 }
 
-#[get("heroes_on_board")]
+#[get("/heroes_on_board")]
 pub async fn heroes_on_board(board_state: Data<BoardState>) -> impl Responder {
     HttpResponse::Ok().json(board_state.lock().await.clone())
 }
 
-#[post("update_board_colors")]
+#[post("/update_board_colors")]
 pub async fn update_board_colors(
     board_colors: Data<BoardColors>,
     req_body: Json<shared::UpdateBoardColorsParams>,
@@ -74,13 +74,13 @@ pub async fn update_board_colors(
     HttpResponse::Ok()
 }
 
-#[get("board_colors")]
+#[get("/board_colors")]
 pub async fn get_board_colors(board_colors: Data<BoardColors>) -> impl Responder {
     HttpResponse::Ok().json(board_colors.lock().await.0)
 }
 
-#[post("create_match")]
-pub async fn add_match(
+#[post("/create_match")]
+pub async fn create_match(
     db: Data<DbParam>,
     req_json: Json<shared::CreateMatchParams>,
 ) -> impl Responder {
