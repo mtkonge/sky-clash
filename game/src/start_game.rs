@@ -252,6 +252,7 @@ impl System for StartGameSystem {
         for id in query!(ctx, StartGame) {
             let start_game = ctx.select::<StartGame>(id).clone();
             if start_game.system_id == self.0 {
+                println!("{}", id);
                 ctx.despawn(id);
             }
         }

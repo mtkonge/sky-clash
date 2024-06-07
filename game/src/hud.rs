@@ -3,6 +3,7 @@ use shared::HeroKind;
 
 use crate::{
     game::Game,
+    main_menu::{MainMenu, MainMenuSystem},
     player::{Player, PlayerKind},
     FONT,
 };
@@ -27,6 +28,7 @@ impl System for HudSystem {
             if ret.should_return(ctx) {
                 let system_id = ctx.select_one::<Game>().system_id;
                 ctx.remove_system(system_id);
+                ctx.add_system(MainMenuSystem);
             }
         }
         Ok(())

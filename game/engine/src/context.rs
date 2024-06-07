@@ -14,7 +14,7 @@ use sdl2::{
     mouse::MouseButton,
     pixels::Color,
     rect::{Point, Rect},
-    render::{Canvas, Texture as SdlTexture, TextureCreator},
+    render::{BlendMode, Canvas, Texture as SdlTexture, TextureCreator},
     ttf::Sdl2TtfContext,
     video::{Window, WindowContext},
 };
@@ -362,6 +362,22 @@ impl<'context, 'game> Context<'context, 'game> {
     ) -> Result<(), Error> {
         let (r, g, b) = rgb;
         self.game.canvas.set_draw_color(Color { r, g, b, a: 255 });
+        self.game.canvas.fill_rect(Rect::new(x, y, w, h))?;
+        Ok(())
+    }
+
+    pub fn draw_rect_alpha(
+        &mut self,
+        rgb: (u8, u8, u8),
+        a: u8,
+        x: i32,
+        y: i32,
+        w: u32,
+        h: u32,
+    ) -> Result<(), Error> {
+        let (r, g, b) = rgb;
+        self.game.canvas.set_blend_mode(BlendMode::Blend);
+        self.game.canvas.set_draw_color(Color { r, g, b, a });
         self.game.canvas.fill_rect(Rect::new(x, y, w, h))?;
         Ok(())
     }

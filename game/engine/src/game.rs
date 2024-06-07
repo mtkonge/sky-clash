@@ -134,11 +134,7 @@ impl<'game> Game<'game> {
             }
             for event in self.event_pump.poll_iter() {
                 match event {
-                    Event::Quit { .. }
-                    | Event::KeyDown {
-                        keycode: Some(Keycode::Escape),
-                        ..
-                    } => break 'running,
+                    Event::Quit { .. } => break 'running,
                     Event::KeyDown {
                         keycode: Some(btn), ..
                     } => {

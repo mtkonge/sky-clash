@@ -11,6 +11,7 @@ use crate::{
     hurtbox::{Hitbox, Hurtbox, HurtboxSystem, Victim},
     keyset::Keyset,
     knockoff::{DeathAnimationSystem, KnockoffSystem},
+    pause::PauseSystem,
     player::{Player, PlayerKind},
     player_interaction::{PlayerInteraction, PlayerInteractionSystem},
     server::Server,
@@ -25,6 +26,7 @@ pub struct Game {
     pub system_id: engine::Id,
     pub child_systems: Vec<engine::Id>,
     pub child_components: Vec<engine::Id>,
+    pub paused: bool,
 }
 
 impl Game {
@@ -38,6 +40,7 @@ impl Game {
             system_id,
             child_systems,
             child_components,
+            paused: false,
         }
     }
 }
@@ -63,7 +66,7 @@ impl System for GameSystem {
         systems += ctx.add_system(PlayerInteractionSystem);
         systems += ctx.add_system(HudSystem);
         systems += ctx.add_system(DeathAnimationSystem);
-        // ctx.add_system(DebugDrawer);
+        ctx.add_system(DebugDrawer);
 
         let background = ctx.load_texture("assets/map_1.png").unwrap();
 
@@ -134,11 +137,24 @@ impl System for GameSystem {
     fn on_update(&self, ctx: &mut engine::Context, delta: f64) -> Result<(), engine::Error> {
         let game = ctx.clone_one::<Game>();
 
+        if game.paused {
+            return Ok(());
+        }
+
         game.board_colors_timer.lock().update(delta);
         if game.board_colors_timer.lock().done() {
             notify_server_about_player_colors(ctx);
             game.board_colors_timer.lock().reset()
         }
+
+        if ctx.key_just_pressed(engine::Keycode::Escape) {
+            // Open pause menu
+            ctx.add_system(PauseSystem);
+
+            let game = ctx.select_one::<Game>();
+            game.paused = true;
+        }
+
         Ok(())
     }
 
@@ -154,7 +170,6 @@ impl System for GameSystem {
         }
         let heroes_on_board = query_one!(ctx, HeroesOnBoard);
         ctx.despawn(heroes_on_board);
-        ctx.add_system(crate::main_menu::MainMenuSystem);
         Ok(())
     }
 }
