@@ -297,7 +297,11 @@ impl PlayerInteractionSystem {
             .is_some_and(|dir| dir.facing(engine::physics::OctoDirection::Bottom))
         {
             let player_movement = ctx.select::<PlayerInteraction>(id);
-            player_movement.jump_state = JumpState::OnGround;
+            if !matches!(player_movement.jump_state, JumpState::OnGround) {
+                player_movement.jump_state = JumpState::OnGround;
+                let sound_player = ctx.select_one::<SoundPlayer>();
+                sound_player.play_effect("assets/sounds/click.ogg");
+            }
         }
 
         if up_pressed && player_movement.can_jump() {
