@@ -11,10 +11,10 @@
    * [Heltespiller](#heltespiller)
    * [Heltespillerfigurer](#heltespillerfigurer)
    * [Sky Board](#sky-board)
-- [Programmet](#programmet)
-   * [Startmenuen](#startmenuen)
-   * [Hero Creator](#hero-creator)
-   * [Start Game](#start-game)
+   * [Programmet](#programmet)
+      - [Startmenuen](#startmenuen)
+      - [Hero Creator](#hero-creator)
+      - [Start Game](#start-game)
 
 <!-- TOC end -->
 
@@ -125,12 +125,12 @@ Dit Sky Board bruges sammen med heltespillerfigurer for at kunne spille Sky Clas
 
 
 <!-- TOC --><a name="programmet"></a>
-## Programmet
+### Programmet
 
 Det kræver mindst 2 heltespillerfigure og et Sky Board for at kunne spille.
 
 <!-- TOC --><a name="startmenuen"></a>
-### Startmenuen
+#### Startmenuen
 
 Det første du kommer til at møde når du starter Sky Clash er startmenuen.
 
@@ -145,7 +145,7 @@ Start game og Hero creator leder dig til menuen for at hhv. Starte spillet og sk
 For at opnå dette, skal du med dit Sky Board have præcist en heltespillerfigur på en af de markerede pladser, og vælge muligheden "Hero Creator".
 
 <!-- TOC --><a name="hero-creator"></a>
-### Hero Creator
+#### Hero Creator
 
 Før du kan gå ind på hero creator'en skal du sikre dig at du har sat én helt på Sky Board'et
 
@@ -168,7 +168,7 @@ Derefter kan du bytte din heltespillerfigur på brættet ud med en anden heltesp
 Nu hvor du har 2 heltespillerfigure forberedt kan du så placere begge heltespillerfigure på hver deres plads på dit Sky Board og vælge muligheden "Start Game" for at begynde at spille.
 
 <!-- TOC --><a name="start-game"></a>
-### Start Game
+#### Start Game
 
 Før du kan gå ind på "Start Game" skal du sikre dig, at du har sat to helte på Sky Board'et
 
