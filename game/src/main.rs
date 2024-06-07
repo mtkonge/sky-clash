@@ -28,8 +28,8 @@ mod ui_components;
 pub const FONT: &str = "assets/ttf/Jaro-Regular.ttf";
 
 fn main() {
-    // let mut connection = backend_connection::BackendConnection::new();
-    let connection = mock_connection::MockConnection::new();
+    let mut connection = backend_connection::BackendConnection::new();
+    // let connection = mock_connection::MockConnection::new();
     let mut server = Server::new(connection.clone());
 
     let (mut sound_player, sound_player_join_handle) = sound_player();
@@ -48,9 +48,9 @@ fn main() {
         sound_player.quit();
     });
 
-    // tokio::runtime::Runtime::new().unwrap().block_on(async {
-    //     connection.run().await;
-    // });
+    tokio::runtime::Runtime::new().unwrap().block_on(async {
+        connection.run().await;
+    });
 
     let _ = game_thread.join();
     let _ = sound_player_join_handle.join();
