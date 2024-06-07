@@ -6,8 +6,10 @@ Filstrukturen ser sådan ud:
 
 - board/
 - docs/
+	- Brugerguide/ 	
 	- ER Diagrammer/
 	- Flowcharts/
+  	- images/
 	- Kravsspecificationer.md
 	- Manual.md
 - game/
