@@ -63,7 +63,7 @@ Du skal bruge:
 Sæt *SkyBoard* til strøm. Dette gøres med USB-ledningen, som følger med. *SkyBoard* vil derefter oprette forbindelse til *SkyServer* via. Wifi\*. LED-indikatorne vil herefter lyse.
 
 Hent spillet ned på din computer. Spillet hentes fra [udgivelsessiden](https://github.com/Mercantec-GHC/h3-projektv2-24q2h3-skyclash/releases/latest). Hent pakken til dit operativsystem. 
-Hvis du bruger Windows, hent `skyclash-windows.zip`. Udpak Zip-filen i en seperat mappe. Åben spillet ved at køre filen `sky-clash.exe`. Hvis du bruger Linux, hent `skyclash-linux.tar.gz`. Udpak filer (`tar xvf <file>`) og åben spillet, ved at køre den eksekverbare fil `sky-clash`.
+Hvis du bruger Windows, hent `skyclash-windows.zip`. Udpak Zip-filen i en seperat mappe. Åben spillet ved at køre filen `sky-clash.exe`. Hvis du bruger Linux, hent `skyclash-linux.tar.gz`. Udpak filer (`tar xvf <file>`) og åben spillet, ved at køre den eksekverbare fil `sky-clash`. Desuden kræver det på Linux, at man henter de nødvendige SDL2-pakker. Disse hedder eksempelvis `sdl2`, `sdl2_image` og `sdl2_ttf` på Archlinux, `libsdl2-2.0-0`, `libsdl2-image-2.0-0` og `libsdl2-ttf-2.0-0` på Debian og Ubuntu.
 
 Initialiser dine *SkyHero*-figurer\*\*. Start spillet med én enkelt *SkyHero*-figur på *SkyBoard*. Åben spillet. Naviger til *Hero Creator*-menuen. Her vil der blive vist en Pop-up-menu, med hver slags *SkyHero*. På billedet nedenunder ses alle figurer i rækkefølgen: `Tankie`, `Strong`, `Speed` og `Centrist`, Vælg den rigtige helt.
 
