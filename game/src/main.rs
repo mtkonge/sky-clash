@@ -22,6 +22,7 @@ mod sound_player;
 mod sprite_renderer;
 mod start_game;
 mod timer;
+mod ui_components;
 
 // pub const FONT: &str = "assets/ttf/OpenSans.ttf";
 pub const FONT: &str = "assets/ttf/Jaro-Regular.ttf";

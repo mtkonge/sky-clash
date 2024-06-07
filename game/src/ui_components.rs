@@ -1,8 +1,7 @@
-use crate::{Context, SharedPtr};
-
-use super::{
+use engine::ui::{
     builder, constructors::Text, id_offset::IdOffset, BoxedNode, Dom, InternalNodeId, Kind, Node,
 };
+use engine::{Context, SharedPtr};
 
 #[allow(non_snake_case)]
 pub fn Button<S: Into<String>>(text: S) -> builder::Box<builder::Node> {
@@ -94,7 +93,7 @@ impl ProgressBar {
     }
 
     pub fn build(&self) -> BoxedNode {
-        use super::constructors::{Hori, Rect, Vert};
+        use engine::ui::constructors::{Hori, Rect, Vert};
 
         let middle = (self.total / 2) as usize;
         let mut children: Vec<_> = (0..self.total)

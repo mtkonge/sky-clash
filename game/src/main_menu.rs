@@ -1,8 +1,8 @@
 use crate::hero_creator::HeroCreatorSystem;
 use crate::sound_player::SoundPlayer;
 use crate::start_game::StartGameSystem;
+use crate::ui_components::Button;
 use engine::ui;
-use engine::ui::components::Button;
 use engine::SharedPtr;
 use engine::{query, spawn};
 use engine::{Component, System};

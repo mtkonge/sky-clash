@@ -4,7 +4,6 @@ use engine::{
     query, spawn,
     ui::{
         self,
-        components::ProgressBar,
         focus::Focus,
         utils::{change_image_node_content, change_text_node_content},
     },
@@ -17,6 +16,7 @@ use crate::{
     main_menu::MainMenuSystem,
     server::{Board, HeroResult, Res, Server},
     sound_player::SoundPlayer,
+    ui_components::{Button, ProgressBar},
 };
 
 #[derive(Component, Clone)]
@@ -73,7 +73,6 @@ struct MaybeHeroesOnBoard(Option<crate::game::HeroesOnBoard>);
 pub struct StartGameSystem(pub u64);
 impl System for StartGameSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
-        use ui::components::Button;
         use ui::constructors::{Hori, Image, Rect, Stack, Text, Vert};
 
         let system_id = self.0;

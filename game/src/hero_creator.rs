@@ -5,6 +5,8 @@ use crate::server::HeroResult;
 use crate::server::Res;
 use crate::server::Server;
 use crate::sound_player::SoundPlayer;
+use crate::ui_components::Button;
+use crate::ui_components::ProgressBar;
 use engine::query_one;
 use engine::spawn;
 use engine::ui::{
@@ -19,9 +21,9 @@ pub struct HeroCreator {
     dom: SharedPtr<ui::Dom>,
     focus: SharedPtr<ui::focus::Focus>,
     unallocated_skill_points: SharedPtr<i64>,
-    strength_bar: SharedPtr<ui::components::ProgressBar>,
-    defence_bar: SharedPtr<ui::components::ProgressBar>,
-    agility_bar: SharedPtr<ui::components::ProgressBar>,
+    strength_bar: SharedPtr<ProgressBar>,
+    defence_bar: SharedPtr<ProgressBar>,
+    agility_bar: SharedPtr<ProgressBar>,
     hero: Option<HeroResult>,
     board_responder: Option<SharedPtr<Box<dyn Res<Board>>>>,
 }
@@ -71,7 +73,6 @@ impl From<Event> for ui::EventId {
 pub struct HeroCreatorSystem(pub u64);
 impl System for HeroCreatorSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
-        use ui::components::ProgressBar;
         let strength_bar = ProgressBar::new("Strength", 24);
         let agility_bar = ProgressBar::new("Agility", 24);
         let defence_bar = ProgressBar::new("Defence", 24);
@@ -214,11 +215,10 @@ impl System for HeroCreatorSystem {
 impl HeroCreatorSystem {
     fn build_dom(
         &self,
-        strength_bar: &ui::components::ProgressBar,
-        agility_bar: &ui::components::ProgressBar,
-        defence_bar: &ui::components::ProgressBar,
+        strength_bar: &ProgressBar,
+        agility_bar: &ProgressBar,
+        defence_bar: &ProgressBar,
     ) -> ui::Dom {
-        use ui::components::Button;
         use ui::constructors::{Hori, Image, Rect, Stack, Text, Vert};
         ui::Dom::new(
             Stack([
@@ -243,12 +243,10 @@ impl HeroCreatorSystem {
                         agility_bar.build(),
                         defence_bar.build(),
                         Hori([
-                            ui::components::Button("Confirm")
+                            Button("Confirm")
                                 .on_click(Event::UpdateHero)
                                 .id(Node::UpdateHero),
-                            ui::components::Button("Back")
-                                .on_click(Event::Back)
-                                .id(Node::Back),
+                            Button("Back").on_click(Event::Back).id(Node::Back),
                         ])
                         .gap(4),
                         Rect().height(720 / 2 - 100),
