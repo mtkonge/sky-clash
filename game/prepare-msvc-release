@@ -4,7 +4,7 @@ rm windows.*.zip
 set -xe
 
 cargo b
-7z a windows.debug.zip $(pwd)/target/debug/sky-clash.exe $(pwd)/vendored-deps/msvc/runtime/* $(pwd)/textures
+7z a windows.debug.zip $(pwd)/target/debug/sky-clash.exe $(pwd)/vendored-deps/msvc/runtime/* $(pwd)/assets
 
 cargo b --release
-7z a windows.release.zip $(pwd)/target/release/sky-clash.exe $(pwd)/vendored-deps/msvc/runtime/* $(pwd)/textures
+7z a windows.release.zip $(pwd)/target/release/sky-clash.exe $(pwd)/vendored-deps/msvc/runtime/* $(pwd)/assets
