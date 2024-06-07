@@ -1,7 +1,28 @@
 # SkyClash
 
+<!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
+
+- [Opgave](#opgave)
+   * [H3-Smart-Kommunikationsplatform - SkyClash](#h3-smart-kommunikationsplatform-skyclash)
+   * [Projekt pitch:](#projekt-pitch)
+- [Opsætning](#opsætning)
+- [Brugerguide](#brugerguide)
+- [Encyclopedia](#encyclopedia)
+   * [Heltespiller](#heltespiller)
+   * [Heltespillerfigurer](#heltespillerfigurer)
+   * [Sky Board](#sky-board)
+- [Programmet](#programmet)
+   * [Startmenuen](#startmenuen)
+   * [Hero Creator](#hero-creator)
+   * [Start Game](#start-game)
+
+<!-- TOC end -->
+
+
+<!-- TOC --><a name="opgave"></a>
 ## Opgave
 
+<!-- TOC --><a name="h3-smart-kommunikationsplatform-skyclash"></a>
 ### H3-Smart-Kommunikationsplatform - SkyClash
 
 Projekt kan findes her: ["Notion link"](https://mercantec.notion.site/Projekt-H3-IoT-og-Serverside-med-Christoffer-og-Kasper-e8980638a8584a72b0c7d718252dbba4?pvs=4)
@@ -21,12 +42,14 @@ Filstrukturen ser sådan ud:
 - .gitignore
 - README.md
 
+<!-- TOC --><a name="projekt-pitch"></a>
 ### Projekt pitch:
 
 Vi vil lave et 1-mod-1 fighting-spil lignende spillet [Brawlhalla](https://www.brawlhalla.com/) eller [Smashbros](https://www.nintendo.dk/nintendo-switch-familien/spil/super-smash-bros-ultimate) der gennem 2 NFC-skannere kan bruges til at vise 'helte' i spillet, man så derefter kan bruge til at spille mod hinanden. Spillet gør brug af disse hardwarekomponenter: NFC-skanner, LCD-display og knapper. Vores mål er at udvikle en løsning, hvor man bruger en fysisk figur til at spille spillet i stedet for, det kun foregår på skærmen. Dette løser vi ved at integrere et interaktivt system, der kan indsamle og reagere på data. For at opnå dette, har vi tænkt os at anvende programmeringssproget Rust til selve spillet, Rust eller Typescript til en server med en HTTP-API og en SQL-database.
 
 Vores system vil kunne interagere med brugerne gennem et dashboard (selve spilklienten), der viser spillet, dvs. de relevante data til spillet, hvilket giver brugerne mulighed for at spille spillet, som så vil foretage ændringer i dataen. Dette projekt vil ikke kun give os praktisk erfaring med Rust, Spilarkitektur, -design, -fysik, -logik, -mekanik, Arduino, embedded C++, kommunikation over HTTP, interaktion med Database, men også muligheden for at udforske, hvordan teknologi kan anvendes til at løse reelle problemer eller forbedre dagligdagen.
 
+<!-- TOC --><a name="opsætning"></a>
 ## Opsætning
 
 SkyClash er et spil-system for 2 spillere. Systemet består af selve spillet og *SkyBoard* til ens *SkyHero*-figurer.
@@ -50,6 +73,7 @@ Initialiser dine *SkyHero*-figurer\*\*. Start spillet med én enkelt *SkyHero*-f
 
 \*\* Dette er kun relevant, hvis figurene ikke allerede er oprettet i serveren.
 
+<!-- TOC --><a name="brugerguide"></a>
 ## Brugerguide
 
 Sæt 2 *SkyHero*-figurer på *SkyBoard*. Åben spillet og naviger til *Start Game*-menuen. Her ses et overblik over de valgte *SkyHero* og deres evner. Spillet går i gang, når der trykkes på *Start Game*. Knapperne til at styre hver figur, ses på tabellen nedenfor.
@@ -60,7 +84,7 @@ Hop | `W` | `↑`
 Gå til venstre | `A` | `←`
 Gå ned | `S` | `↓`
 Gå til højre | `D` | `→`
-Angrib | `J` | `Enter`
+Angrib | `J` | `Numpad Enter`
 Undvig | `K` | `Numpad ,`
 
 Når en spiller angribes, tager den skade. Jo mere skade, jø større effekt har følgende angreb mod spilleren. Spillerens skade kan ses på farven boksene i hjørnerne af skærmen. Farven går hvid til grøn, rød og til sort.
@@ -69,8 +93,10 @@ Når en spiller falder ud af det synlige areal, mister de et liv. Alle spillere 
 
 Som man vinder kampe, optjener man *Skill Points*. Disse kan benyttes i *Hero Creator*-menuen, til at forbedre helten. Dette gøres ved, man sætter én enkelt *SkyHero* på *SkyBoard* og navigere til *Hero Creator*-menuen. I menuen kan man se mængden af *Skill points* til rådighed. Kan man allokere sine point med `-`- og `+`-knapperne for hver evne: *Strength*, *Agility* og *Defence*. Når man er tilfreds, kan man trykke på *Save*-knappen for at gemme og *Back*-knappen for at gå tilbage til startmenuen.
 
+<!-- TOC --><a name="encyclopedia"></a>
 ## Encyclopedia
 
+<!-- TOC --><a name="heltespiller"></a>
 ### Heltespiller
 
 En heltespiller er en figur som du kontrollerer når du spiller Sky Clash.
@@ -83,28 +109,32 @@ De 4 heltespillertyper er Tankie, som har en fokus på beskyttelse, Strong, som 
 
 En heltespiller er bundet til en fysisk heltespillerfigur.
 
+<!-- TOC --><a name="heltespillerfigurer"></a>
 ### Heltespillerfigurer
 
 Heltespillerfigurerne er figurer, der bruges sammen med dit Sky Board for at kunne spille Sky Clash. De representerer én af de 4 heltespillertyper, og bruges til at gemme information om dine kampe vundet, og de valgt du har truffet i Sky Clash’ Hero Creator.
 
-<img src="./images/heroes.jpg" alt="heroes" height="300"/>
+<img src="/docs/images//heroes.jpg" alt="heroes" height="300"/>
 
+<!-- TOC --><a name="sky-board"></a>
 ### Sky Board
 
 Dit Sky Board bruges sammen med heltespillerfigurer for at kunne spille Sky Clash. Man bruger det ved at placere en eller flere heltespillerfigur på en eller begge af to markerede pladser.
 
-<img src="./images/sky_board.jpg" alt="skyboard" height="300"/>
+<img src="/docs/images//sky_board.jpg" alt="skyboard" height="300"/>
 
 
+<!-- TOC --><a name="programmet"></a>
 ## Programmet
 
 Det kræver mindst 2 heltespillerfigure og et Sky Board for at kunne spille.
 
+<!-- TOC --><a name="startmenuen"></a>
 ### Startmenuen
 
 Det første du kommer til at møde når du starter Sky Clash er startmenuen.
 
-<img src="./images/main_menu.png" alt="main menu" height="300"/>
+<img src="/docs/images//main_menu.png" alt="main menu" height="300"/>
 
 Her mødes du af 3 knapper, “start game”, “hero creator” og “exit”. Du kan bruge musen eller Tab knappen til at navigere, og venstre klik eller enter for at vælge en mulighed.
 
@@ -114,15 +144,16 @@ Start game og Hero creator leder dig til menuen for at hhv. Starte spillet og sk
 
 For at opnå dette, skal du med dit Sky Board have præcist en heltespillerfigur på en af de markerede pladser, og vælge muligheden "Hero Creator".
 
+<!-- TOC --><a name="hero-creator"></a>
 ### Hero Creator
 
 Før du kan gå ind på hero creator'en skal du sikre dig at du har sat én helt på Sky Board'et
 
-<img src="./images/sky_board_with_hero.jpg" alt="skyboard with hero" height="300"/>
+<img src="/docs/images//sky_board_with_hero.jpg" alt="skyboard with hero" height="300"/>
 
 Hvis helten ikke er oprettet endnu, bliver du mødt af et valg af hvilken slags heltespillertype du har at gøre med.
 
-<img src="./images/select_hero.png" alt="select hero" height="300"/>
+<img src="/docs/images//select_hero.png" alt="select hero" height="300"/>
 
 Her vælger du et af 4 muligheder der matcher til din heltespiller.
 
@@ -130,25 +161,26 @@ Til at starte med har du ingen ekstra point at uddele, men efter du har vundet e
 
 Når du er færdig, kan du så trykke på "Confirm" knappen for at gemme, og derefter "Back" knappen for at komme til startmenuen.
 
-<img src="./images/hero_creator.png" alt="hero creator" height="300"/>
+<img src="/docs/images//hero_creator.png" alt="hero creator" height="300"/>
 
 Derefter kan du bytte din heltespillerfigur på brættet ud med en anden heltespillerfigur og gøre det samme.
 
 Nu hvor du har 2 heltespillerfigure forberedt kan du så placere begge heltespillerfigure på hver deres plads på dit Sky Board og vælge muligheden "Start Game" for at begynde at spille.
 
+<!-- TOC --><a name="start-game"></a>
 ### Start Game
 
 Før du kan gå ind på "Start Game" skal du sikre dig, at du har sat to helte på Sky Board'et
 
-<img src="./images/sky_board_with_heroes.jpg" alt="skyboard with heroes" height="300"/>
+<img src="/docs/images//sky_board_with_heroes.jpg" alt="skyboard with heroes" height="300"/>
 
 Det første du ser er en menu, hvor du kan se hvilke heltespillerfigure du har på brættet, og hvordan deres point er uddelt. Når du har 2 spillere på brættet, kan du trykke "Start Game" igen for at spille en kamp.
 
-<img src="./images/start_game.png" alt="start game" height="300"/>
+<img src="/docs/images//start_game.png" alt="start game" height="300"/>
 
 Når du har 2 spillere på brættet, kan du trykke "Start Game" igen for at spille en kamp.
 
-<img src="./images/game.png" alt="game" height="300"/>
+<img src="/docs/images//game.png" alt="game" height="300"/>
 
 Spiller 1 bevæger med WASD, angreber med J og undviger med K.
 
@@ -160,8 +192,8 @@ Hvis du holder din "Bevægelse Ned" knap nede mens du angreber, angreber du ved 
 
 Hvis du holder din "Bevægelse til Højre" eller "Bevægelse til Venstre" knap nede angreber du hhv. til højre eller venstre.
 
-<img src="./images/hero_information_left.png" alt="hero information left" height="300"/>
-<img src="./images/hero_information_right.png" alt="hero information right" height="300"/>
+<img src="/docs/images//hero_information_left.png" alt="hero information left" height="300"/>
+<img src="/docs/images//hero_information_right.png" alt="hero information right" height="300"/>
 
 helteinformationsboks viser informationer for spillets gang og kan ses i de to øverste hjørner. helteinformationsboksen viser spillernes liv, deres skade og hvilken figur de spiller.
 
