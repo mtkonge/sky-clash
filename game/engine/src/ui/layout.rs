@@ -11,41 +11,40 @@ pub(super) struct LayoutTreeLeaf<'a> {
 }
 
 #[derive(Debug, PartialEq)]
-pub(super) enum LayoutTree<'a> {
-    Single(LayoutTreeLeaf<'a>),
-    Multiple(LayoutTreeLeaf<'a>, Vec<LayoutTree<'a>>),
+pub(super) struct LayoutTree<'a> {
+    leaf: LayoutTreeLeaf<'a>,
+    children: Vec<LayoutTree<'a>>,
 }
 
 impl LayoutTree<'_> {
+    pub fn single<'a>(leaf: LayoutTreeLeaf<'a>) -> LayoutTree<'a> {
+        LayoutTree {
+            leaf,
+            children: Vec::new(),
+        }
+    }
+    pub fn multiple<'a>(leaf: LayoutTreeLeaf<'a>, children: Vec<LayoutTree<'a>>) -> LayoutTree<'a> {
+        LayoutTree { leaf, children }
+    }
     pub fn draw(&self, ctx: &mut impl UiContext) {
-        match self {
-            LayoutTree::Single(leaf) => leaf.draw(ctx),
-            LayoutTree::Multiple(leaf, children) => {
-                leaf.draw(ctx);
-                for tree in children {
-                    tree.draw(ctx);
-                }
-            }
+        self.leaf.draw(ctx);
+        for tree in &self.children {
+            tree.draw(ctx);
         }
     }
 
     pub fn resolve_click(&self, mouse_pos: V2) -> Option<(EventId, InternalNodeId)> {
-        match self {
-            LayoutTree::Single(leaf) => leaf.resolve_click(mouse_pos),
-            LayoutTree::Multiple(leaf, children) => {
-                let res = leaf.resolve_click(mouse_pos);
-                if res.is_some() {
-                    return res;
-                }
-                for tree in children.iter().rev() {
-                    let res = tree.resolve_click(mouse_pos);
-                    if res.is_some() {
-                        return res;
-                    }
-                }
-                None
+        let res = self.leaf.resolve_click(mouse_pos);
+        if res.is_some() {
+            return res;
+        }
+        for tree in self.children.iter().rev() {
+            let res = tree.resolve_click(mouse_pos);
+            if res.is_some() {
+                return res;
             }
         }
+        None
     }
 }
 
@@ -254,7 +253,7 @@ impl CanCreateLayoutTree for Node {
         pos_transformer: &mut dyn TransformersRobotsInDisguise,
     ) -> LayoutTree<'dom> {
         if !self.visible {
-            return LayoutTree::Single(LayoutTreeLeaf {
+            return LayoutTree::single(LayoutTreeLeaf {
                 size: V2::new(0.0, 0.0),
                 pos: V2::new(0.0, 0.0),
                 inner: self,
@@ -291,7 +290,7 @@ impl CanCreateLayoutTree for Node {
                 let size = ctx.text_size(font_id, text).unwrap();
                 let size = V2::new(f64::from(size.0), f64::from(size.1));
                 let leaf = build_leaf(self, node_id, pos_transformer, parent_pos, size);
-                LayoutTree::Single(leaf)
+                LayoutTree::single(leaf)
             }
             Kind::Rect | Kind::Image(_) => {
                 let leaf = build_leaf(
@@ -301,27 +300,11 @@ impl CanCreateLayoutTree for Node {
                     parent_pos,
                     V2::new(0.0, 0.0),
                 );
-                LayoutTree::Single(leaf)
+                LayoutTree::single(leaf)
             }
             kind @ (Kind::Hori(children) | Kind::Vert(children) | Kind::Stack(children)) => {
                 let padding = self.padding.unwrap_or(0.0) + self.border_thickness.unwrap_or(0.0);
                 let gap = self.gap.unwrap_or(0.0);
-
-                let calc_content_size = match kind {
-                    Kind::Vert(_) => |acc: V2, (curr, gap): (LayoutTree, f64)| {
-                        let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
-                        V2::new(max(acc.x, leaf.size.x), acc.y + leaf.size.y + gap)
-                    },
-                    Kind::Hori(_) => |acc: V2, (curr, gap): (LayoutTree, f64)| {
-                        let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
-                        V2::new(acc.x + leaf.size.x + gap, max(acc.y, leaf.size.y))
-                    },
-                    Kind::Stack(_) => |acc: V2, (curr, _gap): (LayoutTree, f64)| {
-                        let (LayoutTree::Single(leaf) | LayoutTree::Multiple(leaf, _)) = curr;
-                        V2::new(max(acc.x, leaf.size.x), max(acc.y, leaf.size.y))
-                    },
-                    _ => unreachable!("not matched prior"),
-                };
 
                 let size = children
                     .iter()
@@ -330,7 +313,31 @@ impl CanCreateLayoutTree for Node {
                         node.build_layout_tree(id, dom, ctx, V2::new(0.0, 0.0), &mut NoTransform)
                     })
                     .map(|tree| (tree, gap))
-                    .fold(V2::new(0.0, 0.0), calc_content_size);
+                    .fold(
+                        (true, V2::new(0.0, 0.0)),
+                        |(first, acc), (curr, gap)| match kind {
+                            Kind::Vert(_) => {
+                                let mut result = acc.y + curr.leaf.size.y;
+                                if !first {
+                                    result += gap;
+                                }
+                                (false, V2::new(max(acc.x, curr.leaf.size.x), result))
+                            }
+                            Kind::Hori(_) => {
+                                let mut result = acc.x + curr.leaf.size.x;
+                                if !first {
+                                    result += gap;
+                                }
+                                (false, V2::new(result, max(acc.y, curr.leaf.size.y)))
+                            }
+                            Kind::Stack(_) => (
+                                false,
+                                V2::new(max(acc.x, curr.leaf.size.x), max(acc.y, curr.leaf.size.y)),
+                            ),
+                            _ => unreachable!("not matched prior"),
+                        },
+                    )
+                    .1;
 
                 let size = V2::new(self.width.unwrap_or(size.x), self.height.unwrap_or(size.y))
                     + V2::new(padding * 2.0, padding * 2.0);
@@ -359,7 +366,7 @@ impl CanCreateLayoutTree for Node {
                     node_id,
                 };
 
-                LayoutTree::Multiple(leaf, children)
+                LayoutTree::multiple(leaf, children)
             }
         }
     }
@@ -384,12 +391,13 @@ fn troller_no_trolling_min() {
 
     let expected = {
         use crate::ui::Kind::*;
-        use LayoutTree::*;
+        let multiple = LayoutTree::multiple;
+        let single = LayoutTree::single;
 
-        let focus_color = (53, 73, 136);
-        let focus_thickness = 4.0;
+        let focus_color = (50, 160, 190);
+        let focus_thickness = 6.0;
 
-        Multiple(
+        multiple(
             LayoutTreeLeaf {
                 size: V2::new(
                     16.0 + 2.0 + 16.0 + 2.0 + 16.0 + 2.0,
@@ -417,7 +425,7 @@ fn troller_no_trolling_min() {
                     focus_thickness,
                 })),
             },
-            vec![Multiple(
+            vec![multiple(
                 LayoutTreeLeaf {
                     size: V2::new(16.0 + 2.0 + 16.0 + 2.0, 16.0 + 2.0 + 16.0 + 2.0),
                     pos: V2::new(8.0 + 1.0, 8.0 + 1.0),
@@ -442,7 +450,7 @@ fn troller_no_trolling_min() {
                         focus_thickness,
                     })),
                 },
-                vec![Single(LayoutTreeLeaf {
+                vec![single(LayoutTreeLeaf {
                     size: V2::new(16.0 + 2.0, 16.0 + 2.0),
                     pos: V2::new(8.0 + 1.0 + 8.0 + 1.0, 8.0 + 1.0 + 8.0 + 1.0),
                     node_id: InternalNodeId(2),
