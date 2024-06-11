@@ -217,6 +217,16 @@ fn find_shallow_collisions(
     }
 }
 
+fn delta_pos_is_opposite_dir(side: QuadDirection, delta_pos: V2) -> bool {
+    use QuadDirection::*;
+    match side {
+        Top => delta_pos.y < 0.0,
+        Right => delta_pos.x > 0.0,
+        Bottom => delta_pos.y > 0.0, 
+        Left => delta_pos.x < 0.0
+    }
+}
+
 fn find_collisions<F: Fn(QuadDirection, V2) -> bool>(
     intersections: &mut Vec<Collision>,
     body: &RigidBody,
@@ -237,6 +247,9 @@ fn find_collisions<F: Fn(QuadDirection, V2) -> bool>(
 
     for side in [Top, Right, Bottom, Left] {
         if !direction_checked(side.into(), delta_pos) {
+            continue;
+        }
+        if delta_pos_is_opposite_dir(side, delta_pos) {
             continue;
         }
         let (p0, p1) = rect.side_corners(side.reverse());
