@@ -26,6 +26,11 @@ pub fn clamp(value: f64, min: f64, max: f64) -> f64 {
     }
 }
 
+pub const F64_TOL: f64 = 0.001;
+pub fn eq_tol(lhs: f64, rhs: f64, tol: f64) -> bool {
+    (lhs - rhs).abs() <= tol
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct Moving<T> {
     inner: T,
@@ -156,17 +161,17 @@ pub struct Intersection {
 impl Moving<V2> {
     pub fn line_intersect(&self, line: Line) -> Option<V2> {
         let line_direction = line.direction();
-        if self.delta_pos.x == 0.0 && line_direction.x == 0.0 {
+        if eq_tol(self.delta_pos.x, 0.0, F64_TOL) && eq_tol(line_direction.x, 0.0, F64_TOL) {
             // parallel, do nothing
             None
-        } else if self.delta_pos.x == 0.0 {
+        } else if eq_tol(self.delta_pos.x, 0.0, F64_TOL) {
             let x = self.x;
             // y = ax + b
             let line_a = line_direction.y / line_direction.x;
             let line_b = line.p0.y - line_a * line.p0.x;
             let y = line_a * x + line_b;
             Some(V2::new(x, y))
-        } else if line_direction.x == 0.0 {
+        } else if eq_tol(line_direction.x, 0.0, F64_TOL) {
             let x = line.p0.x;
             // y = ax + b
             let delta_pos_a = self.delta_pos.y / self.delta_pos.x;
@@ -177,7 +182,7 @@ impl Moving<V2> {
             // y = ax + b
             let delta_pos_a = self.delta_pos.y / self.delta_pos.x;
             let line_a = line_direction.y / line_direction.x;
-            if delta_pos_a == line_a {
+            if eq_tol(delta_pos_a, line_a, F64_TOL) {
                 // parallel: either none or continous intersection
                 return None;
             }
@@ -191,7 +196,7 @@ impl Moving<V2> {
 
     /// Will a moving point (self) pass a static point (p), where p is on the same movement path?
     pub fn crosses_point_debug(&self, p: V2) -> bool {
-        if self.delta_pos.x == 0.0 && self.delta_pos.y == 0.0 {
+        if eq_tol(self.delta_pos.x, 0.0, F64_TOL) && eq_tol(self.delta_pos.y, 0.0, F64_TOL) {
             // no movement; it will never pass
             return false;
         }
@@ -205,12 +210,7 @@ impl Moving<V2> {
         let target = origin + self.delta_pos;
         let point_to_pass = p;
         let intended_movement = target - origin;
-        // prevent cringe division by 0
-        let distance_factor = if intended_movement.y == 0.0 {
-            (point_to_pass.x - origin.x) / intended_movement.x
-        } else {
-            (point_to_pass.y - origin.y) / intended_movement.y
-        };
+        let distance_factor = (point_to_pass - origin).len() / intended_movement.len();
 
         if distance_factor < -0.01 {
             // has not yet reached point
@@ -227,7 +227,7 @@ impl Moving<V2> {
 
     /// Will a moving point (self) pass a static point (p), where p is on the same movement path?
     pub fn crosses_point(&self, p: V2) -> bool {
-        if self.delta_pos.x == 0.0 && self.delta_pos.y == 0.0 {
+        if eq_tol(self.delta_pos.x, 0.0, F64_TOL) && eq_tol(self.delta_pos.y, 0.0, F64_TOL) {
             // no movement; it will never pass
             return false;
         }
@@ -241,12 +241,7 @@ impl Moving<V2> {
         let target = origin + self.delta_pos;
         let point_to_pass = p;
         let intended_movement = target - origin;
-        // prevent cringe division by 0
-        let distance_factor = if intended_movement.y == 0.0 {
-            (point_to_pass.x - origin.x) / intended_movement.x
-        } else {
-            (point_to_pass.y - origin.y) / intended_movement.y
-        };
+        let distance_factor = (point_to_pass - origin).len() / intended_movement.len();
 
         if distance_factor < 0.0 {
             // has not yet reached point
@@ -260,15 +255,7 @@ impl Moving<V2> {
     }
 
     pub fn distance_factor_to_point(&self, p: V2) -> f64 {
-        // intersection = pos + delta_pos * score
-        // (intersection - pos) / delta_pos = score
-        if self.delta_pos.x != 0.0 {
-            (p.x - self.x) / self.delta_pos.x
-        } else if self.delta_pos.y != 0.0 {
-            (p.y - self.y) / self.delta_pos.y
-        } else {
-            unreachable!("already verified delta_pos != (0, 0)");
-        }
+        (p - **self).len() / self.delta_pos.len()
     }
 
     /// Calculates intersection between point and line if exists.
@@ -284,7 +271,7 @@ impl Moving<V2> {
                 // panic!();
             }
         }
-        if self.delta_pos.len() == 0.0 {
+        if eq_tol(self.delta_pos.len(), 0.0, F64_TOL) {
             // no movement, no collision
             return None;
         }
@@ -392,19 +379,19 @@ impl Line {
     }
 
     pub fn is_vertical(&self) -> bool {
-        self.p1.x == self.p0.x
+        eq_tol(self.p1.x, self.p0.x, F64_TOL)
     }
 
     pub fn point_on_line(&self, p: V2) -> bool {
         let r = self.p1 - self.p0;
-        if r.x == 0.0 && self.p0.x == p.x {
+        if eq_tol(r.x, 0.0, F64_TOL) && eq_tol(self.p0.x, p.x, F64_TOL) {
             true
-        } else if r.y == 0.0 && self.p0.y == p.y {
+        } else if eq_tol(r.y, 0.0, F64_TOL) && eq_tol(self.p0.y, p.y, F64_TOL) {
             true
         } else {
             let t_x = (p.x - self.p0.x) / r.x;
             let t_y = (p.y - self.p0.y) / r.y;
-            t_x == t_y
+            eq_tol(t_x, t_y, F64_TOL)
         }
     }
 
