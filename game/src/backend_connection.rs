@@ -3,7 +3,22 @@ use reqwest::header::HeaderMap;
 use std::{
     collections::VecDeque,
     sync::{Arc, Mutex},
+    thread::JoinHandle,
 };
+
+pub fn backend_connection() -> (BackendConnection, JoinHandle<()>) {
+    let mut connection = BackendConnection::new();
+
+    let connection_clone = connection.clone();
+
+    let join_handle = std::thread::spawn(move || {
+        tokio::runtime::Runtime::new().unwrap().block_on(async {
+            connection.run().await;
+        });
+    });
+
+    (connection_clone, join_handle)
+}
 
 enum Message {
     Quit,
