@@ -3,7 +3,7 @@ use shared::HeroKind;
 
 use crate::{
     game::Game,
-    main_menu::{MainMenu, MainMenuSystem},
+    main_menu::{MainMenuSystem},
     player::{Player, PlayerKind},
     FONT,
 };
