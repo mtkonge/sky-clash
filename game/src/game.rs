@@ -65,8 +65,7 @@ impl System for GameSystem {
         systems += ctx.add_system(PlayerInteractionSystem);
         systems += ctx.add_system(HudSystem);
         systems += ctx.add_system(DeathAnimationSystem);
-
-        ctx.add_system(DebugDrawer);
+        // systems += ctx.add_system(DebugDrawer);
 
         let background = ctx.load_texture("assets/map_1.png").unwrap();
 
