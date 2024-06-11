@@ -22,10 +22,10 @@ use crate::{
 
 #[derive(Component, Clone)]
 pub struct Game {
-    pub board_colors_timer: SharedPtr<Timer>,
     pub system_id: engine::Id,
     pub child_systems: Vec<engine::Id>,
     pub child_components: Vec<engine::Id>,
+    pub board_colors_timer: SharedPtr<Timer>,
     pub paused: bool,
 }
 
@@ -36,16 +36,14 @@ impl Game {
         child_components: Vec<engine::Id>,
     ) -> Self {
         Self {
-            board_colors_timer: Timer::new(1.0).into(),
             system_id,
             child_systems,
             child_components,
+            board_colors_timer: Timer::new(1.0).into(),
             paused: false,
         }
     }
 }
-
-pub struct GameSystem(pub u64);
 
 #[derive(Component, Clone)]
 pub struct HeroesOnBoard {
@@ -53,6 +51,7 @@ pub struct HeroesOnBoard {
     pub hero_2: shared::Hero,
 }
 
+pub struct GameSystem(pub u64);
 impl System for GameSystem {
     fn on_add(&self, ctx: &mut engine::Context) -> Result<(), engine::Error> {
         let mut systems = IdAccumulator::new();
@@ -66,6 +65,7 @@ impl System for GameSystem {
         systems += ctx.add_system(PlayerInteractionSystem);
         systems += ctx.add_system(HudSystem);
         systems += ctx.add_system(DeathAnimationSystem);
+
         ctx.add_system(DebugDrawer);
 
         let background = ctx.load_texture("assets/map_1.png").unwrap();
